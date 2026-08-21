@@ -13,7 +13,6 @@ url = "https://www.python.org/ftp/python/3.14.7/Python-3.14.7.tar.xz"
 sha256 = "3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81"
 
 dependencies = [
-    "glibc >= 2.44",
     "libffi >= 3.8.0",
     "sqlite-libs >= 3.53.4",
     "mpdecimal >= 4.0.1",
@@ -24,7 +23,7 @@ dependencies = [
     "xz-libs >= 5.8.3",
     "zstd-libs >= 1.5.7",
     "ncurses-libs >= 6.6",
-    "readline >= 8.3",
+    "readline >= 8.3"
 ]
 
 build_dependencies = [

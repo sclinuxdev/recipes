@@ -21,7 +21,6 @@ dependencies = [
     "xz-libs >= 5.8.3",
     "openssl-libs >= 4.0.1",
     "pcre2-libs >= 10.47",
-    "glibc >= 2.44",
     "libseccomp >= 2.6.0",
     "acl-libs >= 2.4.0",
     "libxcrypt >= 4.5.2"
