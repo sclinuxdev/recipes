@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "tcl-dev"
+version = "8.6.18"
+release = "1"
+description = "Tcl headers, pkg-config and libtcl.so symlink"
+license = "TCL"
+channel = "system"
+
+[source]
+url = "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.18/tcl8.6.18-src.tar.gz"
+sha256 = "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e"
+
+dependencies = [
+    "tcl-libs >= 8.6.18"
+]
+
+provides = [
+    "tcl-dev"
+]
+
+prepare = []
+
+build = [
+    "cd unix && ./configure --prefix=/usr --mandir=/usr/share/man",
+    "cd unix && make -j$(nproc)"
+]
+
+install = [
+    "cd unix && make install DESTDIR=$DESTDIR",
+    "cd unix && make install-private-headers DESTDIR=$DESTDIR",
+    "ln -sfv libtcl8.6.so $DESTDIR/usr/lib/libtcl.so",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

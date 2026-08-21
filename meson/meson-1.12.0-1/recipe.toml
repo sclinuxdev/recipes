@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "meson"
+version = "1.12.0"
+release = "1"
+description = "Meson build system"
+license = "Apache-2.0"
+channel = "system"
+
+[source]
+url = "https://files.pythonhosted.org/packages/48/91/d58a3eb45ed54bf32b96806dd2f4efd407f7a9675953e15e8ef257840a0d/meson-1.12.0.tar.gz"
+sha256 = "88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c"
+
+dependencies = [
+    "python >= 3.14.7",
+    "ninja >= 1.13.2"
+]
+
+build_dependencies = [
+    "python >= 3.14.7"
+]
+
+provides = [
+    "meson"
+]
+
+prepare = []
+
+build = [
+    "python3 -c \"import setuptools.build_meta as b; b.build_wheel('dist')\""
+]
+
+install = [
+    "mkdir -p $DESTDIR/usr/lib/python3.14/site-packages $DESTDIR/usr/bin",
+    "python3 -c \"import sys, zipfile, glob; [zipfile.ZipFile(f).extractall(sys.argv[1]) for f in glob.glob('dist/*.whl')]\" $DESTDIR/usr/lib/python3.14/site-packages",
+    "sed '1s|^#!.*|#!/usr/bin/python3|' meson.py > $DESTDIR/usr/bin/meson",
+    "chmod 755 $DESTDIR/usr/bin/meson",
+    "install -vDm644 data/shell-completions/bash/meson $DESTDIR/usr/share/bash-completion/completions/meson 2>/dev/null || true",
+    "install -vDm644 data/shell-completions/zsh/_meson $DESTDIR/usr/share/zsh/site-functions/_meson 2>/dev/null || true"
+]

@@ -1,0 +1,42 @@
+schema_version = 1
+
+[package]
+name = "gdbm-libs"
+version = "1.26"
+release = "1"
+description = "libgdbm/libgdbm_compat shared runtime libraries"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.26.tar.gz"
+sha256 = "6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e"
+
+dependencies = [
+    "glibc >= 2.44",
+]
+
+build_dependencies = [
+    "readline-dev >= 8.3",
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "gdbm-libs",
+    "so:libgdbm.so.6",
+    "so:libgdbm_compat.so.4"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --enable-libgdbm-compat",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

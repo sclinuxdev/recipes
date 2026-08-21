@@ -1,0 +1,44 @@
+schema_version = 1
+
+[package]
+name = "coreutils"
+version = "9.11"
+release = "1"
+description = "GNU core utilities"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://ftpmirror.gnu.org/coreutils/coreutils-9.11.tar.xz"
+sha256 = "394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3"
+
+dependencies = [
+    "attr-libs >= 2.6.0",
+    "acl-libs >= 2.4.0",
+    "gmp >= 6.3.0",
+    "libcap-libs >= 2.78",
+    "openssl-libs >= 4.0.1"
+]
+
+build_dependencies = [
+    "attr-dev >= 2.6.0",
+    "acl-dev >= 2.4.0",
+    "gmp-dev >= 6.3.0",
+    "libcap-dev >= 2.78",
+    "openssl-dev >= 4.0.1"
+]
+
+provides = [
+    "coreutils"
+]
+
+prepare = []
+
+build = [
+    "FORCE_UNSAFE_CONFIGURE=1 ./configure --prefix=/usr --enable-install-program=hostname --enable-no-install-program=kill,uptime --disable-nls",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

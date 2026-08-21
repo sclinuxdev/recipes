@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "xz-dev"
+version = "5.8.3"
+release = "1"
+description = "liblzma headers, pkg-config and linker symlink"
+license = "0BSD AND LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://tukaani.org/xz/xz-5.8.3.tar.xz"
+sha256 = "fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6"
+
+dependencies = [
+    "xz-libs >= 5.8.3"
+]
+
+provides = [
+    "xz-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

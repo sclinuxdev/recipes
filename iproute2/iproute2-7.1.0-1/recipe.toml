@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "iproute2"
+version = "7.1.0"
+release = "1"
+description = "IP routing and traffic control utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-7.1.0.tar.xz"
+sha256 = "fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c"
+
+dependencies = [
+    "libcap-libs >= 2.78",
+    "libelf >= 0.196"
+]
+
+build_dependencies = [
+    "bison >= 3.8.2",
+    "flex >= 2.6.4",
+    "pkgconf >= 3.0.5",
+    "libcap-dev >= 2.78",
+    "libelf-dev >= 0.196",
+    "linux-headers >= 7.1.9"
+]
+
+provides = [
+    "iproute2"
+]
+
+prepare = []
+
+build = [
+    "make -j$(nproc)"
+]
+
+install = [
+    "make DESTDIR=$DESTDIR install"
+]

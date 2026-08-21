@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "sage"
+version = "0.2.0"
+release = "1"
+description = "Universal Multi-Layer Linux Package Manager"
+license = "MIT"
+channel = "system"
+
+dependencies = [
+    "lmdb >= 0.9.35",
+    "zstd-libs >= 1.5.7",
+    "tomlplusplus >= 3.4.0",
+    "curl-libs >= 8.21.0",
+    "gcc-libs >= 15.3.0",
+    "openssl-libs >= 4.0.1"
+]
+
+build_dependencies = [
+    "xmake >= 3.1.0",
+    "lmdb-dev >= 0.9.35",
+    "zstd-dev >= 1.5.7",
+    "tomlplusplus-dev >= 3.4.0",
+    "curl-dev >= 8.21.0",
+    "openssl-dev >= 4.0.1"
+]
+
+provides = [
+    "sage"
+]
+
+prepare = []
+
+build = [
+    "SAGE_SOURCE_DIR=\"${SAGE_SOURCE_DIR:-/home/ir/distro/sage}\"; if [ ! -d \"$SAGE_SOURCE_DIR\" ] && [ -d /distro/sage ]; then SAGE_SOURCE_DIR=/distro/sage; fi; cd \"$SAGE_SOURCE_DIR\" && XMAKE_ROOT=y xmake f -c -m release -y && XMAKE_ROOT=y xmake -y"
+]
+
+install = [
+    "SAGE_SOURCE_DIR=\"${SAGE_SOURCE_DIR:-/home/ir/distro/sage}\"; if [ ! -d \"$SAGE_SOURCE_DIR\" ] && [ -d /distro/sage ]; then SAGE_SOURCE_DIR=/distro/sage; fi; install -Dm755 \"$SAGE_SOURCE_DIR/build/linux/x86_64/release/sage\" $DESTDIR/usr/bin/sage"
+]

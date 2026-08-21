@@ -1,0 +1,44 @@
+schema_version = 1
+
+[package]
+name = "file-libs"
+version = "5.48"
+release = "1"
+description = "libmagic shared runtime library"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+dependencies = [
+    "zlib >= 1.3.2",
+    "bzip2-libs >= 1.0.8",
+    "xz-libs >= 5.8.3"
+]
+
+build_dependencies = [
+    "zlib-dev >= 1.3.2",
+    "bzip2-dev >= 1.0.8",
+    "xz-dev >= 5.8.3"
+]
+
+provides = [
+    "file-libs",
+    "so:libmagic.so.1"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

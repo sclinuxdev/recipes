@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "expat-dev"
+version = "2.8.3"
+release = "1"
+description = "libexpat headers, pkg-config and linker symlink"
+license = "MIT"
+channel = "system"
+
+[source]
+url = "https://github.com/libexpat/libexpat/releases/download/R_2_8_3/expat-2.8.3.tar.xz"
+sha256 = "f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85"
+
+dependencies = [
+    "expat-libs >= 2.8.3"
+]
+
+provides = [
+    "expat-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

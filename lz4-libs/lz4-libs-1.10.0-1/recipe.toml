@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "lz4-libs"
+version = "1.10.0"
+release = "1"
+description = "liblz4 shared runtime library"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz"
+sha256 = "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "lz4-libs",
+    "so:liblz4.so.1"
+]
+
+prepare = []
+
+build = [
+    "make -C lib prefix=/usr -j$(nproc)"
+]
+
+install = [
+    "make -C lib prefix=/usr install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

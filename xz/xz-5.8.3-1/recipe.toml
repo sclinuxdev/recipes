@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "xz"
+version = "5.8.3"
+release = "1"
+description = "XZ-format compression utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://tukaani.org/xz/xz-5.8.3.tar.xz"
+sha256 = "fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6"
+
+dependencies = [
+    "xz-libs >= 5.8.3"
+]
+
+provides = [
+    "xz"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --docdir=/usr/share/doc/xz-5.8.3",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib $DESTDIR/usr/lib64 2>/dev/null || true"
+]

@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "lz4-dev"
+version = "1.10.0"
+release = "1"
+description = "liblz4 headers, pkg-config and linker symlink"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz"
+sha256 = "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b"
+
+dependencies = [
+    "lz4-libs >= 1.10.0"
+]
+
+provides = [
+    "lz4-dev"
+]
+
+prepare = []
+
+build = [
+    "make -j$(nproc) -C lib"
+]
+
+install = [
+    "make -C lib install DESTDIR=$DESTDIR PREFIX=/usr",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

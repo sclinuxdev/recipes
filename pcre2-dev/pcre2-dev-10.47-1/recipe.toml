@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "pcre2-dev"
+version = "10.47"
+release = "1"
+description = "PCRE2 headers, pkg-config and linker symlink"
+license = "BSD-3-Clause"
+channel = "system"
+
+[source]
+url = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.bz2"
+sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
+
+dependencies = [
+    "pcre2-libs >= 10.47"
+]
+
+provides = [
+    "pcre2-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --enable-pcre2-16 --enable-pcre2-32 --enable-jit --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

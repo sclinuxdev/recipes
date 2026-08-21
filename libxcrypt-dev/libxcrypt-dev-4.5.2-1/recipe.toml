@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "libxcrypt-dev"
+version = "4.5.2"
+release = "1"
+description = "libxcrypt headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://github.com/besser82/libxcrypt/releases/download/v4.5.2/libxcrypt-4.5.2.tar.xz"
+sha256 = "71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
+
+dependencies = [
+    "libxcrypt >= 4.5.2"
+]
+
+provides = [
+    "libxcrypt-dev"
+]
+
+prepare = []
+
+build = [
+    "CFLAGS=\"$CFLAGS -std=gnu17\" ./configure --prefix=/usr --enable-hashes=strong,glibc --enable-obsolete-api=no --disable-static --disable-failure-tokens --disable-werror",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

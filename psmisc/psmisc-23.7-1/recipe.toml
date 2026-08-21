@@ -1,0 +1,37 @@
+schema_version = 1
+
+[package]
+name = "psmisc"
+version = "23.7"
+release = "1"
+description = "Process management utilities (fuser, killall, pstree)"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://downloads.sourceforge.net/project/psmisc/psmisc/psmisc-23.7.tar.xz"
+sha256 = "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327"
+
+dependencies = [
+    "ncurses-libs >= 6.6"
+]
+
+build_dependencies = [
+    "ncurses-dev >= 6.6",
+    "gettext >= 1.0"
+]
+
+provides = [
+    "psmisc"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

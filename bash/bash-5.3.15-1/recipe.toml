@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "bash"
+version = "5.3.15"
+release = "1"
+description = "GNU Bourne Again SHell (patches 001-015)"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/bash/bash-5.3.tar.gz"
+sha256 = "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba"
+
+dependencies = [
+    "readline >= 8.3",
+]
+
+build_dependencies = [
+    "readline-dev >= 8.3",
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "bash",
+    "sh"
+]
+
+prepare = [
+    "if [ -f \"$RECIPE_DIR/bash-5.3.15.patch\" ]; then patch -Np0 -i \"$RECIPE_DIR/bash-5.3.15.patch\"; fi"
+]
+
+build = [
+    "./configure --prefix=/usr --without-bash-malloc --with-installed-readline",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "ln -sf bash $DESTDIR/usr/bin/sh"
+]

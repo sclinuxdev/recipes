@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "grep"
+version = "3.12"
+release = "1"
+description = "GNU grep"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/grep/grep-3.12.tar.xz"
+sha256 = "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9"
+
+dependencies = [
+    "pcre2-libs >= 10.47"
+]
+
+build_dependencies = [
+    "pcre2-dev >= 10.47"
+]
+
+provides = [
+    "grep"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-nls",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

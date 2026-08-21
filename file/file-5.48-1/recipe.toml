@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "file"
+version = "5.48"
+release = "1"
+description = "File type identification utility"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+dependencies = [
+    "file-libs >= 5.48"
+]
+
+provides = [
+    "file"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/lib/libmagic* $DESTDIR/usr/include/magic.h $DESTDIR/usr/lib/pkgconfig/libmagic.pc $DESTDIR/usr/include"
+]

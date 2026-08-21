@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "isl-dev"
+version = "0.27"
+release = "1"
+description = "ISL headers, pkg-config and linker symlink"
+license = "MIT"
+channel = "system"
+
+[source]
+url = "https://libisl.sourceforge.io/isl-0.27.tar.xz"
+sha256 = "6d8babb59e7b672e8cb7870e874f3f7b813b6e00e6af3f8b04f7579965643d5c"
+
+dependencies = [
+    "isl >= 0.27",
+    "gmp-dev >= 6.3.0"
+]
+
+provides = [
+    "isl-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "expect"
+version = "5.45.4"
+release = "1"
+description = "Automate interactive applications"
+license = "Public-domain"
+channel = "system"
+
+[source]
+url = "https://downloads.sourceforge.net/project/expect/Expect/5.45.4/expect5.45.4.tar.gz"
+sha256 = "49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34"
+
+dependencies = [
+    "tcl-libs >= 8.6.18"
+]
+
+build_dependencies = [
+    "tcl-dev >= 8.6.18"
+]
+
+provides = [
+    "expect",
+    "so:libexpect5.45.4.so"
+]
+
+prepare = []
+
+build = [
+    "CFLAGS=\"$CFLAGS -std=gnu17 -Wno-implicit-function-declaration -Wno-implicit-int -Wno-incompatible-pointer-types\" ./configure --prefix=/usr --with-tcl=/usr/lib --enable-shared --mandir=/usr/share/man --with-tclinclude=/usr/include",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "ln -sfv expect5.45.4/libexpect5.45.4.so $DESTDIR/usr/lib/ 2>/dev/null || true"
+]

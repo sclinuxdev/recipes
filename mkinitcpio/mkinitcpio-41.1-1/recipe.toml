@@ -1,0 +1,78 @@
+# mkinitcpio -- initramfs generator.
+#
+# Supersedes Stage2/recipes/mkinitcpio (release 2). Three changes:
+#
+#   1. Declares a capability hook for virtual/initramfs-generator, so sage's
+#      post-transaction trigger can regenerate the initramfs after a kernel
+#      lands without any recipe hardcoding mkinitcpio's path. Swapping in
+#      dracut later is then one line in system.toml.
+#   2. mkinitcpio 41.1 does not read /etc/mkinitcpio.conf.d/ -- only
+#      /etc/mkinitcpio.conf. A drop-in directory left there looks like it
+#      configures the build and silently does nothing, so the install phase
+#      ships a README saying so rather than an empty directory.
+#   3. Its `systemd` hook iterates /usr/lib/nvpcr/*.nvpcr without nullglob
+#      protection: with no such directory the loop body runs once on the
+#      literal unexpanded pattern. Patched to skip a non-match.
+
+schema_version = 1
+
+[package]
+name = "mkinitcpio"
+version = "41.1"
+release = "1"
+description = "Modular initramfs image creation utility"
+license = "GPL-2.0-only"
+channel = "system"
+
+[source]
+url = "https://sources.archlinux.org/other/mkinitcpio/mkinitcpio-41.1.tar.gz"
+sha256 = "0a42ea57b5fb78c36230053264d4e75726de26ba0bc534d35c7681146cfab91f"
+
+dependencies = [
+    "bash >= 5.3.15",
+    "kmod >= 34.2",
+    "coreutils >= 9.11",
+    "util-linux >= 2.42.2",
+    "findutils >= 4.11.0",
+    "grep >= 3.12",
+    "gawk >= 5.4.1",
+    "sed >= 4.10",
+    "zstd >= 1.5.7",
+    "libarchive >= 3.8.9",
+    "systemd-udev >= 261.2",
+    "busybox >= 1.38.0",
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "mkinitcpio",
+    "virtual/initramfs-generator"
+]
+
+# Guard the nvpcr glob: without a match the shell hands the loop the literal
+# pattern and the body runs on a path that does not exist.
+prepare = [
+    "grep -rl 'for nvpcr in /usr/lib/nvpcr/\\*.nvpcr' . | while read -r f; do sed -i 's|for nvpcr in /usr/lib/nvpcr/\\*\\.nvpcr; do|for nvpcr in /usr/lib/nvpcr/*.nvpcr; do [ -e \"$nvpcr\" ] || continue|' \"$f\"; done"
+]
+
+build = [
+    "meson setup build --prefix=/usr --sysconfdir=/etc -Ddocs=false",
+    "ninja -C build"
+]
+
+install = [
+    "DESTDIR=$DESTDIR ninja -C build install",
+    "mkdir -p $DESTDIR/etc/mkinitcpio.conf.d",
+    "printf '%s\\n' 'mkinitcpio 41.1 does NOT read this directory.' '' 'Only /etc/mkinitcpio.conf is parsed. Files placed here have no effect;' 'edit /etc/mkinitcpio.conf directly.' > $DESTDIR/etc/mkinitcpio.conf.d/README"
+]
+
+# -P regenerates every preset, which is what "the kernel changed" means.
+[[capability_hooks]]
+capability = "virtual/initramfs-generator"
+exec = "/usr/bin/mkinitcpio"
+args = ["-P"]

@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "procps-ng-dev"
+version = "4.0.7"
+release = "1"
+description = "libproc2 headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-4.0.7.tar.xz"
+sha256 = "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d"
+
+dependencies = [
+    "procps-ng-libs >= 4.0.7"
+]
+
+build_dependencies = [
+    "pkgconf >= 3.0.5",
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "procps-ng-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --disable-kill --enable-watch8bit",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

@@ -1,0 +1,62 @@
+# GNU GRUB 2 -- UEFI only.
+#
+# Supersedes Stage2/recipes/grub (release 2), which configured
+# `--with-platform=pc --target=i386` and therefore produced a BIOS-only
+# bootloader: on a UEFI machine there was no grubx64.efi to install and the
+# system could not be booted at all.
+#
+# ShenChen Linux targets x86_64 UEFI. Rather than build both platforms, this
+# builds the one that is actually supported. `grub-install` on a BIOS machine
+# will now fail loudly instead of silently producing an unbootable disk.
+
+schema_version = 1
+
+[package]
+name = "grub"
+version = "2.14"
+release = "1"
+description = "GNU GRUB 2 bootloader (x86_64 UEFI)"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://ftp.gnu.org/gnu/grub/grub-2.14.tar.xz"
+sha256 = "bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43"
+
+dependencies = [
+    "xz-libs >= 5.8.3"
+]
+
+build_dependencies = [
+    "bison >= 3.8.2",
+    "flex >= 2.6.4",
+    "python >= 3.14.7",
+    "gettext >= 1.0",
+    "xz-dev >= 5.8.3"
+]
+
+provides = [
+    "grub",
+    "virtual/bootloader"
+]
+
+prepare = []
+
+# --sbindir=/usr/bin, not /usr/sbin: /usr/sbin is a symlink to bin under the
+# merged-/usr layout base-files establishes, so installing there writes through
+# the link and leaves files mkinitcpio's forced PATH=/usr/bin:/bin cannot see.
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --sysconfdir=/etc --disable-efiemu --disable-werror --with-platform=efi --target=x86_64",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]
+
+# How `sage` invokes the bootloader capability after a kernel or initramfs
+# changes. grub-mkconfig writes the menu that references both.
+[[capability_hooks]]
+capability = "virtual/bootloader"
+exec = "/usr/bin/grub-mkconfig"
+args = ["-o", "/boot/grub/grub.cfg"]

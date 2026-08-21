@@ -1,0 +1,49 @@
+schema_version = 1
+
+[package]
+name = "shadow"
+version = "4.20.2"
+release = "1"
+description = "Password and account management utilities"
+license = "BSD-3-Clause"
+channel = "system"
+
+[source]
+url = "https://github.com/shadow-maint/shadow/releases/download/4.20.2/shadow-4.20.2.tar.gz"
+sha256 = "e5016b40541ee6fa02ea3d409547cef6e7eea9b31f0e3482e4874f87c1d0c7c5"
+
+dependencies = [
+    "libxcrypt >= 4.5.2",
+    "util-linux-libs >= 2.42.2",
+    "acl-libs >= 2.4.0",
+    "attr-libs >= 2.6.0"
+]
+
+build_dependencies = [
+    "libxcrypt-dev >= 4.5.2",
+    "util-linux-dev >= 2.42.2",
+    "acl-dev >= 2.4.0",
+    "attr-dev >= 2.6.0"
+]
+
+provides = [
+    "shadow"
+]
+
+prepare = [
+    "find man -name Makefile.in -exec sed -i 's/getspnam\\.3 / /' {} \\;",
+    "find man -name Makefile.in -exec sed -i 's/passwd\\.5 / /' {} \\;",
+    "sed -e 's:#ENCRYPT_METHOD DES:ENCRYPT_METHOD YESCRYPT:' -e 's:/var/spool/mail:/var/mail:' -e '/PATH=/{s@/sbin:@@;s@/bin:@@}' -i etc/login.defs",
+    "sed -i '/stdio.h/i #include <stdint.h>' lib/find_new_sub_*ids.c"
+]
+
+build = [
+    "touch /usr/bin/passwd 2>/dev/null || true",
+    "./configure --sysconfdir=/etc --disable-static --with-{b,yes}crypt --without-libbsd --disable-logind --with-group-name-max-length=32",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make exec_prefix=/usr install DESTDIR=$DESTDIR",
+    "make -C man install-man DESTDIR=$DESTDIR"
+]

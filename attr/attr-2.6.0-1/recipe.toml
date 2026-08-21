@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "attr"
+version = "2.6.0"
+release = "1"
+description = "Extended attribute tools (getfattr, setfattr)"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://download-mirror.savannah.gnu.org/releases/attr/attr-2.6.0.tar.xz"
+sha256 = "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b"
+
+dependencies = [
+    "attr-libs >= 2.6.0"
+]
+
+provides = [
+    "attr"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --sysconfdir=/etc --docdir=/usr/share/doc/attr-2.6.0",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib $DESTDIR/usr/lib64 2>/dev/null || true"
+]

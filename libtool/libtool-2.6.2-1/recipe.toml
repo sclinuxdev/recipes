@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "libtool"
+version = "2.6.2"
+release = "1"
+description = "GNU libtool, libtoolize, libltdl and development macros"
+license = "GPL-2.0-or-later AND LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/libtool/libtool-2.6.2.tar.xz"
+sha256 = "2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "libtool",
+    "so:libltdl.so.7"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "readline"
+version = "8.3"
+release = "1"
+description = "GNU Readline shared runtime library"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/readline/readline-8.3.tar.gz"
+sha256 = "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc"
+
+dependencies = [
+    "ncurses-libs >= 6.6"
+]
+
+build_dependencies = [
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "readline",
+    "so:libreadline.so.8",
+    "so:libhistory.so.8"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --with-curses",
+    "make -j$(nproc) SHLIB_LIBS=\"-lncursesw\""
+]
+
+install = [
+    "make SHLIB_LIBS=\"-lncursesw\" install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

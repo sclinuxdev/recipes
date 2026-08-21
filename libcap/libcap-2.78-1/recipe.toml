@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "libcap"
+version = "2.78"
+release = "1"
+description = "POSIX capabilities tools (getcap, setcap, capsh)"
+license = "BSD-3-Clause"
+channel = "system"
+
+[source]
+url = "https://cdn.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.78.tar.xz"
+sha256 = "0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11"
+
+dependencies = [
+    "libcap-libs >= 2.78"
+]
+
+provides = [
+    "libcap"
+]
+
+prepare = [
+    "sed -i '/install -m 0644 doc/d' Makefile",
+    "sed -i '/install -m.*STA/d' libcap/Makefile"
+]
+
+build = [
+    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no -j$(nproc)"
+]
+
+install = [
+    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib $DESTDIR/usr/lib64 2>/dev/null || true"
+]

@@ -1,0 +1,63 @@
+# xfsprogs -- XFS filesystem utilities.
+#
+# Supersedes Stage2/recipes/xfsprogs (release 2), which had two defects:
+#
+#   1. --sbindir=/usr/sbin plus PKG_ROOT_SBIN_DIR=/usr/sbin wrote through the
+#      merged-/usr symlink, so xfs_repair and friends were invisible to
+#      mkinitcpio's forced PATH=/usr/bin:/bin.
+#   2. configure picked up the BUILD HOST's libdevmapper and libicu, which the
+#      repository does not package. The DT_NEEDED entries were only discovered
+#      at install time, and xfs_io/xfs_scrub could not run at all.
+#
+# Both host libraries are now explicit: device-mapper and icu are packaged in
+# this same Extra set, so the link is against our own copies rather than
+# whatever happened to be on the builder.
+
+schema_version = 1
+
+[package]
+name = "xfsprogs"
+version = "7.1.1"
+release = "1"
+description = "XFS filesystem utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-7.1.1.tar.xz"
+sha256 = "063edc31ba8e85c95c7faf9be465a04898bba7c6e622fdd9b146eed4ca5415e8"
+
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libinih >= 61",
+    "userspace-rcu >= 0.15.6",
+    "lzo >= 2.10",
+    "device-mapper >= 2.03.42",
+    "icu >= 78.3",
+    "readline >= 8.3",
+]
+
+build_dependencies = [
+    "util-linux-dev >= 2.42.2",
+    "libinih-dev >= 61",
+    "userspace-rcu-dev >= 0.15.6",
+    "lzo-dev >= 2.10",
+    "device-mapper-dev >= 2.03.42",
+    "icu-dev >= 78.3",
+    "gettext >= 1.0"
+]
+
+provides = [
+    "xfsprogs"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --enable-gettext=no",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR PKG_ROOT_SBIN_DIR=/usr/bin PKG_ROOT_LIB_DIR=/usr/lib"
+]

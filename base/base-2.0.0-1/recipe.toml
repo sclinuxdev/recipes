@@ -1,0 +1,45 @@
+schema_version = 1
+
+[package]
+name = "base"
+version = "2.0.0"
+release = "1"
+description = "sclinux Base System (minimal bootable userland; init via virtual/init)"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+dependencies = [
+    "base-files >= 1.0.0",
+    "os-release >= 1.0.0",
+    "virtual/init",
+    "virtual/libc",
+    "bash >= 5.3.15",
+    "coreutils >= 9.11",
+    "diffutils >= 3.12",
+    "findutils >= 4.11.0",
+    "gawk >= 5.4.1",
+    "grep >= 3.12",
+    "sed >= 4.10",
+    "tar >= 1.35",
+    "gzip >= 1.14",
+    "xz >= 5.8.3",
+    "zstd >= 1.5.7",
+    "file >= 5.48",
+    "util-linux >= 2.42.2",
+    "procps-ng >= 4.0.7",
+    "shadow >= 4.20.2",
+    "kmod >= 34.2",
+    "iana-etc >= 20260811",
+    "tzdata >= 2026c",
+    "sage >= 0.2.0",
+]
+
+provides = [
+    "base"
+]
+
+prepare = []
+
+build = []
+
+install = []
