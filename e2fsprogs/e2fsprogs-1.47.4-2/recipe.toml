@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "e2fsprogs"
+version = "1.47.4"
+release = "2"
+description = "Ext2/3/4 filesystem utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz"
+sha256 = "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b"
+
+dependencies = [
+    "e2fsprogs-libs >= 1.47.4",
+    "util-linux-libs >= 2.42.2"
+]
+
+build_dependencies = [
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "e2fsprogs"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --sysconfdir=/etc --enable-elf-shlibs --disable-libblkid --disable-libuuid --disable-uuidd --disable-fsck",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/lib/libext2fs.so* $DESTDIR/usr/lib/libcom_err.so* $DESTDIR/usr/lib/libss.so* $DESTDIR/usr/lib/libsupport.so*",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/et $DESTDIR/usr/lib/ss $DESTDIR/usr/lib/pkgconfig"
+]

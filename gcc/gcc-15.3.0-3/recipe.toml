@@ -1,0 +1,54 @@
+schema_version = 1
+
+[package]
+name = "gcc"
+version = "15.3.0"
+release = "3"
+description = "GNU Compiler Collection (C, C++) in toolchain/gcc:15"
+license = "GPL-3.0-or-later"
+channel = "toolchain/gcc:15"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gcc/gcc-15.3.0/gcc-15.3.0.tar.xz"
+sha256 = "fa59c1beef8995f27c4d71c1df227587189315d3e6faff1bb4306e61b0c530eb"
+
+dependencies = [
+    "binutils >= 2.47",
+    "gmp >= 6.3.0",
+    "mpfr >= 4.2.2",
+    "mpc >= 1.4.1",
+    "isl >= 0.27",
+    "zstd-libs >= 1.5.7",
+    "zlib >= 1.3.2"
+]
+
+build_dependencies = [
+    "gmp-dev >= 6.3.0",
+    "mpfr-dev >= 4.2.2",
+    "mpc-dev >= 1.4.1",
+    "isl-dev >= 0.27",
+    "zstd-dev >= 1.5.7",
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "gcc",
+    "cc",
+    "c++"
+]
+
+prepare = [
+    "rm -rf build && mkdir -p build"
+]
+
+build = [
+    "cd build && CPPFLAGS=\"-I/usr/include\" LDFLAGS=\"-L/usr/lib\" ../configure --prefix=/opt/channels/gcc/15 --enable-languages=c,c++ --enable-default-pie --enable-default-ssp --disable-multilib --disable-bootstrap --disable-fixincludes --with-system-zlib --with-isl=/usr",
+    "cd build && make -j$(nproc)"
+]
+
+install = [
+    "cd build && make install DESTDIR=$DESTDIR",
+    "ln -sf gcc $DESTDIR/opt/channels/gcc/15/bin/cc",
+    "mkdir -p $DESTDIR/opt/channels/gcc/15/share/gdb/auto-load/usr/lib",
+    "mv -v $DESTDIR/opt/channels/gcc/15/lib/*gdb.py $DESTDIR/opt/channels/gcc/15/share/gdb/auto-load/usr/lib 2>/dev/null || true"
+]

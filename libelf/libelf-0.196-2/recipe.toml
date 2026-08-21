@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "libelf"
+version = "0.196"
+release = "2"
+description = "libelf shared runtime library (from elfutils)"
+license = "GPL-2.0-or-later OR LGPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://sourceware.org/elfutils/ftp/0.196/elfutils-0.196.tar.bz2"
+sha256 = "fd5cc6b77ad6773cac93cb3f415f9318ac3b3455eecf801f6b4a742c4f6c7209"
+
+dependencies = [
+    "zlib >= 1.3.2",
+    "xz-libs >= 5.8.3",
+    "zstd-libs >= 1.5.7",
+    "bzip2-libs >= 1.0.8"
+]
+
+build_dependencies = [
+    "zlib-dev >= 1.3.2",
+    "xz-dev >= 5.8.3",
+    "zstd-dev >= 1.5.7",
+    "bzip2-dev >= 1.0.8",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "libelf",
+    "so:libelf.so.1"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-debuginfod --enable-libdebuginfod=dummy --disable-static",
+    "make -C lib -j$(nproc)",
+    "make -C libelf -j$(nproc)"
+]
+
+install = [
+    "make -C libelf install DESTDIR=$DESTDIR",
+    "mkdir -p $DESTDIR/usr/lib/pkgconfig",
+    "install -vm644 config/libelf.pc $DESTDIR/usr/lib/pkgconfig/",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

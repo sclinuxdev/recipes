@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "zstd-dev"
+version = "1.5.7"
+release = "2"
+description = "libzstd headers, pkg-config and linker symlink"
+license = "BSD-3-Clause OR GPL-2.0-only"
+channel = "system"
+
+[source]
+url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz"
+sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3"
+
+dependencies = [
+    "zstd-libs >= 1.5.7"
+]
+
+provides = [
+    "zstd-dev"
+]
+
+prepare = []
+
+build = [
+    "make -j$(nproc) -C lib"
+]
+
+install = [
+    "make -C lib install DESTDIR=$DESTDIR PREFIX=/usr",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

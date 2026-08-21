@@ -1,0 +1,43 @@
+# ICU headers, pkg-config files and linker symlinks.
+
+schema_version = 1
+
+[package]
+name = "icu-dev"
+version = "78.3"
+release = "1"
+description = "Development files for ICU"
+license = "ICU"
+channel = "system"
+
+[source]
+url = "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz"
+sha256 = "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0"
+
+dependencies = [
+    "icu-libs = 78.3"
+]
+
+build_dependencies = [
+    "gcc >= 15",
+    "glibc-dev >= 2.44",
+    "python >= 3.14.7"
+]
+
+provides = [
+    "icu-dev"
+]
+
+prepare = []
+
+build = [
+    "cd source && ./configure --prefix=/usr --bindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --disable-samples --disable-tests --enable-static=no",
+    "cd source && make -j$(nproc)"
+]
+
+install = [
+    "cd source && make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share/man",
+    "find $DESTDIR/usr/lib -maxdepth 1 -name 'lib*.so.*' -delete",
+    "find $DESTDIR -name '*.la' -delete"
+]

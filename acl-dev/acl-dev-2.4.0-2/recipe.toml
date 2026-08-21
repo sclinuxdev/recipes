@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "acl-dev"
+version = "2.4.0"
+release = "2"
+description = "libacl headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://download-mirror.savannah.gnu.org/releases/acl/acl-2.4.0.tar.xz"
+sha256 = "e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3"
+
+dependencies = [
+    "acl-libs >= 2.4.0",
+    "attr-dev >= 2.6.0"
+]
+
+provides = [
+    "acl-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --sysconfdir=/etc",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

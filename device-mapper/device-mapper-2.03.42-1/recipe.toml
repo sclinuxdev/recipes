@@ -1,0 +1,54 @@
+# device-mapper -- the LVM2 device-mapper library and dmsetup.
+#
+# New package. xfsprogs linked the BUILD HOST's libdevmapper because the
+# repository had no package providing it: the DT_NEEDED entry only surfaced at
+# install time, and xfs_io could not run. This supplies libdevmapper.so.1.02
+# from our own tree.
+#
+# Only the device-mapper half of LVM2 is built here. The LVM tools proper
+# (lvm, vgcreate, ...) are a separate concern and are not packaged yet.
+
+schema_version = 1
+
+[package]
+name = "device-mapper"
+version = "2.03.42"
+release = "1"
+description = "Device mapper userspace library and tool (from LVM2)"
+license = "LGPL-2.1-only"
+channel = "system"
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
+
+dependencies = [
+    "glibc >= 2.44",
+    "util-linux-libs >= 2.42.2"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44",
+    "util-linux-dev >= 2.42.2",
+    "pkgconf >= 3.0.5"
+]
+
+# The SONAME is listed explicitly: sage's ELF scan derives so: provides from
+# what it finds, and this is the symbol xfsprogs resolves against.
+provides = [
+    "device-mapper",
+    "so:libdevmapper.so.1.02"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --localstatedir=/var --enable-pkgconfig --enable-dmeventd --disable-selinux --disable-static_link --with-default-dm-run-dir=/run --with-default-run-dir=/run/lvm --with-default-locking-dir=/run/lock/lvm --with-systemdsystemunitdir=/usr/lib/systemd/system",
+    "make -j$(nproc) device-mapper"
+]
+
+install = [
+    "make install_device-mapper DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/run $DESTDIR/var/run",
+    "find $DESTDIR -name '*.la' -delete"
+]

@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "grub"
+version = "2.14"
+release = "2"
+description = "GNU GRUB 2 bootloader"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://ftp.gnu.org/gnu/grub/grub-2.14.tar.xz"
+sha256 = "bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43"
+
+dependencies = [
+    "xz-libs >= 5.8.3"
+]
+
+build_dependencies = [
+    "bison >= 3.8.2",
+    "flex >= 2.6.4",
+    "python >= 3.14.7",
+    "gettext >= 1.0",
+    "xz-dev >= 5.8.3"
+]
+
+provides = [
+    "grub"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --sbindir=/usr/sbin --sysconfdir=/etc --disable-efiemu --disable-werror --with-platform=pc --target=i386",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

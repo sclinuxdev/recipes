@@ -1,0 +1,46 @@
+# ICU runtime libraries (libicuuc, libicui18n, libicudata, libicuio).
+
+schema_version = 1
+
+[package]
+name = "icu-libs"
+version = "78.3"
+release = "1"
+description = "International Components for Unicode runtime libraries"
+license = "ICU"
+channel = "system"
+
+[source]
+url = "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz"
+sha256 = "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0"
+
+dependencies = [
+    "glibc >= 2.44",
+    "gcc-libs >= 15"
+]
+
+build_dependencies = [
+    "gcc >= 15",
+    "glibc-dev >= 2.44",
+    "python >= 3.14.7"
+]
+
+provides = [
+    "icu-libs"
+]
+
+prepare = []
+
+build = [
+    "cd source && ./configure --prefix=/usr --bindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --disable-samples --disable-tests --enable-static=no",
+    "cd source && make -j$(nproc)"
+]
+
+# Versioned SONAMEs and the ICU data only. The unversioned .so symlinks belong
+# to icu-dev, the tools to icu.
+install = [
+    "cd source && make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/include $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/icu $DESTDIR/usr/share/man",
+    "find $DESTDIR/usr/lib -maxdepth 1 -type l -name 'lib*.so' -delete",
+    "find $DESTDIR -name '*.la' -delete"
+]

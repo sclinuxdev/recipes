@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "libcap-libs"
+version = "2.78"
+release = "2"
+description = "libcap/libpsx shared runtime libraries"
+license = "BSD-3-Clause"
+channel = "system"
+
+[source]
+url = "https://cdn.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.78.tar.xz"
+sha256 = "0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "libcap-libs",
+    "so:libcap.so.2",
+    "so:libpsx.so.2"
+]
+
+prepare = [
+    "sed -i '/install -m 0644 doc/d' Makefile",
+    "sed -i '/install -m.*STA/d' libcap/Makefile"
+]
+
+build = [
+    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no -j$(nproc)"
+]
+
+install = [
+    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

@@ -1,0 +1,52 @@
+# icu -- International Components for Unicode.
+#
+# New package. xfsprogs linked the BUILD HOST's libicu because nothing in the
+# repository provided it; xfs_scrub then failed to start on a real root. This
+# supplies the libraries from our own tree.
+#
+# Split per CLAUDE.md §5 rule 2 -- ICU ships genuine CLI products (genbrk,
+# icuinfo, pkgdata) as well as libraries -- so: icu (tools) / icu-libs
+# (SONAMEs) / icu-dev (headers).
+
+schema_version = 1
+
+[package]
+name = "icu"
+version = "78.3"
+release = "1"
+description = "International Components for Unicode command line tools"
+license = "ICU"
+channel = "system"
+
+[source]
+url = "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz"
+sha256 = "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0"
+
+dependencies = [
+    "icu-libs = 78.3"
+]
+
+build_dependencies = [
+    "gcc >= 15",
+    "glibc-dev >= 2.44",
+    "python >= 3.14.7"
+]
+
+provides = [
+    "icu"
+]
+
+# The tarball unpacks to icu/source, not to a directory named for the version.
+prepare = []
+
+build = [
+    "cd source && ./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --disable-samples --disable-tests --enable-static=no",
+    "cd source && make -j$(nproc)"
+]
+
+install = [
+    "cd source && make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/share/icu/*/config",
+    "find $DESTDIR/usr/lib -maxdepth 1 -name 'lib*.so*' -delete",
+    "find $DESTDIR -name '*.la' -delete"
+]

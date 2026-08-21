@@ -1,0 +1,37 @@
+schema_version = 1
+
+[package]
+name = "markupsafe"
+version = "3.0.3"
+release = "2"
+description = "Python HTML/XML string escape library"
+license = "BSD-3-Clause"
+channel = "system"
+
+[source]
+url = "https://files.pythonhosted.org/packages/7e/99/7690b6d4034fffd95959cbe0c02de8deb3098cc577c67bb6a24fe5d7caa7/markupsafe-3.0.3.tar.gz"
+sha256 = "722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698"
+
+dependencies = [
+    "python >= 3.14.7"
+]
+
+build_dependencies = [
+    "python >= 3.14.7",
+    "setuptools >= 68.0"
+]
+
+provides = [
+    "markupsafe"
+]
+
+prepare = []
+
+build = [
+    "python3 -c \"import setuptools.build_meta as b; b.build_wheel('dist')\""
+]
+
+install = [
+    "mkdir -p $DESTDIR/usr/lib/python3.14/site-packages",
+    "python3 -c \"import sys, zipfile, glob; [zipfile.ZipFile(f).extractall(sys.argv[1]) for f in glob.glob('dist/*.whl')]\" $DESTDIR/usr/lib/python3.14/site-packages"
+]

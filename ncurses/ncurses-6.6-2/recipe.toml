@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "ncurses"
+version = "6.6"
+release = "2"
+description = "ncurses terminal programs (clear, tic, infocmp, tput, toe, tabs)"
+license = "MIT"
+channel = "system"
+
+[source]
+url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
+
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "ncurses-terminfo >= 6.6"
+]
+
+provides = [
+    "ncurses"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib $DESTDIR/usr/lib64 2>/dev/null || true",
+    "rm -rf $DESTDIR/usr/share/terminfo"
+]

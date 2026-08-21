@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "gdbm"
+version = "1.26"
+release = "2"
+description = "GNU dbm tools (gdbmtool, gdbm_dump, gdbm_load)"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.26.tar.gz"
+sha256 = "6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e"
+
+dependencies = [
+    "gdbm-libs >= 1.26"
+]
+
+provides = [
+    "gdbm"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --enable-libgdbm-compat",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib $DESTDIR/usr/lib64 2>/dev/null || true"
+]

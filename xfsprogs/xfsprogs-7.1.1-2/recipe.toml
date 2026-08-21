@@ -1,0 +1,43 @@
+schema_version = 1
+
+[package]
+name = "xfsprogs"
+version = "7.1.1"
+release = "2"
+description = "XFS filesystem utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-7.1.1.tar.xz"
+sha256 = "063edc31ba8e85c95c7faf9be465a04898bba7c6e622fdd9b146eed4ca5415e8"
+
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libinih >= 61",
+    "userspace-rcu >= 0.15.6",
+    "lzo >= 2.10"
+]
+
+build_dependencies = [
+    "util-linux-dev >= 2.42.2",
+    "libinih-dev >= 61",
+    "userspace-rcu-dev >= 0.15.6",
+    "lzo-dev >= 2.10",
+    "gettext >= 1.0"
+]
+
+provides = [
+    "xfsprogs"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --sbindir=/usr/sbin --enable-gettext=no",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR PKG_ROOT_SBIN_DIR=/usr/sbin PKG_ROOT_LIB_DIR=/usr/lib"
+]

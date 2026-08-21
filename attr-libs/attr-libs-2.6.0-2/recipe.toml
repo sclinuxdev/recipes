@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "attr-libs"
+version = "2.6.0"
+release = "2"
+description = "libattr shared runtime library"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://download-mirror.savannah.gnu.org/releases/attr/attr-2.6.0.tar.xz"
+sha256 = "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "attr-libs",
+    "so:libattr.so.1"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --sysconfdir=/etc",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

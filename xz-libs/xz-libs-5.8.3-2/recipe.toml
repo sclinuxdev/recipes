@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "xz-libs"
+version = "5.8.3"
+release = "2"
+description = "liblzma shared runtime library"
+license = "0BSD AND LGPL-2.1-or-later AND GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://tukaani.org/xz/xz-5.8.3.tar.xz"
+sha256 = "fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "xz-libs",
+    "so:liblzma.so.5"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-lzma-links --disable-scripts --disable-doc",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

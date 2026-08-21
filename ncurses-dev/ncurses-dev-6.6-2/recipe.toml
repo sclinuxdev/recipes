@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "ncurses-dev"
+version = "6.6"
+release = "2"
+description = "ncurses headers, pkg-config, linker scripts and unversioned .so"
+license = "MIT"
+channel = "system"
+
+[source]
+url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
+
+dependencies = [
+    "ncurses-libs >= 6.6"
+]
+
+provides = [
+    "ncurses-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig --without-progs --without-tests --without-manpages",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "for lib in ncurses form panel menu ; do echo \"INPUT(-l${lib}w)\" > $DESTDIR/usr/lib/lib${lib}.so; ln -sf ${lib}w.pc $DESTDIR/usr/lib/pkgconfig/${lib}.pc 2>/dev/null || true; done",
+    "echo \"INPUT(-lncursesw)\" > $DESTDIR/usr/lib/libcursesw.so",
+    "echo \"INPUT(-lncursesw)\" > $DESTDIR/usr/lib/libtinfo.so",
+    "echo \"INPUT(-lncursesw)\" > $DESTDIR/usr/lib/libtinfow.so",
+    "ln -sf libncurses.so $DESTDIR/usr/lib/libcurses.so 2>/dev/null || true"
+]

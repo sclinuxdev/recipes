@@ -1,0 +1,45 @@
+schema_version = 1
+
+[package]
+name = "dbus-libs"
+version = "1.16.2"
+release = "2"
+description = "libdbus-1 shared runtime library"
+license = "GPL-2.0-or-later OR AFL-2.1"
+channel = "system"
+
+[source]
+url = "https://dbus.freedesktop.org/releases/dbus/dbus-1.16.2.tar.xz"
+sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
+
+dependencies = [
+    "expat-libs >= 2.8.3",
+    "systemd-libs >= 261.2"
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5",
+    "expat-dev >= 2.8.3"
+]
+
+provides = [
+    "dbus-libs",
+    "so:libdbus-1.so.3"
+]
+
+prepare = []
+
+build = [
+    "mkdir build",
+    "cd build && meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback ..",
+    "cd build && ninja -j$(nproc)"
+]
+
+install = [
+    "cd build && DESTDIR=$DESTDIR ninja install",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

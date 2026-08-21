@@ -1,0 +1,32 @@
+schema_version = 1
+
+[package]
+name = "gperf"
+version = "3.3"
+release = "2"
+description = "Perfect hash function generator"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gperf/gperf-3.3.tar.gz"
+sha256 = "fd87e0aba7e43ae054837afd6cd4db03a3f2693deb3619085e6ed9d8d9604ad8"
+
+dependencies = []
+
+build_dependencies = []
+
+provides = [
+    "gperf"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.3",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

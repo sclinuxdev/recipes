@@ -1,0 +1,45 @@
+schema_version = 1
+
+[package]
+name = "btrfs-progs"
+version = "7.1"
+release = "2"
+description = "Btrfs filesystem utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://cdn.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v7.1.tar.xz"
+sha256 = "d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34"
+
+dependencies = [
+    "e2fsprogs-libs >= 1.47.4",
+    "zstd-libs >= 1.5.7",
+    "lzo >= 2.10",
+    "util-linux-libs >= 2.42.2",
+    "systemd-libs >= 261.2"
+]
+
+build_dependencies = [
+    "e2fsprogs-dev >= 1.47.4",
+    "zstd-dev >= 1.5.7",
+    "lzo-dev >= 2.10",
+    "util-linux-dev >= 2.42.2",
+    "pkgconf >= 3.0.5",
+    "python >= 3.14.7"
+]
+
+provides = [
+    "btrfs-progs"
+]
+
+prepare = []
+
+build = [
+    "CFLAGS=\"-I/usr/include/lzo\" CPPFLAGS=\"-I/usr/include/lzo\" LDFLAGS=\"-L/usr/lib\" ./configure --prefix=/usr --disable-documentation --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

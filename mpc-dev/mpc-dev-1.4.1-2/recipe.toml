@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "mpc-dev"
+version = "1.4.1"
+release = "2"
+description = "MPC headers, pkg-config and linker symlink"
+license = "LGPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/mpc/mpc-1.4.1.tar.xz"
+sha256 = "91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931"
+
+dependencies = [
+    "mpc >= 1.4.1",
+    "gmp-dev >= 6.3.0",
+    "mpfr-dev >= 4.2.2"
+]
+
+provides = [
+    "mpc-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

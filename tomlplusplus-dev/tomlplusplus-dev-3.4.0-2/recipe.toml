@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "tomlplusplus-dev"
+version = "3.4.0"
+release = "2"
+description = "toml++ headers, pkg-config and linker symlink"
+license = "MIT"
+channel = "system"
+
+[source]
+url = "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz"
+sha256 = "8517f65938a4faae9ccf8ebb36631a38c1cadfb5efa85d9a72e15b9e97d25155"
+
+dependencies = [
+    "tomlplusplus >= 3.4.0"
+]
+
+provides = [
+    "tomlplusplus-dev"
+]
+
+prepare = []
+
+build = [
+    "g++ -fPIC -shared -O3 -std=c++20 -Iinclude src/toml.cpp -DTOML_SHARED_LIB=1 -DTOML_EXPORTING=1 -Wl,-soname,libtomlplusplus.so.3 -o libtomlplusplus.so.3.4.0",
+    "ln -sf libtomlplusplus.so.3.4.0 libtomlplusplus.so.3",
+    "ln -sf libtomlplusplus.so.3 libtomlplusplus.so"
+]
+
+install = [
+    "mkdir -p $DESTDIR/usr/include $DESTDIR/usr/lib/pkgconfig",
+    "cp -r include/toml++ $DESTDIR/usr/include/",
+    "ln -sf libtomlplusplus.so.3 $DESTDIR/usr/lib/libtomlplusplus.so",
+    "printf 'prefix=/usr\\nincludedir=${prefix}/include\\nlibdir=${prefix}/lib\\n\\nName: tomlplusplus\\nDescription: TOML parser for C++20\\nVersion: 3.4.0\\nLibs: -L${libdir} -ltomlplusplus\\nCflags: -I${includedir}\\n' > $DESTDIR/usr/lib/pkgconfig/tomlplusplus.pc"
+]

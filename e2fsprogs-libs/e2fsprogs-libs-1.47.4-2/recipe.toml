@@ -1,0 +1,43 @@
+schema_version = 1
+
+[package]
+name = "e2fsprogs-libs"
+version = "1.47.4"
+release = "2"
+description = "libext2fs/libcom_err/libss runtime libraries"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz"
+sha256 = "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b"
+
+dependencies = [
+    "util-linux-libs >= 2.42.2"
+]
+
+build_dependencies = [
+    "pkgconf >= 3.0.5",
+    "util-linux-dev >= 2.42.2"
+]
+
+provides = [
+    "e2fsprogs-libs",
+    "so:libext2fs.so.2",
+    "so:libcom_err.so.2",
+    "so:libss.so.2"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --sysconfdir=/etc --enable-elf-shlibs --disable-libblkid --disable-libuuid --disable-uuidd --disable-fsck",
+    "make -j$(nproc) libs"
+]
+
+install = [
+    "make install-libs DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

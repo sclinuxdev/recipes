@@ -1,0 +1,49 @@
+# sudo -- run commands as another user.
+#
+# New package.
+
+schema_version = 1
+
+[package]
+name = "sudo"
+version = "1.9.17p2"
+release = "1"
+description = "Give certain users the ability to run some commands as root"
+license = "ISC"
+channel = "system"
+
+[source]
+url = "https://www.sudo.ws/dist/sudo-1.9.17p2.tar.gz"
+sha256 = "4a38a1ab3adb1199257edc2a7c4a2bd714665eb605b04368843b06dada2cfcfb"
+
+dependencies = [
+    "glibc >= 2.44",
+    "zlib >= 1.3.2",
+    "libxcrypt >= 4.5.2"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44",
+    "zlib-dev >= 1.3.2",
+    "libxcrypt-dev >= 4.5.2"
+]
+
+provides = [
+    "sudo"
+]
+
+prepare = []
+
+# --sbindir=/usr/bin keeps sudo out of /usr/sbin, which is a symlink under
+# merged-/usr. --with-secure-path is not a hardening extra: without it sudo
+# inherits the caller's PATH, and /usr/sbin not being on it is precisely the
+# class of bug this package set exists to fix.
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libexecdir=/usr/lib --sysconfdir=/etc --with-rundir=/run/sudo --with-vardir=/var/lib/sudo --with-logfac=auth --with-secure-path='/usr/local/bin:/usr/bin' --without-pam --disable-static",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/lib/sudo/*.la $DESTDIR/var/lib/sudo $DESTDIR/run"
+]

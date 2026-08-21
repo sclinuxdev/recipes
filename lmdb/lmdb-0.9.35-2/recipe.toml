@@ -1,0 +1,37 @@
+schema_version = 1
+
+[package]
+name = "lmdb"
+version = "0.9.35"
+release = "2"
+description = "LMDB runtime library and tools (mdb_stat, mdb_copy, mdb_dump, mdb_load)"
+license = "OpenLDAP"
+channel = "system"
+
+[source]
+url = "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_0.9.35.tar.gz"
+sha256 = "18b021fd589d30cc08860a9550a30ae51637117451385e9581616da751326632"
+
+dependencies = [
+    "glibc >= 2.44"
+]
+
+provides = [
+    "lmdb",
+    "so:liblmdb.so.0"
+]
+
+prepare = []
+
+build = [
+    "cd libraries/liblmdb && make -j$(nproc)"
+]
+
+install = [
+    "mkdir -p $DESTDIR/usr/lib $DESTDIR/usr/bin $DESTDIR/usr/share/man/man1",
+    "cd libraries/liblmdb && make prefix=/usr install DESTDIR=$DESTDIR",
+    "if [ -f $DESTDIR/usr/lib/liblmdb.so ] && [ ! -e $DESTDIR/usr/lib/liblmdb.so.0 ]; then cp -a $DESTDIR/usr/lib/liblmdb.so $DESTDIR/usr/lib/liblmdb.so.0.0.0; ln -sfn liblmdb.so.0.0.0 $DESTDIR/usr/lib/liblmdb.so.0; fi",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

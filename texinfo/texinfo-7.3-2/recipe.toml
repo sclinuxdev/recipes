@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "texinfo"
+version = "7.3"
+release = "2"
+description = "GNU documentation system"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.3.tar.xz"
+sha256 = "51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e"
+
+dependencies = [
+    "perl >= 5.44.0",
+    "ncurses-libs >= 6.6"
+]
+
+build_dependencies = [
+    "perl >= 5.44.0",
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "texinfo"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr",
+    "make -j$(nproc)"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]
