@@ -30,6 +30,10 @@ provides = [
     "sage"
 ]
 
+conffiles = [
+    "/etc/sage/build.toml"
+]
+
 prepare = []
 
 build = [
