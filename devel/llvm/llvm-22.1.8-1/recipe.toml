@@ -4,7 +4,7 @@ schema_version = 1
 name = "llvm"
 version = "22.1.8"
 release = "1"
-description = "LLVM core: libLLVM shared library, tools and development headers (toolchain/llvm:22)"
+description = "LLVM core: libLLVM shared library, tools and development headers"
 license = "Apache-2.0 WITH LLVM-exception"
 channel = "toolchain/llvm:22"
 

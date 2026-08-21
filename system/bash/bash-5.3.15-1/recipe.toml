@@ -4,7 +4,7 @@ schema_version = 1
 name = "bash"
 version = "5.3.15"
 release = "1"
-description = "GNU Bourne Again SHell (patches 001-015)"
+description = "GNU Bourne Again SHell"
 license = "GPL-3.0-or-later"
 channel = "system"
 

@@ -4,7 +4,7 @@ schema_version = 1
 name = "gcc"
 version = "15.3.0"
 release = "1"
-description = "GNU Compiler Collection (C, C++) in toolchain/gcc:15"
+description = "GNU Compiler Collection (C, C++)"
 license = "GPL-3.0-or-later"
 channel = "toolchain/gcc:15"
 

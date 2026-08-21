@@ -4,7 +4,7 @@ schema_version = 1
 name = "xmake"
 version = "3.1.0"
 release = "1"
-description = "xmake C/C++ build utility in toolchain/xmake:3"
+description = "xmake C/C++ build utility"
 license = "Apache-2.0"
 channel = "toolchain/xmake:3"
 

@@ -4,7 +4,7 @@ schema_version = 1
 name = "perl"
 version = "5.44.0"
 release = "1"
-description = "Perl 5.44 isolated language toolchain (/opt/channels/perl/5.44)"
+description = "Perl isolated language toolchain"
 license = "GPL-1.0-or-later OR Artistic-1.0-Perl"
 channel = "toolchain/perl:5.44"
 
