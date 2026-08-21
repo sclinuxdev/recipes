@@ -39,10 +39,8 @@ dependencies = [
     "sed >= 4.10",
     "zstd >= 1.5.7",
     "libarchive >= 3.8.9",
-    "systemd >= 261.2",
-    "systemd-libs >= 261.2",
     "systemd-udev >= 261.2",
-    "busybox >= 1.38.0"
+    "busybox >= 1.38.0",
 ]
 
 build_dependencies = [

@@ -23,11 +23,8 @@ dependencies = [
     "bzip2-libs >= 1.0.8",
     "xz-libs >= 5.8.3",
     "zstd-libs >= 1.5.7",
-    "lz4-libs >= 1.10.0",
     "ncurses-libs >= 6.6",
     "readline >= 8.3",
-    "gdbm-libs >= 1.26",
-    "libxcrypt >= 4.5.2"
 ]
 
 build_dependencies = [

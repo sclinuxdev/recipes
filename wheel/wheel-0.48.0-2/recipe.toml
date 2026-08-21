@@ -14,7 +14,6 @@ sha256 = "94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322"
 
 dependencies = [
     "python >= 3.14.7",
-    "flit-core >= 4.0.2"
 ]
 
 build_dependencies = [

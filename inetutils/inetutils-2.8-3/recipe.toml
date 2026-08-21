@@ -27,9 +27,8 @@ url = "https://ftpmirror.gnu.org/inetutils/inetutils-2.8.tar.gz"
 sha256 = "57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5"
 
 dependencies = [
-    "ncurses-libs >= 6.6",
     "readline >= 8.3",
-    "libxcrypt >= 4.5.2"
+    "libxcrypt >= 4.5.2",
 ]
 
 build_dependencies = [

@@ -33,8 +33,7 @@ sha256 = "3271a4ae3897b38352980f2b0975bae61bca81c644d186221c5ae928bcc072b0"
 # post-transaction trigger able to find a builder after this package lands.
 dependencies = [
     "kmod >= 34.2",
-    "linux-zen-headers = 7.1.9",
-    "virtual/initramfs-generator"
+    "virtual/initramfs-generator",
 ]
 
 build_dependencies = [

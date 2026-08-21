@@ -33,7 +33,8 @@ dependencies = [
     "userspace-rcu >= 0.15.6",
     "lzo >= 2.10",
     "device-mapper >= 2.03.42",
-    "icu >= 78.3"
+    "icu >= 78.3",
+    "readline >= 8.3",
 ]
 
 build_dependencies = [

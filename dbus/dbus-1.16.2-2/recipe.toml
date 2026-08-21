@@ -15,7 +15,6 @@ sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
 dependencies = [
     "dbus-libs >= 1.16.2",
     "expat-libs >= 2.8.3",
-    "systemd >= 261.2"
 ]
 
 build_dependencies = [

@@ -13,7 +13,8 @@ url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.26.tar.gz"
 sha256 = "6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e"
 
 dependencies = [
-    "gdbm-libs >= 1.26"
+    "gdbm-libs >= 1.26",
+    "readline >= 8.3",
 ]
 
 provides = [
