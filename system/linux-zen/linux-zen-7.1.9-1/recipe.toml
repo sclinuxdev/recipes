@@ -23,7 +23,7 @@ license = "GPL-2.0-only"
 channel = "system"
 
 [source]
-url = "https://mirrors.tuna.tsinghua.edu.cn/kernel/v7.x/linux-7.1.9.tar.xz"
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.9.tar.xz"
 sha256 = "3271a4ae3897b38352980f2b0975bae61bca81c644d186221c5ae928bcc072b0"
 
 # virtual/initramfs-generator, not "mkinitcpio": a kernel is unbootable
