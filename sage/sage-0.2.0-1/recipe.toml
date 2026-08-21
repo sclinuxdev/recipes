@@ -37,5 +37,6 @@ build = [
 ]
 
 install = [
-    "SAGE_SOURCE_DIR=\"${SAGE_SOURCE_DIR:-/home/ir/distro/sage}\"; if [ ! -d \"$SAGE_SOURCE_DIR\" ] && [ -d /distro/sage ]; then SAGE_SOURCE_DIR=/distro/sage; fi; install -Dm755 \"$SAGE_SOURCE_DIR/build/linux/x86_64/release/sage\" $DESTDIR/usr/bin/sage"
+    "SAGE_SOURCE_DIR=\"${SAGE_SOURCE_DIR:-/home/ir/distro/sage}\"; if [ ! -d \"$SAGE_SOURCE_DIR\" ] && [ -d /distro/sage ]; then SAGE_SOURCE_DIR=/distro/sage; fi; install -Dm755 \"$SAGE_SOURCE_DIR/build/linux/x86_64/release/sage\" $DESTDIR/usr/bin/sage",
+    "install -Dm644 /dev/null \"$DESTDIR/etc/sage/build.toml\" && printf '%s\\n' '# Sage build configuration: compiler policy and flag baseline.' '# Unlisted keys fall back to the built-in defaults; unknown keys are ignored.' 'schema_version = 1' 'cc = \"clang\"' 'cxx = \"clang++\"' 'fallback_cc = \"gcc\"' 'fallback_cxx = \"g++\"' 'cflags = \"-O3 -march=x86-64-v3\"' > \"$DESTDIR/etc/sage/build.toml\""
 ]
