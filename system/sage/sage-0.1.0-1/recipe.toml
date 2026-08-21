@@ -5,7 +5,7 @@ name = "sage"
 version = "0.1.0"
 release = "1"
 description = "Universal Multi-Layer Linux Package Manager"
-license = "MIT"
+license = "BSD-2-Clause"
 channel = "system"
 
 dependencies = [
