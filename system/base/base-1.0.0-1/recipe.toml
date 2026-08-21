@@ -14,7 +14,7 @@ dependencies = [
     "virtual/init",
     "virtual/libc",
     "bash >= 5.3.15",
-    "coreutils >= 9.11",
+    "virtual/coreutils",
     "diffutils >= 3.12",
     "findutils >= 4.11.0",
     "gawk >= 5.4.1",

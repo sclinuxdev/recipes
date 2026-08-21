@@ -31,7 +31,7 @@ sha256 = "0a42ea57b5fb78c36230053264d4e75726de26ba0bc534d35c7681146cfab91f"
 dependencies = [
     "bash >= 5.3.15",
     "kmod >= 34.2",
-    "coreutils >= 9.11",
+    "virtual/coreutils",
     "util-linux >= 2.42.2",
     "findutils >= 4.11.0",
     "grep >= 3.12",

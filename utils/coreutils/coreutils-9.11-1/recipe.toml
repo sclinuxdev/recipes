@@ -29,7 +29,8 @@ build_dependencies = [
 ]
 
 provides = [
-    "coreutils"
+    "coreutils",
+    "virtual/coreutils"
 ]
 
 prepare = []
