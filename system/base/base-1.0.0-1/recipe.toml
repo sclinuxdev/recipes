@@ -2,7 +2,7 @@ schema_version = 1
 
 [package]
 name = "base"
-version = "2.0.0"
+version = "1.0.0"
 release = "1"
 description = "sclinux Base System (minimal bootable userland; init via virtual/init)"
 license = "GPL-3.0-or-later"
@@ -31,7 +31,7 @@ dependencies = [
     "kmod >= 34.2",
     "iana-etc >= 20260811",
     "tzdata >= 2026c",
-    "sage >= 0.2.0",
+    "sage >= 0.1.0",
 ]
 
 provides = [

@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later"
 channel = "system"
 
 dependencies = [
-    "base >= 2.0.0",
+    "base >= 1.0.0",
     "virtual/linux-headers",
     "glibc-dev >= 2.44",
     "binutils >= 2.47",
