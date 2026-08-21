@@ -23,7 +23,7 @@ provides = [
 prepare = []
 
 build = [
-    "g++ -fPIC -shared -O3 -std=c++20 -Iinclude src/toml.cpp -DTOML_SHARED_LIB=1 -DTOML_EXPORTING=1 -Wl,-soname,libtomlplusplus.so.3 -o libtomlplusplus.so.3.4.0",
+    "g++ -fPIC -shared $CFLAGS -std=c++20 -Iinclude src/toml.cpp -DTOML_SHARED_LIB=1 -DTOML_EXPORTING=1 -Wl,-soname,libtomlplusplus.so.3 -o libtomlplusplus.so.3.4.0",
     "ln -sf libtomlplusplus.so.3.4.0 libtomlplusplus.so.3",
     "ln -sf libtomlplusplus.so.3 libtomlplusplus.so"
 ]

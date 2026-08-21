@@ -28,7 +28,7 @@ provides = [
 prepare = []
 
 build = [
-    "CFLAGS=\"-O2 -std=gnu17 -Wno-implicit-function-declaration -Wno-implicit-int -Wno-incompatible-pointer-types\" ./configure --prefix=/usr --with-tcl=/usr/lib --enable-shared --mandir=/usr/share/man --with-tclinclude=/usr/include",
+    "CFLAGS=\"$CFLAGS -std=gnu17 -Wno-implicit-function-declaration -Wno-implicit-int -Wno-incompatible-pointer-types\" ./configure --prefix=/usr --with-tcl=/usr/lib --enable-shared --mandir=/usr/share/man --with-tclinclude=/usr/include",
     "make -j$(nproc)"
 ]
 

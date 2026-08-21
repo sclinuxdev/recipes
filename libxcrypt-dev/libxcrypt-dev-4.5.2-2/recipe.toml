@@ -23,7 +23,7 @@ provides = [
 prepare = []
 
 build = [
-    "CFLAGS=\"-O2 -std=gnu17\" ./configure --prefix=/usr --enable-hashes=strong,glibc --enable-obsolete-api=no --disable-static --disable-failure-tokens --disable-werror",
+    "CFLAGS=\"$CFLAGS -std=gnu17\" ./configure --prefix=/usr --enable-hashes=strong,glibc --enable-obsolete-api=no --disable-static --disable-failure-tokens --disable-werror",
     "make -j$(nproc)"
 ]
 

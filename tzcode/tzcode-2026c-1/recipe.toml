@@ -36,7 +36,7 @@ provides = [
 prepare = []
 
 build = [
-    "make CFLAGS=\"-DHAVE_GETTEXT=0\" cc=gcc zic zdump"
+    "make CFLAGS=\"$CFLAGS -DHAVE_GETTEXT=0\" zic zdump"
 ]
 
 install = [

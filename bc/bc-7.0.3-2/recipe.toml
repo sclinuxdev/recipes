@@ -27,7 +27,7 @@ provides = [
 prepare = []
 
 build = [
-    "CC=gcc CFLAGS=\"-std=gnu11 -O3\" ./configure --prefix=/usr -G -O3",
+    "CFLAGS=\"$CFLAGS -std=gnu11\" ./configure --prefix=/usr -G -O3",
     "make -j$(nproc)"
 ]
 
