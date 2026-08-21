@@ -6,7 +6,7 @@ version = "3.1.0"
 release = "1"
 description = "xmake C/C++ build utility"
 license = "Apache-2.0"
-channel = "toolchain/xmake:3"
+channel = "system"
 
 [source]
 url = "https://github.com/xmake-io/xmake/releases/download/v3.1.0/xmake-v3.1.0.tar.gz"
@@ -23,12 +23,10 @@ provides = [
 prepare = []
 
 build = [
-    "./configure --runtime=lua --prefix=/opt/channels/xmake/3",
+    "./configure --runtime=lua --prefix=/usr",
     "make -j$(nproc)"
 ]
 
 install = [
-    "make install DESTDIR=$DESTDIR PREFIX=/opt/channels/xmake/3",
-    "if [ -e \"$DESTDIR/usr/bin/xmake\" ] && [ ! -e \"$DESTDIR/opt/channels/xmake/3/bin/xmake\" ]; then mkdir -p \"$DESTDIR/opt/channels/xmake/3\"; mv \"$DESTDIR/usr/bin\" \"$DESTDIR/opt/channels/xmake/3/bin\"; mkdir -p \"$DESTDIR/opt/channels/xmake/3/share\"; mv \"$DESTDIR/usr/share/xmake\" \"$DESTDIR/opt/channels/xmake/3/share/xmake\" 2>/dev/null || true; rmdir \"$DESTDIR/usr/share\" \"$DESTDIR/usr/bin\" 2>/dev/null || true; fi",
-    "[ -x \"$DESTDIR/opt/channels/xmake/3/bin/xmake\" ] || { echo 'ERROR: xmake not installed at /opt/channels/xmake/3/bin/xmake' >&2; exit 1; }"
+    "make install DESTDIR=$DESTDIR PREFIX=/usr"
 ]
