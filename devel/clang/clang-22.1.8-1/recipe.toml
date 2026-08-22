@@ -41,9 +41,11 @@ install = [
     "DESTDIR=\"$DESTDIR\" ninja -C build install",
     "ln -sf clang \"$DESTDIR/opt/channels/llvm/22/bin/cc\"",
     "ln -sf clang++ \"$DESTDIR/opt/channels/llvm/22/bin/c++\"",
-    # LLVM 22 removed GCC_INSTALL_PREFIX: point the driver at the gcc 15
-    # installation with a configuration file instead. One per invocation
+    # LLVM 22 removed GCC_INSTALL_PREFIX: point the driver at the installed
+    # gcc toolchain with a configuration file instead. One per invocation
     # name -- the cc/c++ symlinks look for cc.cfg/c++.cfg, clang itself for
-    # clang.cfg, and clang++ for clang++.cfg. Same content everywhere.
-    "for n in clang clang++ cc c++; do printf '%s\\n' '--gcc-install-dir=/opt/channels/gcc/15/lib/gcc/x86_64-pc-linux-gnu/15.3.0' > \"$DESTDIR/opt/channels/llvm/22/bin/$n.cfg\"; done"
+    # clang.cfg, and clang++ for clang++.cfg. Same content everywhere. The
+    # install dir is detected at build time (highest version wins) so gcc
+    # major upgrades never require editing this recipe.
+    "GDIR=\"$(ls -d /opt/channels/gcc/*/lib/gcc/*/*/ 2>/dev/null | sort -V | tail -n1)\"; GDIR=\"${GDIR%/}\"; [ -n \"$GDIR\" ] || { echo 'ERROR: no gcc toolchain found under /opt/channels/gcc' >&2; exit 1; }; for n in clang clang++ cc c++; do printf '%s\\n' \"--gcc-install-dir=$GDIR\" > \"$DESTDIR/opt/channels/llvm/22/bin/$n.cfg\"; done"
 ]
