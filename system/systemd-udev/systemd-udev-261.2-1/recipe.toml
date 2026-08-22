@@ -44,6 +44,11 @@ provides = [
     "virtual/udev"
 ]
 
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
 prepare = [
     "sed -e 's/GROUP=\"render\"/GROUP=\"video\"/' -e 's/GROUP=\"sgx\", //' -i rules.d/50-udev-default.rules.in"
 ]
@@ -57,3 +62,4 @@ build = [
 install = [
     "set -e; cd build && DESTDIR=$DESTDIR ninja install; KEEP=$(mktemp -d); ( cd \"$DESTDIR\" && for g in 'usr/bin/udevadm' 'usr/bin/systemd-hwdb' 'usr/lib/systemd/systemd-udevd' 'usr/lib/systemd/systemd-hwdb' 'usr/lib/udev' 'usr/lib/hwdb.d' 'etc/udev' 'usr/lib/modprobe.d' 'usr/lib/systemd/network/*.link' 'usr/lib/systemd/system/systemd-udevd*' 'usr/lib/systemd/system/systemd-udev-*' 'usr/lib/systemd/system/systemd-hwdb*' 'usr/lib/systemd/system/initrd-udevadm*' 'usr/lib/systemd/system/*/systemd-udevd*' 'usr/lib/systemd/system/*/systemd-udev-*' 'usr/lib/systemd/system/*/systemd-hwdb*'; do for p in $g; do [ -e \"$p\" ] || continue; tar -cf - \"$p\" | tar -C \"$KEEP\" -xf -; done; done ); find \"$DESTDIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; mkdir -p \"$DESTDIR\"; if [ -z \"$(ls -A \"$KEEP\" 2>/dev/null)\" ]; then echo 'ERROR: systemd split keep-set empty' >&2; rm -rf \"$KEEP\"; exit 1; fi; cp -a \"$KEEP\"/. \"$DESTDIR\"/; rm -rf \"$KEEP\""
 ]
+

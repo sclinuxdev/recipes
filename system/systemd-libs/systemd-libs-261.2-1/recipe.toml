@@ -51,6 +51,11 @@ provides = [
     "so:libudev.so.1"
 ]
 
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
 prepare = [
     "sed -e 's/GROUP=\"render\"/GROUP=\"video\"/' -e 's/GROUP=\"sgx\", //' -i rules.d/50-udev-default.rules.in"
 ]
@@ -64,3 +69,4 @@ build = [
 install = [
     "set -e; cd build && DESTDIR=$DESTDIR ninja install; KEEP=$(mktemp -d); ( cd \"$DESTDIR\" && for g in 'usr/lib/libsystemd.so.*' 'usr/lib/libudev.so.*' 'usr/lib/systemd/libsystemd-shared*' 'usr/lib/systemd/libsystemd-core*' 'usr/lib/libnss_systemd.so*' 'usr/lib/libnss_myhostname.so*' 'usr/lib/libnss_mymachines.so*'; do for p in $g; do [ -e \"$p\" ] || continue; tar -cf - \"$p\" | tar -C \"$KEEP\" -xf -; done; done ); find \"$DESTDIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; mkdir -p \"$DESTDIR\"; if [ -z \"$(ls -A \"$KEEP\" 2>/dev/null)\" ]; then echo 'ERROR: systemd split keep-set empty' >&2; rm -rf \"$KEEP\"; exit 1; fi; cp -a \"$KEEP\"/. \"$DESTDIR\"/; rm -rf \"$KEEP\""
 ]
+

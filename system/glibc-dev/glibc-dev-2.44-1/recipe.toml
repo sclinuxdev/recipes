@@ -23,6 +23,11 @@ provides = [
     "glibc-dev"
 ]
 
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
 prepare = [
     "rm -rf build && mkdir -p build"
 ]
@@ -37,3 +42,4 @@ install = [
     "rm -f $DESTDIR/usr/lib/libc.so.6 $DESTDIR/usr/lib/ld-linux*.so.*",
     "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/share"
 ]
+

@@ -40,6 +40,11 @@ provides = [
     "systemd-networkd"
 ]
 
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
 prepare = [
     "sed -e 's/GROUP=\"render\"/GROUP=\"video\"/' -e 's/GROUP=\"sgx\", //' -i rules.d/50-udev-default.rules.in"
 ]
@@ -53,3 +58,4 @@ build = [
 install = [
     "set -e; cd build && DESTDIR=$DESTDIR ninja install; KEEP=$(mktemp -d); ( cd \"$DESTDIR\" && for g in 'usr/bin/networkctl' 'usr/lib/systemd/systemd-networkd' 'usr/lib/systemd/systemd-networkd-wait-online' 'usr/lib/systemd/systemd-network-generator' 'usr/lib/systemd/network/*.network' 'usr/lib/systemd/network/*.netdev' 'etc/systemd/network' 'usr/lib/systemd/system/systemd-networkd*' 'usr/lib/systemd/system/systemd-network-generator*' 'usr/lib/systemd/system/*/systemd-networkd*' 'usr/lib/systemd/system/*/systemd-network-generator*' 'usr/lib/systemd/system/dbus-org.freedesktop.network1.service'; do for p in $g; do [ -e \"$p\" ] || continue; tar -cf - \"$p\" | tar -C \"$KEEP\" -xf -; done; done ); find \"$DESTDIR\" -mindepth 1 -maxdepth 1 -exec rm -rf {} +; mkdir -p \"$DESTDIR\"; if [ -z \"$(ls -A \"$KEEP\" 2>/dev/null)\" ]; then echo 'ERROR: systemd split keep-set empty' >&2; rm -rf \"$KEEP\"; exit 1; fi; cp -a \"$KEEP\"/. \"$DESTDIR\"/; rm -rf \"$KEEP\""
 ]
+

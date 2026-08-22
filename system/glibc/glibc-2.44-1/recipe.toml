@@ -23,6 +23,11 @@ provides = [
     "so:ld-linux-x86-64.so.2"
 ]
 
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
 prepare = [
     "mkdir -p build"
 ]
@@ -39,3 +44,4 @@ install = [
     "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/*.a $DESTDIR/usr/lib/pkgconfig 2>/dev/null || true",
     "rm -f $DESTDIR/usr/lib/libc.so $DESTDIR/usr/lib/libm.so $DESTDIR/usr/lib/libpthread.so $DESTDIR/usr/lib/librt.so $DESTDIR/usr/lib/libdl.so $DESTDIR/usr/lib/libutil.so $DESTDIR/usr/lib/libresolv.so"
 ]
+
