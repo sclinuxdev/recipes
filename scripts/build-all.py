@@ -314,11 +314,14 @@ def main():
         m = r["meta"]
         aname = archive_name(m)
         rdir = "/recipes/" + r["dir"].relative_to(RECIPES).as_posix()
+        # Two spellings of one log: the redirect happens inside the chroot,
+        # whose root already *is* /mnt, so the leading component must go.
         blog = BUILD_LOGDIR / (aname + ".log")
+        cblog = "/" + blog.relative_to(ROOT).as_posix()
         t0 = time.time()
         log(f"  > {m['name']:<22} building {m['version']}-{m['release']} ...")
-        res = chroot(f"sage build {rdir} > {blog} 2>&1; echo RC=$? >> {blog}")
-        tail = blog.read_text(errors="replace").strip().splitlines()[-6:]
+        res = chroot(f"sage build {rdir} > {cblog} 2>&1; echo RC=$? >> {cblog}")
+        tail = blog.read_text(errors="replace").strip().splitlines()[-6:] if blog.exists() else [f"(no log produced; arch-chroot rc={res.returncode}: {res.stderr[-200:]})"]
         ok = res.returncode == 0 and any(l.strip() == "RC=0" for l in tail)
         mins = (time.time() - t0) / 60
         if not ok:
