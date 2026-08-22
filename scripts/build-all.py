@@ -42,7 +42,10 @@ STATE_FILE = LOGDIR / "build-all-state.json"
 
 # Installed into the target root immediately after a successful build,
 # before any other package compiles against the freshly built toolchain.
+# INSTALL_AFTER additionally covers library splits whose sonames later
+# builds must resolve as installed providers during the DT_NEEDED check.
 INSTALL_FIRST = {"glibc"}
+INSTALL_AFTER = {"icu-libs", "icu-dev"}
 
 
 def log(msg):
@@ -156,13 +159,13 @@ def find_repo_archive(m):
     """Existing repo archive for this name-version, any release: a rebuild
     auto-steps past the highest published release, so the artifact name
     leads whatever the recipe directory declares."""
-    found = sorted(REPO_DIR.glob(f"{m['name']}-{m['version']}-*-x86_64.pkg.tar.zst"))
+    found = sorted(REPO_DIR.glob(f"{m['name']}-{m['version']}-*-*.pkg.tar.zst"))
     return found[-1] if found else None
 
 
 def find_fresh_archive(recipe_dir, m, not_before):
     """Newest archive in the recipe dir written during this build."""
-    cands = [p for p in recipe_dir.glob(f"{m['name']}-{m['version']}-*-x86_64.pkg.tar.zst")
+    cands = [p for p in recipe_dir.glob(f"{m['name']}-{m['version']}-*-*.pkg.tar.zst")
              if p.stat().st_mtime >= not_before]
     return max(cands, key=lambda p: p.stat().st_mtime) if cands else None
 
@@ -346,7 +349,7 @@ def main():
         except Exception as e:
             log(f"    FAIL publishing: {e}")
             return False
-        if m["name"] in INSTALL_FIRST:
+        if m["name"] in INSTALL_FIRST or m["name"] in INSTALL_AFTER:
             inst = chroot(f"sage install {m['name']} 2>&1 | tail -2")
             log(f"    install: {inst.stdout.strip().splitlines()[-1:] or ''}")
         log(f"    OK in {mins:.1f}min -> {aname}")
