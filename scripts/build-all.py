@@ -170,6 +170,38 @@ def find_fresh_archive(recipe_dir, m, not_before):
     return max(cands, key=lambda p: p.stat().st_mtime) if cands else None
 
 
+def align_recipe_release(r, built_name):
+    """Step the recipe to the release actually built: auto-derivation bumps
+    past the highest published release, and the tree must follow or the
+    site reads the next rebuild as 'ahead' of its own recipe."""
+    m = r["meta"]
+    # <name>-<version>-<release>-<arch>.pkg.tar.zst: two splits from
+    # the right isolate the release -- names carry hyphens galore.
+    built_rel = built_name.rsplit("-", 2)[-2]
+    if built_rel == m["release"]:
+        return
+    old_dir, new_dir = r["dir"], r["dir"].parent / (
+        f"{m['name']}-{m['version']}-{built_rel}")
+    recipe = old_dir / "recipe.toml"
+    text = recipe.read_text()
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.startswith("release = "):
+            lines[i] = f'release = "{built_rel}"\n'
+            break
+    new_dir.mkdir(exist_ok=True)
+    recipe.write_text("".join(lines))
+    for item in old_dir.iterdir():
+        item.rename(new_dir / item.name)
+    old_dir.rmdir()
+    mirror = ROOT / "recipes" / old_dir.relative_to(RECIPES)
+    if mirror.exists():
+        mirror.rename(ROOT / "recipes" / new_dir.relative_to(RECIPES))
+    r["dir"] = new_dir
+    m["release"] = built_rel
+    log(f"    stepped recipe to {m['name']}-{m['version']}-{built_rel}")
+
+
 def emit_toml(v):
     import json as _j
     if isinstance(v, str):
@@ -353,6 +385,7 @@ def main():
             inst = chroot(f"sage install {m['name']} 2>&1 | tail -2")
             log(f"    install: {inst.stdout.strip().splitlines()[-1:] or ''}")
         log(f"    OK in {mins:.1f}min -> {aname}")
+        align_recipe_release(r, aname)
         return aname
 
     failures = []

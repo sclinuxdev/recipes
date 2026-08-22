@@ -36,7 +36,7 @@ schema_version = 1
 [package]
 name = "linux-zen"
 version = "7.1.9"
-release = "1"
+release = "3"
 description = "Linux ZEN kernel with performance optimizations and CJK console support"
 license = "GPL-2.0-only"
 channel = "system"
@@ -79,11 +79,10 @@ prepare = [
     # The config block is stamped too: rewriting .config flips its mtime and
     # kbuild answers with a from-scratch rebuild, which is exactly what a
     # resume must not pay for. Fresh trees run it; resumed ones skip it.
-    "[ -e .stamp-config ] || { cp distfiles/config.x86_64 .config && echo '-1' > localversion.10-pkgrel && echo '-zen' > localversion.20-pkgname && ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
-    # LLVM=1 here too: config-time tool identity is recorded into .config
-    # (CONFIG_CC_IS_CLANG, CONFIG_LD_IS_LLD); configuring with GNU ld and
-    # building with lld would leave those lies behind.
-    "make LLVM=1 olddefconfig && touch .stamp-config; }"
+    # LLVM=1 in olddefconfig as well: config-time tool identity is recorded
+    # into .config (CONFIG_CC_IS_CLANG, CONFIG_LD_IS_LLD); configuring with
+    # GNU ld and building with lld would leave those lies behind.
+    "[ -e .stamp-config ] || { cp distfiles/config.x86_64 .config && echo '-1' > localversion.10-pkgrel && echo '-zen' > localversion.20-pkgname && ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST && make LLVM=1 olddefconfig && touch .stamp-config; }"
 ]
 
 # LLVM=1 drives the whole toolchain from the llvm:22 channel -- clang for

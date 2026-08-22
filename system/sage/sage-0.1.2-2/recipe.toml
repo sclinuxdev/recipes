@@ -13,7 +13,7 @@ schema_version = 1
 [package]
 name = "sage"
 version = "0.1.2"
-release = "1"
+release = "2"
 description = "Universal Multi-Layer Linux Package Manager"
 license = "BSD-2-Clause"
 channel = "system"

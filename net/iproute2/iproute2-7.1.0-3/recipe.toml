@@ -3,7 +3,7 @@ schema_version = 1
 [package]
 name = "iproute2"
 version = "7.1.0"
-release = "1"
+release = "3"
 description = "IP routing and traffic control utilities"
 license = "GPL-2.0-or-later"
 channel = "system"

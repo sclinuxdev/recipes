@@ -3,7 +3,7 @@ schema_version = 1
 [package]
 name = "glibc"
 version = "2.44"
-release = "1"
+release = "3"
 description = "GNU C Library runtime, loader and locale data"
 license = "LGPL-2.1-or-later"
 channel = "system"

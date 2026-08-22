@@ -3,7 +3,7 @@ schema_version = 1
 [package]
 name = "util-linux-libs"
 version = "2.42.2"
-release = "1"
+release = "3"
 description = "libuuid/libblkid/libmount/libsmartcols runtime libraries"
 license = "LGPL-2.1-or-later"
 channel = "system"
