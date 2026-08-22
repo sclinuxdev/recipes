@@ -1,0 +1,6 @@
+# Build residue: never track fetched sources, unpacked trees,
+# staged payloads or package archives next to a recipe.
+distfiles/
+src/
+pkg/
+*.pkg.tar.zst
