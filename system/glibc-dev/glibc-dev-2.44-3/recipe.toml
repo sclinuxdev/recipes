@@ -3,7 +3,7 @@ schema_version = 1
 [package]
 name = "glibc-dev"
 version = "2.44"
-release = "1"
+release = "3"
 description = "GNU C Library headers, static libraries and linker scripts"
 license = "LGPL-2.1-or-later"
 channel = "system"
@@ -39,7 +39,17 @@ build = [
 
 install = [
     "cd build && make install DESTDIR=$DESTDIR",
-    "rm -f $DESTDIR/usr/lib/libc.so.6 $DESTDIR/usr/lib/ld-linux*.so.*",
-    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/share"
+    # make install drops a few admin tools into both sbin spellings; the dev
+    # package is headers/libs/scripts only, and every bin/sbin entity path is
+    # illegal under the collapsed usr merge.
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/sbin $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/share $DESTDIR/usr/libexec",
+    # Dev keeps exactly what linking needs: headers, static archives, and the
+    # unversioned .so linker scripts/symlinks. Everything else top-level in
+    # usr/lib (versioned runtime libs, crt*.o, gconv/, audit/) is owned by
+    # the glibc runtime package and must not be claimed twice. These ten
+    # unversioned helpers ship inside the runtime package itself, so the dev
+    # tree's copies (symlinks into pruned files) go too.
+    "rm -f $DESTDIR/usr/lib/libanl.so $DESTDIR/usr/lib/libBrokenLocale.so $DESTDIR/usr/lib/libc_malloc_debug.so $DESTDIR/usr/lib/libmemusage.so $DESTDIR/usr/lib/libmvec.so $DESTDIR/usr/lib/libnss_compat.so $DESTDIR/usr/lib/libnss_db.so $DESTDIR/usr/lib/libnss_hesiod.so $DESTDIR/usr/lib/libpcprofile.so $DESTDIR/usr/lib/libthread_db.so",
+    "find $DESTDIR/usr/lib -mindepth 1 -maxdepth 1 ! -name '*.a' ! -name '*.so' ! -type l -exec rm -rf {} +"
 ]
 
