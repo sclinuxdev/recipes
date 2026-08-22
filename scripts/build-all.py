@@ -48,8 +48,14 @@ INSTALL_FIRST = {"glibc"}
 INSTALL_AFTER = {"icu-libs", "icu-dev"}
 
 
+import threading
+
+_log_lock = threading.Lock()
+
+
 def log(msg):
-    print(msg, flush=True)
+    with _log_lock:
+        print(msg, flush=True)
 
 
 def sh(cmd, **kw):
@@ -296,6 +302,8 @@ def main():
     ap.add_argument("--only", help="comma-separated package names")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--retry-rounds", type=int, default=2)
+    ap.add_argument("--parallel", type=int, default=6,
+                    help="packages built concurrently")
     args = ap.parse_args()
 
     BUILD_LOGDIR.mkdir(parents=True, exist_ok=True)
@@ -377,7 +385,8 @@ def main():
             log(f"    FAIL usr-merge check: {e}")
             return False
         try:
-            repo_publish(art, aname)
+            with publish_lock:
+                repo_publish(art, aname)
         except Exception as e:
             log(f"    FAIL publishing: {e}")
             return False
@@ -388,32 +397,63 @@ def main():
         align_recipe_release(r, aname)
         return aname
 
-    failures = []
-    for r in todo:
-        done = build_one(r)
-        if done:
-            state["built"][r["meta"]["name"]] = done
-            state["failed"].pop(r["meta"]["name"], None)
-        else:
-            failures.append(r)
-            state["failed"][r["meta"]["name"]] = time.strftime("%Y-%m-%dT%H:%M:%S")
-        save_state(state)
+    # -- parallel scheduling ------------------------------------------------
+    # Up to --parallel packages at once, each launched the moment every
+    # provider it depends on has an artifact. Publishing and state writes
+    # take locks; sage itself serializes root mutations via its own flock.
+    import concurrent.futures as cf
+    import threading
+
+    publish_lock = threading.Lock()
+    state_lock = threading.Lock()
+    done_names = ({r["meta"]["name"] for r in order}
+                  - {r["meta"]["name"] for r in todo}) | set(state["built"])
+
+    def run_round(batch):
+        remaining = list(batch)
+        inflight = {}
+        round_failures = []
+        with cf.ThreadPoolExecutor(max_workers=args.parallel) as pool:
+            while remaining or inflight:
+                progress = True
+                while len(inflight) < args.parallel and progress:
+                    progress = False
+                    for r in list(remaining):
+                        if not (deps_of[r["meta"]["name"]] - done_names):
+                            remaining.remove(r)
+                            inflight[pool.submit(build_one, r)] = r
+                            progress = True
+                            break
+                if not inflight:
+                    for r in remaining:  # nothing runnable: unresolved deps
+                        log(f"    SKIP {r['meta']['name']}: "
+                            "dependencies unresolved this round")
+                        round_failures.append(r)
+                    remaining.clear()
+                    break
+                for fut in cf.wait(inflight, return_when=cf.FIRST_COMPLETED)[0]:
+                    r = inflight.pop(fut)
+                    name = r["meta"]["name"]
+                    res = fut.result()
+                    with state_lock:
+                        if res:
+                            state["built"][name] = res
+                            state["failed"].pop(name, None)
+                            done_names.add(name)
+                        else:
+                            state["failed"][name] = time.strftime(
+                                "%Y-%m-%dT%H:%M:%S")
+                            round_failures.append(r)
+                        save_state(state)
+        return round_failures
+
+    failures = run_round(todo)
 
     for rnd in range(1, args.retry_rounds + 1):
         if not failures:
             break
         log(f"\nRetry round {rnd}/{args.retry_rounds}: {len(failures)} package(s)")
-        still = []
-        for r in failures:
-            done = build_one(r)
-            if done:
-                state["built"][r["meta"]["name"]] = done
-                state["failed"].pop(r["meta"]["name"], None)
-            else:
-                still.append(r)
-                state["failed"][r["meta"]["name"]] = time.strftime("%Y-%m-%dT%H:%M:%S")
-            save_state(state)
-        failures = still
+        failures = run_round(failures)
 
     log(f"\nFinished: {len(state['built'])} built total, "
         f"{len(failures)} unresolved failure(s)")
