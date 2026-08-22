@@ -28,7 +28,10 @@ build = [
 ]
 
 install = [
-    "make install DESTDIR=$DESTDIR",
+# tic regenerates terminfo during install and must run against the
+# tree's own libncursesw -- the legacy system's copy lacks the new
+# _nc_disable_period symbol.
+    "LD_LIBRARY_PATH=$SRCDIR/lib make install DESTDIR=$DESTDIR",
     "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
     "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
     "for lib in ncurses form panel menu ; do echo \"INPUT(-l${lib}w)\" > $DESTDIR/usr/lib/lib${lib}.so; ln -sf ${lib}w.pc $DESTDIR/usr/lib/pkgconfig/${lib}.pc 2>/dev/null || true; done",

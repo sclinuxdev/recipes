@@ -26,6 +26,9 @@ build = [
 ]
 
 install = [
-    "make install DESTDIR=$DESTDIR",
+# tic regenerates terminfo during install and must run against the
+# tree's own libncursesw -- the legacy system's copy lacks the new
+# _nc_disable_period symbol.
+    "LD_LIBRARY_PATH=$SRCDIR/lib make install DESTDIR=$DESTDIR",
     "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/lib $DESTDIR/usr/include $DESTDIR/usr/share/man $DESTDIR/usr/share/tabset $DESTDIR/usr/share/doc $DESTDIR/usr/share/pkgconfig $DESTDIR/usr/lib/pkgconfig"
 ]
