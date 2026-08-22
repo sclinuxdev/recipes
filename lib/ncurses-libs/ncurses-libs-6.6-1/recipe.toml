@@ -29,7 +29,7 @@ provides = [
 prepare = []
 
 build = [
-    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig --without-progs --without-tests --without-manpages",
+    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig --with-progs --without-tests --without-manpages",
     "make"
 ]
 
