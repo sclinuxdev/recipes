@@ -30,7 +30,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --sysconfdir=/etc --with-regex=pcre2",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

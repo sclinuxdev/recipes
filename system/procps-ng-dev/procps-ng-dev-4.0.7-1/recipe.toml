@@ -29,7 +29,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static --disable-kill --enable-watch8bit",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

@@ -47,7 +47,7 @@ prepare = []
 # the link and leaves files mkinitcpio's forced PATH=/usr/bin:/bin cannot see.
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --sysconfdir=/etc --disable-efiemu --disable-werror --with-platform=efi --target=x86_64",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

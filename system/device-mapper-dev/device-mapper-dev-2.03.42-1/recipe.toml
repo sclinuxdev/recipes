@@ -37,7 +37,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --localstatedir=/var --enable-pkgconfig --disable-selinux --with-default-dm-run-dir=/run",
-    "make -j$(nproc) device-mapper"
+    "make device-mapper"
 ]
 
 # Keep headers, the .pc file and the unversioned .so the linker follows;

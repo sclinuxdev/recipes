@@ -43,7 +43,7 @@ prepare = [
 
 build = [
     "cd build && CPPFLAGS=\"-I/usr/include\" LDFLAGS=\"-L/usr/lib\" ../configure --prefix=/opt/channels/gcc/15 --enable-languages=c,c++ --enable-default-pie --enable-default-ssp --disable-multilib --disable-bootstrap --disable-fixincludes --with-system-zlib --with-isl=/usr",
-    "cd build && make -j$(nproc)"
+    "cd build && make"
 ]
 
 install = [

@@ -31,7 +31,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static --with-openssl --with-zlib --with-zstd --without-brotli --without-nghttp2 --without-libpsl --without-libidn2",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

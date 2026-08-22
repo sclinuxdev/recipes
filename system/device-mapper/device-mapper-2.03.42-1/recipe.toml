@@ -43,7 +43,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --localstatedir=/var --enable-pkgconfig --enable-dmeventd --disable-selinux --disable-static_link --with-default-dm-run-dir=/run --with-default-run-dir=/run/lvm --with-default-locking-dir=/run/lock/lvm --with-systemdsystemunitdir=/usr/lib/systemd/system",
-    "make -j$(nproc) device-mapper"
+    "make device-mapper"
 ]
 
 install = [

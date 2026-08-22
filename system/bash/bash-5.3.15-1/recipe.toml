@@ -31,7 +31,7 @@ prepare = [
 
 build = [
     "./configure --prefix=/usr --without-bash-malloc --with-installed-readline",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

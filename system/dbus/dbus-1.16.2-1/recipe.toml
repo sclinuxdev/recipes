@@ -33,7 +33,7 @@ prepare = []
 build = [
     "mkdir build",
     "cd build && meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback ..",
-    "cd build && ninja -j$(nproc)"
+    "cd build && ninja"
 ]
 
 install = [

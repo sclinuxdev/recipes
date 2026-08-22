@@ -27,7 +27,7 @@ prepare = [
 ]
 
 build = [
-    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no -j$(nproc)"
+    "make prefix=/usr lib=lib PAM_CAP=no GOLANG=no"
 ]
 
 install = [

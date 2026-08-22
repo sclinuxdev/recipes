@@ -24,7 +24,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --enable-pcre2-16 --enable-pcre2-32 --enable-jit --disable-static",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

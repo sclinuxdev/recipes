@@ -6,7 +6,7 @@
 # the image once the kernel lands. WHICH generator stays a system choice, so
 # dracut can satisfy this without touching the recipe.
 #
-# Three sources, each downloaded and sha256-verified by sage ([[source]]
+# Four sources, each downloaded and sha256-verified by sage ([[source]]
 # multi-source support; the first entry is the primary archive):
 #
 #   1. The vanilla 7.1.9 tarball.
@@ -82,7 +82,7 @@ prepare = [
 ]
 
 build = [
-    "make -j$(nproc) -k KCFLAGS=\"-Wno-error\" all || make -j$(nproc) KCFLAGS=\"-Wno-error\" all"
+    "make -k KCFLAGS=\"-Wno-error\" all || make KCFLAGS=\"-Wno-error\" all"
 ]
 
 install = [

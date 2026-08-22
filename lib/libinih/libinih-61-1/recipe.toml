@@ -29,7 +29,7 @@ prepare = []
 
 build = [
     "meson setup build --prefix=/usr --buildtype=release -Ddefault_library=shared -Ddistro_install=true",
-    "ninja -C build -j$(nproc)"
+    "ninja -C build"
 ]
 
 install = [

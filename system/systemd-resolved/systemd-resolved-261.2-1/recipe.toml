@@ -48,7 +48,7 @@ prepare = [
 build = [
     "mkdir -p build",
     "cd build && meson setup .. --prefix=/usr --buildtype=release -D default-dnssec=no -D firstboot=false -D install-tests=false -D ldconfig=false -D sysusers=false -D rpmmacrosdir=no -D homed=disabled -D man=disabled -D mode=release -D pamconfdir=no -D dev-kvm-mode=0660 -D nobody-group=nogroup -D sysupdate=disabled -D ukify=disabled -D docdir=/usr/share/doc/systemd-261.2",
-    "cd build && ninja -j$(nproc)"
+    "cd build && ninja"
 ]
 
 install = [

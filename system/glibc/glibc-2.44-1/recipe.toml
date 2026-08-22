@@ -29,7 +29,7 @@ prepare = [
 
 build = [
     "cd build && ../configure --prefix=/usr --disable-profile --enable-kernel=4.19 --enable-stack-protector=strong --disable-nscd libc_cv_slibdir=/usr/lib",
-    "cd build && make -j$(nproc)"
+    "cd build && make"
 ]
 
 install = [

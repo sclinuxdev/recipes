@@ -49,7 +49,7 @@ prepare = [
 ]
 
 build = [
-    "make -j$(nproc)"
+    "make"
 ]
 
 # Just the one binary in /usr/bin. No applet symlinks: mkinitcpio's base hook

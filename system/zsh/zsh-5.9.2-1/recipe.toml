@@ -31,7 +31,7 @@ build = [
     # Upstream widec ncurses keeps tgetent in libtinfow, so -lncursesw alone
     # leaves it undefined; LIBS is baked into the generated Makefile.
     "LIBS=\"-ltinfow\" ./configure --prefix=/usr --enable-multibyte --with-term-lib=ncursesw",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

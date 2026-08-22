@@ -28,7 +28,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-vlock",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

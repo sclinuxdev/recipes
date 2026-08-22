@@ -36,8 +36,8 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-debuginfod --enable-libdebuginfod=dummy --disable-static",
-    "make -C lib -j$(nproc)",
-    "make -C libelf -j$(nproc)"
+    "make -C lib",
+    "make -C libelf"
 ]
 
 install = [

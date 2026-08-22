@@ -24,7 +24,7 @@ prepare = []
 
 build = [
     "./configure --runtime=lua --prefix=/usr",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

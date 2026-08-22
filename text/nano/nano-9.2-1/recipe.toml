@@ -33,7 +33,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --sysconfdir=/etc --enable-utf8",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

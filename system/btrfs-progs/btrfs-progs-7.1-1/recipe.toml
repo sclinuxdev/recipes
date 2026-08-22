@@ -38,7 +38,7 @@ prepare = []
 
 build = [
     "CFLAGS=\"-I/usr/include/lzo\" CPPFLAGS=\"-I/usr/include/lzo\" LDFLAGS=\"-L/usr/lib\" ./configure --prefix=/usr --disable-documentation --disable-static",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

@@ -23,7 +23,7 @@ provides = [
 prepare = []
 
 build = [
-    "cd libraries/liblmdb && make -j$(nproc)"
+    "cd libraries/liblmdb && make"
 ]
 
 install = [

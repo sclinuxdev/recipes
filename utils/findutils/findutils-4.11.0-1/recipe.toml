@@ -25,7 +25,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --localstatedir=/var/lib/locate --disable-nls",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

@@ -23,7 +23,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

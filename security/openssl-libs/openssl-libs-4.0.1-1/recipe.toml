@@ -32,7 +32,7 @@ prepare = []
 
 build = [
     "./config --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic no-apps enable-deprecated enable-tls1-method enable-tls1_1-method",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

@@ -39,7 +39,7 @@ prepare = []
 
 build = [
     "CFLAGS=\"$CFLAGS -DOPENSSL_NO_SSL3 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1_1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_2 -DOPENSSL_NO_TLS1_2_METHOD\" ./configure --prefix=/usr/lib/runtimes/python/3.14 --enable-shared --with-system-expat --with-system-libmpdec --without-ensurepip --without-static-libpython",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

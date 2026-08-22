@@ -28,7 +28,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-nls",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

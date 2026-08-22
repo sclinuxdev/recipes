@@ -24,7 +24,7 @@ provides = [
 prepare = []
 
 build = [
-    "make -f Makefile-libbz2_so -j$(nproc)"
+    "make -f Makefile-libbz2_so"
 ]
 
 install = [

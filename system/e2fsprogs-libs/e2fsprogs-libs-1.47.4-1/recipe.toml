@@ -32,7 +32,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --sysconfdir=/etc --enable-elf-shlibs --disable-libblkid --disable-libuuid --disable-uuidd --disable-fsck",
-    "make -j$(nproc) libs"
+    "make libs"
 ]
 
 install = [

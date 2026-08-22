@@ -33,7 +33,7 @@ provides = [
 prepare = []
 
 build = [
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

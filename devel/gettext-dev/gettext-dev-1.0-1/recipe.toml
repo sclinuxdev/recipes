@@ -24,7 +24,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static --docdir=/usr/share/doc/gettext-1.0",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

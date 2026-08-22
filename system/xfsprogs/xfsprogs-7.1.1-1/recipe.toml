@@ -55,7 +55,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --enable-gettext=no",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

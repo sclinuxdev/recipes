@@ -40,7 +40,7 @@ prepare = [
 build = [
     "touch /usr/bin/passwd 2>/dev/null || true",
     "./configure --sysconfdir=/etc --disable-static --with-{b,yes}crypt --without-libbsd --disable-logind --with-group-name-max-length=32",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

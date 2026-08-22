@@ -30,7 +30,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static --without-xml2 --with-expat --without-cng --with-openssl --with-zlib --with-bz2lib --with-lzma --with-zstd",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

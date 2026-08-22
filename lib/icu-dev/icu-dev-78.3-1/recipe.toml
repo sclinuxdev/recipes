@@ -32,7 +32,7 @@ prepare = []
 
 build = [
     "cd source && ./configure --prefix=/usr --bindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --disable-samples --disable-tests --enable-static=no",
-    "cd source && make -j$(nproc)"
+    "cd source && make"
 ]
 
 install = [

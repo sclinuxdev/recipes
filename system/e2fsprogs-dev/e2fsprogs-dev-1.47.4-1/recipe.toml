@@ -30,7 +30,7 @@ prepare = [
 
 build = [
     "cd build && ../configure --prefix=/usr --sysconfdir=/etc --enable-elf-shlibs --disable-libblkid --disable-libuuid --disable-fsck",
-    "cd build && make -j$(nproc)"
+    "cd build && make"
 ]
 
 install = [

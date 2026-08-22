@@ -24,7 +24,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --enable-shared --disable-static",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

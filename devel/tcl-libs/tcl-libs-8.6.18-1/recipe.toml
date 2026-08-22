@@ -29,7 +29,7 @@ prepare = []
 
 build = [
     "cd unix && ./configure --prefix=/usr --mandir=/usr/share/man",
-    "cd unix && make -j$(nproc)"
+    "cd unix && make"
 ]
 
 install = [

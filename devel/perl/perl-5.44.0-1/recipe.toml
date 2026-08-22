@@ -38,7 +38,7 @@ prepare = []
 
 build = [
     "BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de -D prefix=/opt/channels/perl/5.44 -D vendorprefix=/opt/channels/perl/5.44 -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D man1dir=/opt/channels/perl/5.44/share/man/man1 -D man3dir=/opt/channels/perl/5.44/share/man/man3 -D pager=\"/usr/bin/cat\" -D useshrplib -D usethreads -D BUILD_ZLIB=0 -D BUILD_BZIP2=0",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

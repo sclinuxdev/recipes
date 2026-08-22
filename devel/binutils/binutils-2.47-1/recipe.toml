@@ -36,7 +36,7 @@ build = [
     # gold was removed from the binutils tree (no gold/ in the 2.47 release
     # tarball); --enable-gold was inert and gmp was never linked.
     "cd build && ../configure --prefix=/usr --sysconfdir=/etc --enable-plugins --enable-shared --disable-werror --enable-64-bit-bfd --with-system-zlib --enable-default-hash-style=gnu --without-debuginfod --disable-gprofng",
-    "cd build && make tooldir=/usr/x86_64-pc-linux-gnu -j$(nproc)"
+    "cd build && make tooldir=/usr/x86_64-pc-linux-gnu"
 ]
 
 install = [

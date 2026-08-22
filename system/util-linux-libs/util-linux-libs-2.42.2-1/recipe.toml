@@ -27,7 +27,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --libdir=/usr/lib --disable-static --without-python --without-systemd --disable-all-programs --enable-libmount --enable-libuuid --enable-libblkid --enable-libsmartcols",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

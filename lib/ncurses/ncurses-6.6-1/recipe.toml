@@ -25,7 +25,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

@@ -24,7 +24,7 @@ prepare = []
 
 build = [
     "./configure --prefix=/usr --disable-static --sysconfdir=/etc",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [

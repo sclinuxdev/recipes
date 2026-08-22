@@ -23,7 +23,7 @@ provides = [
 prepare = []
 
 build = [
-    "make -C lib prefix=/usr -j$(nproc)"
+    "make -C lib prefix=/usr"
 ]
 
 install = [

@@ -48,7 +48,7 @@ prepare = []
 # and any build-time references go with it.
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --localstatedir=/var --disable-hostname --disable-logger --disable-whois --disable-rcp --disable-rexec --disable-rlogin --disable-rsh --disable-servers --disable-telnet",
-    "make -j$(nproc)"
+    "make"
 ]
 
 # Everything stays in /usr/bin. Nothing is moved to /usr/sbin.

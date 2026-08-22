@@ -42,8 +42,8 @@ provides = [
 prepare = []
 
 build = [
-    "CFLAGS=\"$CFLAGS -fpermissive\" CXXFLAGS=\"$CXXFLAGS -fpermissive\" ./bootstrap --prefix=/usr --parallel=$(nproc) --system-curl --system-zlib --system-bzip2 --system-zstd --system-liblzma --system-libarchive --system-expat --no-system-jsoncpp --no-system-librhash --no-system-cppdap",
-    "make -j$(nproc)"
+    "CFLAGS=\"$CFLAGS -fpermissive\" CXXFLAGS=\"$CXXFLAGS -fpermissive\" ./bootstrap --prefix=/usr --system-curl --system-zlib --system-bzip2 --system-zstd --system-liblzma --system-libarchive --system-expat --no-system-jsoncpp --no-system-librhash --no-system-cppdap",
+    "make"
 ]
 
 install = [

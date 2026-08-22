@@ -39,7 +39,7 @@ prepare = []
 # class of bug this package set exists to fix.
 build = [
     "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libexecdir=/usr/lib --sysconfdir=/etc --with-rundir=/run/sudo --with-vardir=/var/lib/sudo --with-logfac=auth --with-secure-path='/usr/local/bin:/usr/bin' --without-pam --disable-static",
-    "make -j$(nproc)"
+    "make"
 ]
 
 install = [
