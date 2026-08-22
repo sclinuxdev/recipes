@@ -1,16 +1,35 @@
-# Linux ZEN kernel.
+# Linux ZEN kernel with CJK VT console support.
 #
-# Supersedes Stage2/recipes/linux-zen (release 2). Two changes:
+# Supersedes Stage2/recipes/linux-zen (release 2). Depends on
+# virtual/initramfs-generator: installing a kernel pulls in a builder for the
+# initramfs it cannot boot without, and sage's capability trigger regenerates
+# the image once the kernel lands. WHICH generator stays a system choice, so
+# dracut can satisfy this without touching the recipe.
 #
-#   1. Depends on virtual/initramfs-generator. Installing a kernel now pulls in
-#      a builder for the initramfs it cannot boot without, and sage's
-#      capability trigger regenerates the image once the kernel lands.
-#   2. The empty sha256 is filled in.
+# Three sources, each downloaded and sha256-verified by sage ([[source]]
+# multi-source support; the first entry is the primary archive):
 #
-# Note the second distfile: prepare applies ../distfiles/linux-v7.1.9-zen1.patch.zst,
-# which sage does not fetch or verify -- one [source] url is all it supports.
-# That file has to be placed in the recipe's distfiles/ directory by hand.
-# Its sha256 is bdd01b28231ae1e2b5804c28d0917af44e5f72ee35ff8bdd1406b8c40126d009.
+#   1. The vanilla 7.1.9 tarball.
+#   2. The ZEN patchset for v7.1.9-zen1.
+#   3. bigshans' cjktty UTF-8 VT console patch, 7.2 series.
+#   4. Arch Linux's pinned default config for this exact kernel version
+#      (config.x86_64), fetched at build time from the packaging repo commit.
+#
+# Why the 7.2 cjktty patch on a 7.1.9 kernel: v7.x/cjktty-7.1.patch was
+# generated before upstream added the charcount clamp to bit_cursor, and its
+# final hunk no longer matches 7.1.9 (one FAILED hunk). Every hunk of
+# cjktty-7.2.patch applies to this tree cleanly, and all touched files build.
+# The FONT_CJK_* options default to y, so olddefconfig enables them.
+#
+# Both patches are applied with fatal failure semantics: a silently skipped
+# patch yields a kernel that builds fine but lacks the feature. The zen patch
+# is decompressed to a file first because a plain `zstd | patch` pipeline
+# reports only patch's exit status -- an empty stream from a failed zstd
+# would "succeed" while applying nothing.
+#
+# Layout note: every key below the [[source]] blocks belongs to its nearest
+# such block, so all root-scoped declarations come first and the two extra
+# sources close the file.
 
 schema_version = 1
 
@@ -18,19 +37,13 @@ schema_version = 1
 name = "linux-zen"
 version = "7.1.9"
 release = "1"
-description = "Linux ZEN kernel with performance optimizations"
+description = "Linux ZEN kernel with performance optimizations and CJK console support"
 license = "GPL-2.0-only"
 channel = "system"
 
-[source]
-url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.9.tar.xz"
-sha256 = "3271a4ae3897b38352980f2b0975bae61bca81c644d186221c5ae928bcc072b0"
-
 # virtual/initramfs-generator, not "mkinitcpio": a kernel is unbootable
 # without an initramfs, so the generator is a hard runtime dependency -- but
-# WHICH generator is a system choice. Depending on the capability lets dracut
-# satisfy this without touching the recipe, and it is what makes sage's
-# post-transaction trigger able to find a builder after this package lands.
+# WHICH generator is a system choice.
 dependencies = [
     "kmod >= 34.2",
     "virtual/initramfs-generator",
@@ -58,13 +71,14 @@ provides = [
 ]
 
 prepare = [
-    "[ -f .prepared ] || zstd -dc ../distfiles/linux-v7.1.9-zen1.patch.zst | patch -p1 --forward --batch || true",
-    "[ -f .prepared ] || cp -v ../config.x86_64 .config",
-    "[ -f .prepared ] || echo '-1' > localversion.10-pkgrel",
-    "[ -f .prepared ] || echo '-zen' > localversion.20-pkgname",
-    "[ -f .prepared ] || ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
-    "[ -f .prepared ] || make olddefconfig",
-    "[ -f .prepared ] || touch .prepared"
+    "zstd -dc distfiles/linux-v7.1.9-zen1.patch.zst > zen-patch.diff",
+    "patch -p1 --forward --batch < zen-patch.diff",
+    "patch -p1 --forward --batch < distfiles/cjktty-7.2.patch",
+    "cp -v distfiles/config.x86_64 .config",
+    "echo '-1' > localversion.10-pkgrel",
+    "echo '-zen' > localversion.20-pkgname",
+    "./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
+    "make olddefconfig"
 ]
 
 build = [
@@ -74,3 +88,22 @@ build = [
 install = [
     "set -e; KVER=$(make -s kernelrelease); echo \"Installing kernel release: ${KVER}\"; mkdir -p $DESTDIR/boot $DESTDIR/usr/lib/modules; make INSTALL_MOD_PATH=$DESTDIR modules_install; if [ -d $DESTDIR/lib/modules ] && [ ! -L $DESTDIR/lib ]; then cp -a $DESTDIR/lib/modules $DESTDIR/usr/lib/ && rm -rf $DESTDIR/lib; fi; rm -f $DESTDIR/usr/lib/modules/$KVER/build $DESTDIR/usr/lib/modules/$KVER/source; install -Dm644 arch/x86/boot/bzImage $DESTDIR/boot/vmlinuz-${KVER}; install -Dm644 System.map $DESTDIR/boot/System.map-${KVER}; install -Dm644 .config $DESTDIR/boot/config-${KVER}; install -Dm644 arch/x86/boot/bzImage $DESTDIR/usr/lib/modules/$KVER/vmlinuz"
 ]
+
+# The primary archive unpacks to src/; the extra downloads land verbatim at
+# src/distfiles/, which the prepare commands above consume relative to that
+# work directory.
+[[source]]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.9.tar.xz"
+sha256 = "3271a4ae3897b38352980f2b0975bae61bca81c644d186221c5ae928bcc072b0"
+
+[[source]]
+url = "https://github.com/zen-kernel/zen-kernel/releases/download/v7.1.9-zen1/linux-v7.1.9-zen1.patch.zst"
+sha256 = "bdd01b28231ae1e2b5804c28d0917af44e5f72ee35ff8bdd1406b8c40126d009"
+
+[[source]]
+url = "https://raw.githubusercontent.com/bigshans/cjktty-patches/master/v7.x/cjktty-7.2.patch"
+sha256 = "252c69ec48019660dce565c45e287626793f84939cec249d62644a11ea9842a8"
+
+[[source]]
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/linux-zen/-/raw/b352bac2f44f0c5f1deea40c8230ba099f4e066b/config.x86_64?inline=false"
+sha256 = "2d33524b30d9e200f9a38ec0d57fb6c56eb3da04cd8e12b11f434dcd9a444535"
