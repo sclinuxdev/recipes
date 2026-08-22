@@ -12,8 +12,11 @@ channel = "system"
 url = "https://mirrors.kernel.org/gnu/nano/nano-9.2.tar.xz"
 sha256 = "05ecb99247b782e8a5b3a25ed4101dd034b0236902f7449bc9795b717642f7e9"
 
+# nano's configure probes for libmagic unless told otherwise, and file-dev is
+# on the builder, so the binary links it: declare the runtime side too.
 dependencies = [
     "ncurses-libs >= 6.6",
+    "file-libs >= 5.48"
 ]
 
 build_dependencies = [

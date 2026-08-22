@@ -4,7 +4,7 @@ schema_version = 1
 name = "linux-zen-headers"
 version = "7.1.9"
 release = "1"
-description = "Linux ZEN UAPI headers (bound to linux-zen 7.1.9)"
+description = "Linux ZEN kernel UAPI headers"
 license = "GPL-2.0-only"
 channel = "system"
 

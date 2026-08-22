@@ -25,7 +25,11 @@ build_dependencies = [
 ]
 
 provides = [
-    "icu-libs"
+    "icu-libs",
+    "so:libicuuc.so.78",
+    "so:libicui18n.so.78",
+    "so:libicudata.so.78",
+    "so:libicuio.so.78"
 ]
 
 prepare = []

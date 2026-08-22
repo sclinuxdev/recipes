@@ -4,7 +4,7 @@ schema_version = 1
 name = "tcl-libs"
 version = "8.6.18"
 release = "1"
-description = "libtcl8.6 shared runtime library"
+description = "Tcl shared runtime library"
 license = "TCL"
 channel = "system"
 
