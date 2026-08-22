@@ -1,0 +1,60 @@
+# Sage package manager, built from the released v0.1.2 tag tarball.
+#
+# Provenance: the [source] pins the exact GitHub tag archive, so the package
+# is reproducible from the recipe alone -- no host checkout, no SAGE_SOURCE_DIR.
+# The tag tarball unpacks to sage-0.1.2/, which the fetch step strips into src/.
+#
+# /etc/sage/build.toml is declared a conffile: reinstalls and upgrades never
+# clobber an administrator's compiler policy (the shipped file below only
+# seeds a fresh root with the built-in defaults).
+
+schema_version = 1
+
+[package]
+name = "sage"
+version = "0.1.2"
+release = "1"
+description = "Universal Multi-Layer Linux Package Manager"
+license = "BSD-2-Clause"
+channel = "system"
+
+dependencies = [
+    "lmdb >= 0.9.35",
+    "zstd-libs >= 1.5.7",
+    "tomlplusplus >= 3.4.0",
+    "curl-libs >= 8.21.0",
+    "gcc-libs >= 15.3.0",
+    "openssl-libs >= 4.0.1"
+]
+
+build_dependencies = [
+    "xmake >= 3.1.0",
+    "lmdb-dev >= 0.9.35",
+    "zstd-dev >= 1.5.7",
+    "tomlplusplus-dev >= 3.4.0",
+    "curl-dev >= 8.21.0",
+    "openssl-dev >= 4.0.1"
+]
+
+provides = [
+    "sage"
+]
+
+conffiles = [
+    "/etc/sage/build.toml"
+]
+
+prepare = []
+
+build = [
+    "cd \"$SRCDIR\" && XMAKE_ROOT=y xmake f -c -m release -y && XMAKE_ROOT=y xmake -y"
+]
+
+install = [
+    "install -Dm755 \"$SRCDIR/build/linux/x86_64/release/sage\" \"$DESTDIR/usr/bin/sage\"",
+    "install -Dm644 /dev/null \"$DESTDIR/etc/sage/build.toml\" && printf '%s\\n' '# Sage build configuration: compiler policy and flag baseline.' '# Unlisted keys fall back to the built-in defaults; unknown keys are ignored.' 'schema_version = 1' 'cc = \"clang\"' 'cxx = \"clang++\"' 'fallback_cc = \"gcc\"' 'fallback_cxx = \"g++\"' 'cflags = \"-O3 -march=x86-64-v3\"' > \"$DESTDIR/etc/sage/build.toml\""
+]
+
+[source]
+url = "https://github.com/sclinuxdev/sage/archive/refs/tags/v0.1.2.tar.gz"
+sha256 = "734d078baed532fd6cad3de629a45e76d35808652d454b06498ea3bbbeed04a4"

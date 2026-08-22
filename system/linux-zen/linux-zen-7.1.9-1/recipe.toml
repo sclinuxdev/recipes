@@ -70,18 +70,20 @@ provides = [
     "virtual/kernel"
 ]
 
+# Patch steps stamp themselves (.stamp-*): `patch` exits non-zero even when
+# it skips already-applied hunks, which would kill every --reuse-src resume
+# on a patched tree. Stamped, fresh trees stay strict and resumed ones no-op.
 prepare = [
-    "zstd -dc distfiles/linux-v7.1.9-zen1.patch.zst > zen-patch.diff",
-    "patch -p1 --forward --batch < zen-patch.diff",
-    "patch -p1 --forward --batch < distfiles/cjktty-7.2.patch",
-    "cp -v distfiles/config.x86_64 .config",
-    "echo '-1' > localversion.10-pkgrel",
-    "echo '-zen' > localversion.20-pkgname",
-    "./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
+    "[ -e .stamp-zen ] || { zstd -dc distfiles/linux-v7.1.9-zen1.patch.zst > zen-patch.diff && patch -p1 --batch < zen-patch.diff && touch .stamp-zen; }",
+    "[ -e .stamp-cjktty ] || { patch -p1 --batch < distfiles/cjktty-7.2.patch && touch .stamp-cjktty; }",
+    # The config block is stamped too: rewriting .config flips its mtime and
+    # kbuild answers with a from-scratch rebuild, which is exactly what a
+    # resume must not pay for. Fresh trees run it; resumed ones skip it.
+    "[ -e .stamp-config ] || { cp distfiles/config.x86_64 .config && echo '-1' > localversion.10-pkgrel && echo '-zen' > localversion.20-pkgname && ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
     # LLVM=1 here too: config-time tool identity is recorded into .config
     # (CONFIG_CC_IS_CLANG, CONFIG_LD_IS_LLD); configuring with GNU ld and
     # building with lld would leave those lies behind.
-    "make LLVM=1 olddefconfig"
+    "make LLVM=1 olddefconfig && touch .stamp-config; }"
 ]
 
 # LLVM=1 drives the whole toolchain from the llvm:22 channel -- clang for
