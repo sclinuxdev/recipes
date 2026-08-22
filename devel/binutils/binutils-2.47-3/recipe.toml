@@ -3,10 +3,10 @@ schema_version = 1
 [package]
 name = "binutils"
 version = "2.47"
-release = "1"
+release = "3"
 description = "GNU binary utilities in gcc toolchain slot"
 license = "GPL-3.0-or-later"
-channel = "toolchain/gcc:15"
+channel = "toolchain/gcc:16"
 
 [source]
 url = "https://mirrors.kernel.org/gnu/binutils/binutils-2.47.tar.xz"
@@ -35,11 +35,11 @@ prepare = [
 build = [
     # gold was removed from the binutils tree (no gold/ in the 2.47 release
     # tarball); --enable-gold was inert and gmp was never linked.
-    "cd build && ../configure --prefix=/usr --sysconfdir=/etc --enable-plugins --enable-shared --disable-werror --enable-64-bit-bfd --with-system-zlib --enable-default-hash-style=gnu --without-debuginfod --disable-gprofng",
-    "cd build && make tooldir=/usr/x86_64-pc-linux-gnu"
+    "cd build && ../configure --prefix=/opt/channels/gcc/16 --sysconfdir=/etc --enable-plugins --enable-shared --disable-werror --enable-64-bit-bfd --with-system-zlib --enable-default-hash-style=gnu --without-debuginfod --disable-gprofng",
+    "cd build && make tooldir=/opt/channels/gcc/16/x86_64-pc-linux-gnu"
 ]
 
 install = [
-    "cd build && make tooldir=/usr/x86_64-pc-linux-gnu install DESTDIR=$DESTDIR",
-    "rm -fv $DESTDIR/usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a 2>/dev/null || true"
+    "cd build && make tooldir=/opt/channels/gcc/16/x86_64-pc-linux-gnu install DESTDIR=$DESTDIR",
+    "rm -fv $DESTDIR/opt/channels/gcc/16/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a 2>/dev/null || true"
 ]

@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "gcc-libs"
+version = "16.2.0"
+release = "1"
+description = "GCC runtime libraries (libstdc++, libgcc_s) in /usr/lib"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+channel = "system"
+
+dependencies = [
+]
+
+build_dependencies = [
+    "gcc >= 16.0"
+]
+
+provides = [
+    "gcc-libs",
+    "so:libstdc++.so.6",
+    "so:libgcc_s.so.1"
+]
+
+prepare = []
+
+build = []
+
+install = [
+    "GCC_PKG=\"$(ls -t ./gcc-*.pkg.tar.zst ../gcc/gcc-*.pkg.tar.zst /var/cache/sage/repo/gcc-*.pkg.tar.zst 2>/dev/null | head -n1)\"; [ -n \"$GCC_PKG\" ] || { echo 'ERROR: gcc package artifact not found - build recipes/gcc first' >&2; exit 1; }; X=\"$(mktemp -d)\"; tar --zstd -xf \"$GCC_PKG\" -C \"$X\" \"data/opt/channels/gcc/16/lib64\" 2>/dev/null || zstd -dc \"$GCC_PKG\" 2>/dev/null | tar -xf - -C \"$X\" \"data/opt/channels/gcc/16/lib64\"; if [ -n \"$(ls -A \"$X\"/data/opt/channels/gcc/16/lib64/ 2>/dev/null)\" ]; then mkdir -p \"$DESTDIR/usr/lib\"; cp -av \"$X\"/data/opt/channels/gcc/16/lib64/libstdc++.so* \"$DESTDIR/usr/lib/\"; cp -av \"$X\"/data/opt/channels/gcc/16/lib64/libgcc_s.so* \"$DESTDIR/usr/lib/\"; cp -av \"$X\"/data/opt/channels/gcc/16/lib64/libatomic.so* \"$DESTDIR/usr/lib/\" 2>/dev/null || true; cp -av \"$X\"/data/opt/channels/gcc/16/lib64/libgomp.so* \"$DESTDIR/usr/lib/\" 2>/dev/null || true; if [ -e \"$DESTDIR/usr/lib/libstdc++.so.6\" ]; then RC=0; else echo 'ERROR: libstdc++.so.6 missing after extraction' >&2; RC=1; fi; else echo 'ERROR: failed to extract GCC runtime libraries from gcc package' >&2; RC=1; fi; rm -rf \"$X\"; exit $RC"
+]
