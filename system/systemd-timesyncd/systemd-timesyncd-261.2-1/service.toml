@@ -1,0 +1,10 @@
+schema_version = 1
+
+# No after-list on purpose: the renderer's default "need net" is exactly
+# right for an SNTP client.
+[service]
+name = "systemd-timesyncd"
+description = "Network Time Synchronization daemon"
+exec_start = "/usr/lib/systemd/systemd-timesyncd"
+restart = "always"
+after = []
