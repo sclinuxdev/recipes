@@ -329,7 +329,9 @@ def main():
             for l in tail:
                 log(f"      | {l[:140]}")
             return False
-        art = find_fresh_archive(r["dir"], m, t0)
+        # Archives land where the chroot wrote them: the /mnt recipes mirror,
+        # not the host checkout this orchestrator iterates.
+        art = find_fresh_archive(ROOT / "recipes" / r["dir"].relative_to(RECIPES), m, t0)
         if not art:
             log(f"    FAIL: RC=0 but no fresh artifact for {m['name']} in {r['dir']}")
             return False
