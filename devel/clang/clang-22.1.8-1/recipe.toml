@@ -34,11 +34,16 @@ prepare = [
 ]
 
 build = [
-    "cmake -G Ninja -S clang -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/channels/llvm/22 -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' -DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm -DCLANG_LINK_CLANG_DYLIB=ON -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_DOCS=OFF -DCLANG_INCLUDE_BENCHMARKS=OFF -DGCC_INSTALL_PREFIX=/opt/channels/gcc/15 -DCLANG_DEFAULT_RTLIB=libgcc -DCLANG_DEFAULT_UNWINDLIB=libgcc && ninja -C build"
+    "cmake -G Ninja -S clang -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/channels/llvm/22 -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' -DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm -DCLANG_LINK_CLANG_DYLIB=ON -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_DOCS=OFF -DCLANG_INCLUDE_BENCHMARKS=OFF -DCLANG_DEFAULT_RTLIB=libgcc -DCLANG_DEFAULT_UNWINDLIB=libgcc && ninja -C build"
 ]
 
 install = [
     "DESTDIR=\"$DESTDIR\" ninja -C build install",
     "ln -sf clang \"$DESTDIR/opt/channels/llvm/22/bin/cc\"",
-    "ln -sf clang++ \"$DESTDIR/opt/channels/llvm/22/bin/c++\""
+    "ln -sf clang++ \"$DESTDIR/opt/channels/llvm/22/bin/c++\"",
+    # LLVM 22 removed GCC_INSTALL_PREFIX: point the driver at the gcc 15
+    # installation with a configuration file instead. One per invocation
+    # name -- the cc/c++ symlinks look for cc.cfg/c++.cfg, clang itself for
+    # clang.cfg, and clang++ for clang++.cfg. Same content everywhere.
+    "for n in clang clang++ cc c++; do printf '%s\\n' '--gcc-install-dir=/opt/channels/gcc/15/lib/gcc/x86_64-pc-linux-gnu/15.3.0' > \"$DESTDIR/opt/channels/llvm/22/bin/$n.cfg\"; done"
 ]
