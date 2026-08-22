@@ -37,5 +37,7 @@ build = [
 ]
 
 install = [
-    "make DESTDIR=$DESTDIR install"
+    # SBINDIR: upstream defaults to /sbin, a top-level entity path that the
+    # collapsed usr merge reserves -- ip and friends belong in /usr/bin.
+    "make DESTDIR=$DESTDIR SBINDIR=/usr/bin install"
 ]

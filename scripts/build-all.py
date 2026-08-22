@@ -152,6 +152,21 @@ def archive_name(m):
     return f"{m['name']}-{m['version']}-{m['release']}-x86_64.pkg.tar.zst"
 
 
+def find_repo_archive(m):
+    """Existing repo archive for this name-version, any release: a rebuild
+    auto-steps past the highest published release, so the artifact name
+    leads whatever the recipe directory declares."""
+    found = sorted(REPO_DIR.glob(f"{m['name']}-{m['version']}-*-x86_64.pkg.tar.zst"))
+    return found[-1] if found else None
+
+
+def find_fresh_archive(recipe_dir, m, not_before):
+    """Newest archive in the recipe dir written during this build."""
+    cands = [p for p in recipe_dir.glob(f"{m['name']}-{m['version']}-*-x86_64.pkg.tar.zst")
+             if p.stat().st_mtime >= not_before]
+    return max(cands, key=lambda p: p.stat().st_mtime) if cands else None
+
+
 def emit_toml(v):
     import json as _j
     if isinstance(v, str):
@@ -268,14 +283,22 @@ def main():
     todo = []
     for r in order:
         m = r["meta"]
-        aname = archive_name(m)
         if not args.force and m["name"] in state["built"]:
             log(f"  = {m['name']:<22} done in previous run, skipping")
             continue
-        if not args.force and (REPO_DIR / aname).exists():
-            log(f"  = {m['name']:<22} artifact exists ({aname}), skipping")
-            state["built"][m["name"]] = aname
-            continue
+        existing = find_repo_archive(m)
+        if not args.force and existing:
+            # An artifact only counts as done when its payload respects the
+            # collapsed usr merge -- pre-merge archives rebuild regardless.
+            try:
+                assert_usr_merged(existing, m["name"])
+            except Exception as e:
+                log(f"  ! {m['name']:<22} {existing.name} predates the usr merge, rebuilding")
+                log(f"      {e}")
+            else:
+                log(f"  = {m['name']:<22} artifact exists ({existing.name}), skipping")
+                state["built"][m["name"]] = existing.name
+                continue
         todo.append(r)
 
     log(f"\nPlan: {len(todo)} to build "
@@ -303,10 +326,11 @@ def main():
             for l in tail:
                 log(f"      | {l[:140]}")
             return False
-        art = r["dir"] / aname
-        if not art.exists():
-            log(f"    FAIL: RC=0 but artifact missing: {art}")
+        art = find_fresh_archive(r["dir"], m, t0)
+        if not art:
+            log(f"    FAIL: RC=0 but no fresh artifact for {m['name']} in {r['dir']}")
             return False
+        aname = art.name
         try:
             assert_usr_merged(art, m["name"])
         except Exception as e:
@@ -321,12 +345,13 @@ def main():
             inst = chroot(f"sage install {m['name']} 2>&1 | tail -2")
             log(f"    install: {inst.stdout.strip().splitlines()[-1:] or ''}")
         log(f"    OK in {mins:.1f}min -> {aname}")
-        return True
+        return aname
 
     failures = []
     for r in todo:
-        if build_one(r):
-            state["built"][r["meta"]["name"]] = archive_name(r["meta"])
+        done = build_one(r)
+        if done:
+            state["built"][r["meta"]["name"]] = done
             state["failed"].pop(r["meta"]["name"], None)
         else:
             failures.append(r)
@@ -339,8 +364,9 @@ def main():
         log(f"\nRetry round {rnd}/{args.retry_rounds}: {len(failures)} package(s)")
         still = []
         for r in failures:
-            if build_one(r):
-                state["built"][r["meta"]["name"]] = archive_name(r["meta"])
+            done = build_one(r)
+            if done:
+                state["built"][r["meta"]["name"]] = done
                 state["failed"].pop(r["meta"]["name"], None)
             else:
                 still.append(r)
