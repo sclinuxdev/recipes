@@ -78,11 +78,30 @@ prepare = [
     "echo '-1' > localversion.10-pkgrel",
     "echo '-zen' > localversion.20-pkgname",
     "./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST",
-    "make olddefconfig"
+    # LLVM=1 here too: config-time tool identity is recorded into .config
+    # (CONFIG_CC_IS_CLANG, CONFIG_LD_IS_LLD); configuring with GNU ld and
+    # building with lld would leave those lies behind.
+    "make LLVM=1 olddefconfig"
 ]
 
+# LLVM=1 drives the whole toolchain from the llvm:22 channel -- clang for
+# the kernel and host tools, ld.lld linking, llvm-ar/nm/objcopy/strip, and
+# the integrated assembler. The kernel ignores the global CFLAGS by design
+# (KBUILD_CFLAGS governs its own optimization), so nothing leaks in there.
+#
+# HOSTCFLAGS/HOSTLDFLAGS feed objtool: it links -lopcodes/-lbfd from the
+# binutils that rides along with the active gcc slot, and its DISAS code
+# paths #include <bfd.h> from that prefix's include/. `ld` on the profile
+# PATH is a symlink-farm entry, so readlink -f must pierce it before taking
+# dirname; and the whole thing is a shell-prefixed assignment because make's
+# immediate command-line expansion would eat $(dirname ...) as an unknown
+# make function. CPATH covers the one probe that invokes a bare $(HOSTCC)
+# with no flags at all (the dis-asm.h styled-API check): without it the
+# kernel's old-binutils compat shim collides with real binutils >= 2.39
+# headers. Kernel proper compiles with -nostdinc, so CPATH never leaks into
+# the kernel build itself; host tools just gain one extra search dir.
 build = [
-    "make -k KCFLAGS=\"-Wno-error\" all || make KCFLAGS=\"-Wno-error\" all"
+    "P=\"$(dirname $(readlink -f \"$(command -v ld)\"))\"; export P; HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 -k KCFLAGS=\"-Wno-error\" all || HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 KCFLAGS=\"-Wno-error\" all"
 ]
 
 install = [
