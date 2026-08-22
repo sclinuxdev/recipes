@@ -31,7 +31,12 @@ provides = [
     "sudo"
 ]
 
-prepare = []
+# OpenSSL 4 made ASN1_OCTET_STRING opaque; sudo 1.9.17p2 still reads
+# ->length directly in its TLS host checker. Route both reads through the
+# accessor the library has always provided.
+prepare = [
+    "sed -i 's/current_name->d\\.iPAddress->length/ASN1_STRING_length(current_name->d.iPAddress)/g' lib/iolog/hostcheck.c"
+]
 
 # --sbindir=/usr/bin keeps sudo out of /usr/sbin, which is a symlink under
 # merged-/usr. --with-secure-path is not a hardening extra: without it sudo
