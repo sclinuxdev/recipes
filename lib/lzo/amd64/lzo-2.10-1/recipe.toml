@@ -1,0 +1,30 @@
+schema_version = 2
+
+[package]
+name = "lzo"
+version = "2.10"
+release = "1"
+description = "LZO real-time data compression runtime library"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = []
+provides = [
+    "lzo",
+    "so:liblzo2.so.2"
+]
+
+[upstream]
+url = "https://www.oberhumer.com/opensource/lzo/download/"
+version_regex = 'lzo-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz"
+sha256 = "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--enable-shared",
+    "--disable-static"
+]

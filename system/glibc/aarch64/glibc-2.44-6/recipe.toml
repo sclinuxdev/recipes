@@ -1,0 +1,54 @@
+schema_version = 1
+
+[package]
+name = "glibc"
+version = "2.44"
+release = "6"
+arch = "aarch64"
+description = "GNU C Library runtime, loader and locale data"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.44.tar.xz"
+sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
+
+dependencies = []
+
+build_dependencies = []
+
+provides = [
+    "glibc",
+    "virtual/libc",
+    "so:libc.so.6",
+    "so:ld-linux-aarch64.so.1"
+]
+
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
+prepare = [
+    "mkdir -p build"
+]
+
+build = [
+    "cd build && ../configure --prefix=/usr --disable-profile --enable-kernel=4.19 --enable-stack-protector=strong --disable-nscd libc_cv_slibdir=/usr/lib",
+    "cd build && make"
+]
+
+install = [
+    "cd build && make install DESTDIR=$DESTDIR",
+    "mkdir -p $DESTDIR/usr/lib/locale",
+    "sed '/RTLDLIST/s@/usr@@g' -i $DESTDIR/usr/bin/ldd 2>/dev/null || true",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/*.a $DESTDIR/usr/lib/pkgconfig 2>/dev/null || true",
+    "rm -f $DESTDIR/usr/lib/libc.so $DESTDIR/usr/lib/libm.so $DESTDIR/usr/lib/libpthread.so $DESTDIR/usr/lib/librt.so $DESTDIR/usr/lib/libdl.so $DESTDIR/usr/lib/libutil.so $DESTDIR/usr/lib/libresolv.so",
+    "mkdir -p $DESTDIR/usr/bin",
+    "rm -f $DESTDIR/usr/bin/zdump $DESTDIR/usr/bin/zic $DESTDIR/usr/sbin/zdump $DESTDIR/usr/sbin/zic $DESTDIR/sbin/zdump $DESTDIR/sbin/zic",
+    "for tool in ldconfig sln; do [ ! -e $DESTDIR/sbin/$tool ] || mv $DESTDIR/sbin/$tool $DESTDIR/usr/bin/$tool; done",
+    "[ ! -e $DESTDIR/usr/sbin/iconvconfig ] || mv $DESTDIR/usr/sbin/iconvconfig $DESTDIR/usr/bin/iconvconfig",
+    "rm -rf $DESTDIR/sbin $DESTDIR/usr/sbin",
+    "[ -f $DESTDIR/usr/lib/libc.so.6 ] || { echo 'ERROR: glibc payload incomplete' >&2; exit 1; }",
+    "[ ! -e $DESTDIR/usr/bin/zic ] || { echo 'ERROR: glibc still ships tzcode tools' >&2; exit 1; }",
+]

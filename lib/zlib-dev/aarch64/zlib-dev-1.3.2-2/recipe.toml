@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "zlib-dev"
+version = "1.3.2"
+release = "2"
+description = "zlib headers, pkg-config and linker symlink"
+license = "Zlib"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://zlib.net/zlib-1.3.2.tar.gz"
+sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+
+dependencies = [
+    "zlib >= 1.3.2"
+]
+
+provides = [
+    "zlib-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type f -o -type l \\) -name '*.so.*' -delete 2>/dev/null || true"
+]

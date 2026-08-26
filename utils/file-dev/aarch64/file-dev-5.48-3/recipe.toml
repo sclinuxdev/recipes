@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "file-dev"
+version = "5.48"
+release = "3"
+arch = "aarch64"
+description = "libmagic headers, pkg-config and linker symlink"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+dependencies = [
+    "file-libs >= 5.48"
+]
+
+provides = [
+    "file-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
+    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }",
+]

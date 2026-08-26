@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "libinih-dev"
+version = "61"
+release = "1"
+description = "inih headers, pkg-config and linker symlink"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/benhoyt/inih/archive/refs/tags/r61.tar.gz"
+sha256 = "7caf26a2202a4ca689df3fe4175dfa74e0faa18fcca07331bba934fd0ecb8f12"
+
+dependencies = [
+    "libinih >= 61"
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2"
+]
+
+provides = [
+    "libinih-dev"
+]
+
+prepare = []
+
+build = [
+    "meson setup build --prefix=/usr --buildtype=release -Ddefault_library=shared -Ddistro_install=true",
+    "ninja -C build"
+]
+
+install = [
+    "DESTDIR=$DESTDIR ninja -C build install",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true"
+]

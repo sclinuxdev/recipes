@@ -1,0 +1,59 @@
+# util-linux -- essential system utilities.
+#
+# Supersedes Stage2/recipes/util-linux (release 2), which configured
+# --sbindir=/usr/sbin. /usr/sbin is a symlink to bin under merged-/usr, so
+# every tool that landed there -- fsck, mount, blkid -- wrote through the link
+# and became invisible to mkinitcpio, which forces PATH=/usr/bin:/bin. The
+# result was a silently incomplete initramfs.
+#
+# The empty sha256 the old recipe carried is also filled in here.
+
+schema_version = 1
+
+[package]
+name = "util-linux"
+version = "2.42.2"
+release = "8"
+arch = "aarch64"
+description = "Essential system utilities (mount, fdisk, sulogin, ...)"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-2.42.2.tar.xz"
+sha256 = "03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a"
+
+# sulogin links libcrypt and is the one login utility util-linux owns here:
+# shadow marks its own sulogin noinst, so without this nobody ships it.
+# login/su stay with shadow (util-linux's require PAM headers), and nologin is
+# disabled because shadow installs its own -- leaving both enabled would make
+# the two packages fight over the same paths.
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libxcrypt >= 4.5.2"
+]
+
+build_dependencies = [
+    "libxcrypt-dev >= 4.5.2"
+]
+
+provides = [
+    "util-linux"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --disable-static --without-python --without-systemd --disable-liblastlog2 --disable-pam-lastlog2 --disable-makeinstall-chown --without-bash-completion-dir --disable-login --disable-su --disable-nologin --docdir=/usr/share/doc/util-linux-2.42.2",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib/pkgconfig",
+    "rm -f $DESTDIR/usr/lib/libuuid.so* $DESTDIR/usr/lib/libblkid.so* $DESTDIR/usr/lib/libmount.so* $DESTDIR/usr/lib/libsmartcols.so* $DESTDIR/usr/lib/libfdisk.so* $DESTDIR/usr/lib/liblastlog2.so*",
+    "[ -d $DESTDIR/usr/sbin ] && cp -a $DESTDIR/usr/sbin/. $DESTDIR/usr/bin/ && rm -rf $DESTDIR/usr/sbin || true",
+    "rm -rf $DESTDIR/usr/lib",
+    "find $DESTDIR/usr/bin -type f 2>/dev/null | grep -q . || { echo 'ERROR: util-linux lost its binaries' >&2; exit 1; }",
+    "[ ! -e $DESTDIR/usr/lib ] || { echo 'ERROR: util-linux still ships library files' >&2; exit 1; }",
+]

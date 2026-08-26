@@ -1,0 +1,54 @@
+# device-mapper headers, pkg-config file and linker symlink.
+#
+# Split per CLAUDE.md §5 rule 2: device-mapper ships a CLI product (dmsetup)
+# alongside the library, so it is a three-way split -- except that the runtime
+# library and the tool come out of one build here, leaving `device-mapper`
+# (tool + SONAME) and `device-mapper-dev`.
+
+schema_version = 1
+
+[package]
+name = "device-mapper-dev"
+version = "2.03.42"
+release = "5"
+description = "libdevmapper headers and pkg-config data"
+license = "GPL-2.0-only AND LGPL-2.1-only"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
+
+dependencies = [
+    "device-mapper = 2.03.42-3"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44",
+    "util-linux-dev >= 2.42.2",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "device-mapper-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --libdir=/usr/lib --sysconfdir=/etc --localstatedir=/var --enable-pkgconfig --disable-selinux --with-default-dm-run-dir=/run",
+    "make device-mapper"
+]
+
+# Keep headers, the .pc file and the unversioned .so the linker follows;
+# everything the runtime package owns is dropped.
+install = [
+    "make -j1 install_device-mapper DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/run",
+    "find $DESTDIR/usr/lib -name 'libdevmapper.so.*' -delete",
+    "find $DESTDIR -name '*.la' -delete",
+    "test -f $DESTDIR/usr/include/libdevmapper.h || { echo 'ERROR: libdevmapper.h missing' >&2; exit 1; }",
+    "test -L $DESTDIR/usr/lib/libdevmapper.so || { echo 'ERROR: linker symlink missing' >&2; exit 1; }",
+    "test -f $DESTDIR/usr/lib/pkgconfig/devmapper.pc || { echo 'ERROR: devmapper.pc missing' >&2; exit 1; }",
+]

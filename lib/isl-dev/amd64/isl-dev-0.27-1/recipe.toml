@@ -1,0 +1,33 @@
+schema_version = 2
+
+[package]
+name = "isl-dev"
+version = "0.27"
+release = "1"
+description = "ISL headers, pkg-config and linker symlink"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "isl >= 0.27",
+    "gmp-dev >= 6.3.0"
+]
+
+provides = [
+    "isl-dev"
+]
+
+[upstream]
+url = "https://libisl.sourceforge.io/"
+version_regex = 'isl-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://libisl.sourceforge.io/isl-0.27.tar.xz"
+sha256 = "6d8babb59e7b672e8cb7870e874f3f7b813b6e00e6af3f8b04f7579965643d5c"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static"
+]

@@ -1,0 +1,55 @@
+# gptfdisk -- GPT 分区工具（gdisk、cgdisk、sgdisk、fixparts）。
+#
+# 从 sclinux 的 Stage1 迁入。镜像组装用 sgdisk 建 GPT 与 ESP 分区。
+#
+# prepare 去掉 ncursesw/ 前缀：本树的 ncurses 把宽字符头文件直接装在
+# /usr/include 下，没有 ncursesw 子目录。
+#
+# 上游 Makefile 不带 install 目标，逐个装。
+
+schema_version = 1
+
+[package]
+name = "gptfdisk"
+version = "1.0.10"
+release = "1"
+arch = "aarch64"
+description = "GUID Partition Table disk utilities"
+license = "GPL-2.0-only"
+channel = "system"
+
+[source]
+url = "https://downloads.sourceforge.net/project/gptfdisk/gptfdisk/1.0.10/gptfdisk-1.0.10.tar.gz"
+sha256 = "2abed61bc6d2b9ec498973c0440b8b804b7a72d7144069b5a9209b2ad693a282"
+
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "popt >= 1.19",
+    "util-linux-libs >= 2.42.2"
+]
+
+build_dependencies = [
+    "ncurses-dev >= 6.6",
+    "popt-dev >= 1.19",
+    "util-linux-dev >= 2.42.2",
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "gptfdisk",
+    "gdisk"
+]
+
+prepare = [
+    "sed -i '/^#include /s:ncursesw/::' gptcurses.cc"
+]
+
+build = [
+    "make"
+]
+
+install = [
+    "install -d $DESTDIR/usr/bin $DESTDIR/usr/share/man/man8",
+    "install -m755 gdisk cgdisk sgdisk fixparts $DESTDIR/usr/bin/",
+    "install -m644 gdisk.8 cgdisk.8 sgdisk.8 fixparts.8 $DESTDIR/usr/share/man/man8/"
+]

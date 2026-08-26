@@ -1,0 +1,39 @@
+schema_version = 2
+
+[package]
+name = "readline"
+version = "8.3"
+release = "1"
+description = "GNU Readline shared runtime library"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "ncurses-libs >= 6.6"
+]
+build_dependencies = [
+    "ncurses-dev >= 6.6"
+]
+provides = [
+    "readline",
+    "so:libreadline.so.8",
+    "so:libhistory.so.8"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/readline/"
+version_regex = 'readline-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/readline/readline-8.3.tar.gz"
+sha256 = "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static",
+    "--with-curses"
+]
+
+[build.variables]
+SHLIB_LIBS = "-lncursesw"

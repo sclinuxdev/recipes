@@ -1,0 +1,48 @@
+schema_version = 1
+
+[package]
+name = "ncurses-libs"
+version = "6.6"
+release = "1"
+description = "ncurses widechar shared runtime libraries"
+license = "MIT"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
+
+dependencies = [
+]
+
+provides = [
+    "ncurses-libs",
+    "so:libncursesw.so.6",
+    "so:libncurses.so.6",
+    "so:libtinfo.so.6",
+    "so:libtinfow.so.6",
+    "so:libformw.so.6",
+    "so:libmenuw.so.6",
+    "so:libpanelw.so.6"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig --with-progs --without-tests --without-manpages",
+    "make"
+]
+
+install = [
+    # tic regenerates terminfo during install and must run against the
+    # tree's own libncursesw -- the legacy system's copy lacks the new
+    # _nc_disable_period symbol.
+    "LD_LIBRARY_PATH=$SRCDIR/lib make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true",
+    "ln -sf libncursesw.so.6 $DESTDIR/usr/lib/libncurses.so.6",
+    "ln -sf libncursesw.so.6 $DESTDIR/usr/lib/libtinfo.so.6",
+    "ln -sf libncursesw.so.6 $DESTDIR/usr/lib/libtinfow.so.6"
+]

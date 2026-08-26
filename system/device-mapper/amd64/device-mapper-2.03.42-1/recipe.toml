@@ -1,0 +1,52 @@
+schema_version = 2
+
+[package]
+name = "device-mapper"
+version = "2.03.42"
+release = "1"
+description = "Device mapper userspace library and tool (from LVM2)"
+license = "LGPL-2.1-only"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "util-linux-libs >= 2.42.2"
+]
+build_dependencies = [
+    "glibc-dev >= 2.44",
+    "util-linux-dev >= 2.42.2",
+    "pkgconf >= 3.0.5"
+]
+# The SONAME is listed explicitly: sage's ELF scan derives so: provides from
+# what it finds, and this is the symbol xfsprogs resolves against.
+provides = [
+    "device-mapper",
+    "so:libdevmapper.so.1.02"
+]
+
+[upstream]
+url = "https://sourceware.org/ftp/lvm2/"
+version_regex = 'LVM2\.([0-9.]+)\.tgz'
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--bindir=/usr/bin",
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--sysconfdir=/etc",
+    "--localstatedir=/var",
+    "--enable-pkgconfig",
+    "--enable-dmeventd",
+    "--disable-selinux",
+    "--disable-static_link",
+    "--with-default-dm-run-dir=/run",
+    "--with-default-run-dir=/run/lvm",
+    "--with-default-locking-dir=/run/lock/lvm",
+    "--with-systemdsystemunitdir=/usr/lib/systemd/system"
+]
+build_targets = ["device-mapper"]
+install_targets = ["install_device-mapper"]

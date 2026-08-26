@@ -1,0 +1,41 @@
+schema_version = 2
+
+[package]
+name = "util-linux-dev"
+version = "2.42.2"
+release = "1"
+arch = "amd64"
+description = "util-linux library headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+dependencies = [
+    "util-linux-libs >= 2.42.2"
+]
+provides = [
+    "util-linux-dev"
+]
+
+[upstream]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/"
+version_regex = 'util-linux-dev-v?([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-2.42.2.tar.xz"
+sha256 = "03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--libdir=/usr/lib",
+    "--disable-static",
+    "--without-python",
+    "--without-systemd",
+    "--disable-liblastlog2",
+    "--disable-pam-lastlog2",
+    "--disable-all-programs",
+    "--enable-libmount",
+    "--enable-libuuid",
+    "--enable-libblkid",
+    "--enable-libsmartcols",
+    "--enable-libfdisk"
+]

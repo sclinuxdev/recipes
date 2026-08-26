@@ -1,0 +1,24 @@
+schema_version = 1
+
+[package]
+name = "systemd-udev-trigger"
+version = "261.2"
+release = "1"
+description = "Coldplug uevent trigger service for existing devices (oneshot)"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "any"
+
+dependencies = [
+    "systemd-udev >= 261.2",
+]
+
+provides = [
+    "systemd-udev-trigger",
+]
+
+prepare = []
+
+build = []
+
+install = []

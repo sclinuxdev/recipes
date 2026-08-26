@@ -1,0 +1,33 @@
+schema_version = 2
+
+[package]
+name = "libxcrypt"
+version = "4.5.2"
+release = "1"
+description = "Extended crypt runtime library (libcrypt.so.2)"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = []
+provides = [
+    "libxcrypt",
+    "so:libcrypt.so.2"
+]
+
+[upstream]
+url = "https://github.com/besser82/libxcrypt/tags"
+version_regex = 'v([0-9][0-9.]*)'
+
+[source]
+url = "https://github.com/besser82/libxcrypt/releases/download/v4.5.2/libxcrypt-4.5.2.tar.xz"
+sha256 = "71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--enable-hashes=strong,glibc",
+    "--enable-obsolete-api=no",
+    "--disable-static",
+    "--disable-failure-tokens",
+    "--disable-werror",
+]

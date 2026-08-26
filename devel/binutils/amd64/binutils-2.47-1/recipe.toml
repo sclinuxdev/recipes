@@ -1,0 +1,45 @@
+schema_version = 2
+
+[package]
+name = "binutils"
+version = "2.47"
+release = "1"
+description = "GNU binary utilities in gcc toolchain slot"
+license = "GPL-3.0-or-later"
+channel = "toolchain/gcc:16"
+arch = "amd64"
+dependencies = [
+    "zlib >= 1.3.2",
+    "zstd-libs >= 1.5.7",
+]
+build_dependencies = [
+    "zlib-dev >= 1.3.2",
+    "zstd-dev >= 1.5.7"
+]
+provides = [
+    "binutils",
+    "so:libbfd-2.47.so",
+    "so:libctf.so.0"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/binutils/"
+version_regex = 'binutils-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/binutils/binutils-2.47.tar.xz"
+sha256 = "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--sysconfdir=/etc",
+    "--enable-plugins",
+    "--enable-shared",
+    "--disable-werror",
+    "--enable-64-bit-bfd",
+    "--with-system-zlib",
+    "--enable-default-hash-style=gnu",
+    "--without-debuginfod",
+    "--disable-gprofng"
+]

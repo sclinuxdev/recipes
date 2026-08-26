@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "findutils"
+version = "4.11.0"
+release = "2"
+arch = "aarch64"
+description = "GNU find and xargs"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/findutils/findutils-4.11.0.tar.xz"
+sha256 = "bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd"
+
+dependencies = [
+]
+
+build_dependencies = []
+
+provides = [
+    "findutils"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --localstatedir=/var/lib/locate --disable-nls",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/share/info/dir"
+]

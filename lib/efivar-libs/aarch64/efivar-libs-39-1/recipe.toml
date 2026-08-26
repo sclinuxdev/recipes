@@ -1,0 +1,49 @@
+# efivar-libs -- 读写 UEFI 变量的运行库（libefivar、libefiboot）。
+#
+# 从 sclinux 的 Stage1 迁入。Stage1 把 CLI 与库打在一个包里；本树按「库 + 独立
+# CLI 产品」三分，运行库在此，CLI 见 system/efivar，头文件见 lib/efivar-dev。
+#
+# Stage1 版本带一个 target-runner 补丁：交叉构建时 Makefile 会执行刚编出来的
+# makeguids，而那是目标架构的 ELF，宿主跑不了。本树在目标系统里原生构建，
+# 该补丁不再需要。
+
+schema_version = 1
+
+[package]
+name = "efivar-libs"
+version = "39"
+release = "1"
+description = "UEFI variable manipulation runtime libraries"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz"
+sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
+
+dependencies = [
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "efivar-libs",
+    "so:libefivar.so.1",
+    "so:libefiboot.so.1"
+]
+
+prepare = []
+
+build = [
+    "make ERRORS='' ENABLE_DOCS=0"
+]
+
+install = [
+    "make ERRORS='' ENABLE_DOCS=0 DESTDIR=$DESTDIR libdir=/usr/lib bindir=/usr/bin mandir=/usr/share/man includedir=/usr/include install",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/include $DESTDIR/usr/share $DESTDIR/usr/lib/pkgconfig 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

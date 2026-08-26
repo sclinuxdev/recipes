@@ -1,0 +1,51 @@
+schema_version = 1
+
+[package]
+name = "kmod-libs"
+version = "34.2"
+release = "1"
+arch = "aarch64"
+description = "libkmod shared runtime library"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/kernel/kmod/kmod-34.2.tar.xz"
+sha256 = "5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54"
+
+dependencies = [
+    "xz-libs >= 5.8.3",
+    "zlib >= 1.3.2",
+    "zstd-libs >= 1.5.7",
+    "openssl-libs >= 4.0.1"
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5",
+    "openssl-dev >= 4.0.1",
+    "zlib-dev >= 1.3.2",
+    "xz-dev >= 5.8.3",
+    "zstd-dev >= 1.5.7"
+]
+
+provides = [
+    "kmod-libs",
+    "so:libkmod.so.2"
+]
+
+prepare = []
+
+build = [
+    "mkdir -p build",
+    "cd build && meson setup --prefix=/usr --buildtype=release -D manpages=false ..",
+    "cd build && ninja"
+]
+
+install = [
+    "cd build && DESTDIR=$DESTDIR ninja install",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

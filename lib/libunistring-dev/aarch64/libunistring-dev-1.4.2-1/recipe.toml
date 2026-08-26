@@ -1,0 +1,44 @@
+# libunistring-dev -- libunistring 的头文件与链接期符号链接。
+
+schema_version = 1
+
+[package]
+name = "libunistring-dev"
+version = "1.4.2"
+release = "1"
+description = "libunistring headers and linker symlink"
+license = "LGPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://ftp.gnu.org/gnu/libunistring/libunistring-1.4.2.tar.xz"
+sha256 = "5b46e74377ed7409c5b75e7a96f95377b095623b689d8522620927964a41499c"
+
+dependencies = [
+    "libunistring >= 1.4.2"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "libunistring-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --libdir=/usr/lib --disable-static",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/share/info/dir",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type f -o -type l \\) -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }"
+]

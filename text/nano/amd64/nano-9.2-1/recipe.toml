@@ -1,0 +1,37 @@
+schema_version = 2
+
+[package]
+name = "nano"
+version = "9.2"
+release = "1"
+arch = "amd64"
+description = "Pico editor clone"
+license = "GPL-3.0-or-later"
+channel = "system"
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "file-libs >= 5.48"
+]
+build_dependencies = [
+    "ncurses-dev >= 6.6",
+    "file-dev >= 5.48"
+]
+provides = [
+    "nano",
+    "editor"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/nano/"
+version_regex = 'nano-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/nano/nano-9.2.tar.xz"
+sha256 = "05ecb99247b782e8a5b3a25ed4101dd034b0236902f7449bc9795b717642f7e9"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--sysconfdir=/etc",
+    "--enable-utf8"
+]

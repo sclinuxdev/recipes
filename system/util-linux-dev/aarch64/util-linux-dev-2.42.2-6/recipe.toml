@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "util-linux-dev"
+version = "2.42.2"
+release = "6"
+arch = "aarch64"
+description = "util-linux library headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-2.42.2.tar.xz"
+sha256 = "03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a"
+
+dependencies = [
+    "util-linux-libs >= 2.42.2"
+]
+
+provides = [
+    "util-linux-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --libdir=/usr/lib --disable-static --without-python --without-systemd --disable-liblastlog2 --disable-pam-lastlog2 --disable-all-programs --enable-libmount --enable-libuuid --enable-libblkid --enable-libsmartcols --enable-libfdisk",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/bin $DESTDIR/sbin $DESTDIR/lib $DESTDIR/lib64 $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
+    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }",
+]

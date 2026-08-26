@@ -1,0 +1,67 @@
+# sclinux-boot -- initramfs 与 systemd-boot 的接线。
+#
+# 从 sclinux 的 Stage1 迁入。本包不含二进制，只有两个脚本与一份内核命令行：
+#
+#   /usr/bin/sclinux-update-boot            重建 initramfs 并同步 ESP
+#   /usr/lib/kernel/install.d/90-...install kernel-install 的钩子
+#   /etc/kernel/cmdline                     内核命令行
+#
+# 它 provide virtual/bootloader，并通过 [[capability_hooks]] 把
+# sclinux-update-boot 登记为该能力的实现。Sage 内置的 bootloader 触发器在内核
+# 或模块变动时通过这个能力间接调用它，配方本身不必知道路径。
+#
+# Stage1 那份用 @SC_SYSTEMD_BOOT_EFI@ / @SC_EFI_BOOT_NAME@ / @SC_KERNEL_CONSOLE@
+# 三个占位符由构建器按目标架构渲染。本树是单架构的，直接写死 AArch64 的值：
+#   systemd-bootaa64.efi / BOOTAA64.EFI / ttyAMA0,115200
+#
+# 卷组名与 ESP 挂载点必须与 docs/INSTALLATION.md 的磁盘布局一致：
+# root=/dev/mapper/vg0-root，ESP 挂在 /boot/efi。
+
+schema_version = 1
+
+[package]
+name = "sclinux-boot"
+version = "1.0.0"
+release = "6"
+description = "ShenChen Linux initramfs and systemd-boot integration"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+dependencies = [
+    "coreutils >= 9.11",
+    "findutils >= 4.11.0",
+    "virtual/kernel",
+    "lvm2 >= 2.03.42",
+    "mkinitcpio >= 41.1",
+    "systemd >= 261.2",
+    "util-linux >= 2.42.2",
+    "xfsprogs >= 7.1.1"
+]
+
+provides = [
+    "sclinux-boot",
+    "virtual/bootloader"
+]
+
+conffiles = [
+    "/etc/kernel/cmdline"
+]
+
+prepare = []
+
+build = []
+
+install = [
+    "install -Dm755 $RECIPE_DIR/sclinux-update-boot.in $DESTDIR/usr/bin/sclinux-update-boot",
+    "sed -i -e 's/@SYSTEMD_BOOT_EFI@/systemd-bootaa64.efi/g' -e 's/@EFI_BOOT_NAME@/BOOTAA64.EFI/g' $DESTDIR/usr/bin/sclinux-update-boot",
+    "! grep -q '@[A-Z_]*@' $DESTDIR/usr/bin/sclinux-update-boot || { echo 'ERROR: unresolved placeholder in sclinux-update-boot' >&2; exit 1; }",
+    "install -Dm755 $RECIPE_DIR/90-sclinux-boot.install $DESTDIR/usr/lib/kernel/install.d/90-sclinux-boot.install",
+    "install -d $DESTDIR/etc/kernel",
+    "printf 'root=/dev/mapper/vg0-root rd.lvm.lv=vg0/root rw rootfstype=xfs console=tty0 console=ttyAMA0,115200\n' > $DESTDIR/etc/kernel/cmdline"
+]
+
+[[capability_hooks]]
+capability = "virtual/bootloader"
+exec = "/usr/bin/sclinux-update-boot"
+args = []

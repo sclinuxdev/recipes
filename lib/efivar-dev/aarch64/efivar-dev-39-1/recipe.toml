@@ -1,0 +1,43 @@
+# efivar-dev -- efivar 的头文件、pkg-config 与链接期符号链接。
+# efibootmgr 依赖它构建。
+
+schema_version = 1
+
+[package]
+name = "efivar-dev"
+version = "39"
+release = "1"
+description = "efivar headers, pkg-config and linker symlinks"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz"
+sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
+
+dependencies = [
+    "efivar-libs >= 39"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "efivar-dev"
+]
+
+prepare = []
+
+build = [
+    "make ERRORS='' ENABLE_DOCS=0"
+]
+
+install = [
+    "make ERRORS='' ENABLE_DOCS=0 DESTDIR=$DESTDIR libdir=/usr/lib bindir=/usr/bin mandir=/usr/share/man includedir=/usr/include install",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type f -o -type l \\) -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }"
+]

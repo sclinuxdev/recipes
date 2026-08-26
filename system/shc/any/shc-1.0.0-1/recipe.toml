@@ -1,0 +1,39 @@
+# shc -- Sage 的简写前端，装为 /usr/bin/shc。
+#
+# 从 sclinux 的 packages/shc 迁入。那边的 install 引用
+# $RECIPE_DIR/../../scripts/shc，指向 sclinux 仓库自己的 scripts/ 目录；本树没有
+# 那个目录，脚本随配方一起放在这里。
+#
+# 纯 shell 脚本，与架构无关：arch = "any" 让它产出
+# shc-1.0.0-1-any.pkg.tar.zst，换架构不必重新打包。
+#
+# 没有 [source] 段，sage build 会跳过 fetch 与解包，直接以配方目录为工作目录
+# 执行下面的 install。
+
+schema_version = 1
+
+[package]
+name = "shc"
+version = "1.0.0"
+release = "1"
+description = "ShenChen Linux shorthand front-end for the Sage package manager"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "any"
+
+dependencies = [
+    "sage"
+]
+
+provides = [
+    "shc"
+]
+
+prepare = []
+
+build = []
+
+install = [
+    "mkdir -p $DESTDIR/usr/bin",
+    "install -m755 $RECIPE_DIR/shc $DESTDIR/usr/bin/shc"
+]

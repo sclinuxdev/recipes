@@ -1,0 +1,44 @@
+# libaio-dev -- libaio 的头文件与链接期符号链接。
+
+schema_version = 1
+
+[package]
+name = "libaio-dev"
+version = "0.3.113"
+release = "1"
+description = "libaio headers and linker symlink"
+license = "LGPL-2.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://sources.buildroot.net/libaio/libaio-0.3.113.tar.gz"
+sha256 = "2c44d1c5fd0d43752287c9ae1eb9c023f04ef848ea8d4aafa46e9aedb678200b"
+
+dependencies = [
+    "libaio >= 0.3.113"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "libaio-dev"
+]
+
+prepare = [
+    "sed -i 's/-Werror//' harness/Makefile"
+]
+
+build = [
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type f -o -type l \\) -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }"
+]

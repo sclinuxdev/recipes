@@ -1,0 +1,91 @@
+schema_version = 1
+
+[package]
+name = "linux-aarch64"
+version = "7.2"
+release = "1"
+arch = "aarch64"
+description = "Mainline Linux kernel for AArch64 multi-platform systems"
+license = "GPL-2.0-only"
+channel = "system"
+
+dependencies = [
+    "kmod >= 34.2",
+    "virtual/initramfs-generator",
+]
+
+build_dependencies = [
+    "bc >= 7.0.3",
+    "bison >= 3.8.2",
+    "flex >= 2.6.4",
+    "libelf-dev >= 0.196",
+    "openssl-dev >= 4.0.1",
+    "patch >= 2.8",
+    "perl >= 5.44.0",
+    "python >= 3.14.7",
+    "tar >= 1.35",
+    "xz >= 5.8.3",
+    "zlib-dev >= 1.3.2",
+    "zstd >= 1.5.7",
+    "llvm >= 22.1.8",
+    "clang >= 22.1.8",
+    "lld >= 22.1.8",
+]
+
+provides = [
+    "linux-aarch64",
+    "linux",
+    "virtual/linux",
+    "virtual/kernel",
+]
+
+# The base config and five platform patches are pinned to Arch Linux ARM's
+# linux-aarch64 packaging commit c1ded2d2. SCLinux adds only its boot contract:
+# XFS-on-LVM, virtio, early graphical console, no compat userspace, and CJK VT.
+[build]
+ldflags = ""
+prepare = [
+    "[ -e .stamp-alarm ] || { for p in distfiles/000[1-5]-*.patch; do patch -p1 --batch < \"$p\"; done && touch .stamp-alarm; }",
+    "[ -e .stamp-cjktty ] || { patch -p1 --batch < distfiles/cjktty-7.2.patch && touch .stamp-cjktty; }",
+    "CONFIG_STAMP=$(sha256sum \"$RECIPE_DIR/recipe.toml\" | cut -d' ' -f1); [ \"$(cat .stamp-config 2>/dev/null)\" = \"$CONFIG_STAMP\" ] || { cp distfiles/config .config && echo '-1' > localversion.10-pkgrel && echo '-aarch64' > localversion.20-pkgname && ./scripts/config --set-str DEFAULT_HOSTNAME sclinux --enable VT --enable VT_CONSOLE --enable CONSOLE_TRANSLATIONS --enable DRM --enable DRM_KMS_HELPER --enable DRM_FBDEV_EMULATION --enable DRM_VIRTIO_GPU --enable DRM_SIMPLEDRM --enable SYSFB --enable SYSFB_SIMPLEFB --enable FB --enable FB_EFI --enable FB_SIMPLE --enable FRAMEBUFFER_CONSOLE --enable FRAMEBUFFER_CONSOLE_DETECT_PRIMARY --enable VIRTIO --enable VIRTIO_PCI --enable VIRTIO_MMIO --module XFS_FS --module BLK_DEV_DM --module DM_THIN_PROVISIONING --disable COMPAT --disable LTO --disable LTO_CLANG --disable LTO_CLANG_THIN --enable LTO_NONE --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST && make LLVM=1 olddefconfig && printf '%s\n' \"$CONFIG_STAMP\" > .stamp-config; }",
+]
+
+build = [
+    "P=\"$(dirname $(readlink -f \"$(command -v ld)\"))\"; export P; HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 KCFLAGS=\"-Wno-error -O3 -march=armv8-a\" Image Image.gz modules dtbs",
+]
+
+install = [
+    "set -e; KVER=$(make -s kernelrelease); echo \"Installing kernel release: $KVER\"; mkdir -p $DESTDIR/boot $DESTDIR/usr/lib/modules; make INSTALL_MOD_PATH=$DESTDIR modules_install; if [ -d $DESTDIR/lib/modules ] && [ ! -L $DESTDIR/lib ]; then cp -a $DESTDIR/lib/modules $DESTDIR/usr/lib/ && rm -rf $DESTDIR/lib; fi; rm -f $DESTDIR/usr/lib/modules/$KVER/build $DESTDIR/usr/lib/modules/$KVER/source; install -Dm644 arch/arm64/boot/Image $DESTDIR/boot/vmlinuz-$KVER; install -Dm644 arch/arm64/boot/Image.gz $DESTDIR/boot/Image.gz-$KVER; install -Dm644 System.map $DESTDIR/boot/System.map-$KVER; install -Dm644 .config $DESTDIR/boot/config-$KVER; install -Dm644 arch/arm64/boot/Image $DESTDIR/usr/lib/modules/$KVER/vmlinuz; make INSTALL_DTBS_PATH=$DESTDIR/boot/dtbs/$KVER dtbs_install; install -d $DESTDIR/etc/mkinitcpio.d; PRESET=$DESTDIR/etc/mkinitcpio.d/linux-aarch64-$KVER.preset; printf '%s\n' '# mkinitcpio preset for linux-aarch64' 'ALL_config=\"/etc/mkinitcpio.conf\"' \"ALL_kver=/boot/vmlinuz-$KVER\" \"PRESETS=('default' 'fallback')\" \"default_image=/boot/initramfs-$KVER.img\" \"fallback_image=/boot/initramfs-$KVER-fallback.img\" 'fallback_options=\"-S autodetect\"' > \"$PRESET\"; test -s $DESTDIR/boot/vmlinuz-$KVER; test -d $DESTDIR/boot/dtbs/$KVER; grep -q ALL_kver \"$PRESET\"",
+]
+
+[[source]]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.tar.xz"
+sha256 = "f9fef3d14c0df53819026f4be74459835c2a0b0dcbf5b5bbd9ea19f0829402b3"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/0001-arm64-dts-rockchip-disable-pwm0-on-rk3399-firefly.patch"
+sha256 = "3cc4e31aef52c091b86609f2750069cad44a089c3b9228585d2375b72967d076"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/0002-pps-Compatibility-hack-should-be-X86-specific.patch"
+sha256 = "b0ac7e7828601b034c5f82cf5d0bf7a0fdc67fc79644fc4ebd2ac20c167c13a7"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/0003-Revert-arm64-dts-rockchip-Move-rk3568-PCIe3-MSI-to-u.patch"
+sha256 = "9b7bbd201e08602a829fb1293541764863dddcc4f046e5befd801a9af78ca9e9"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/0004-serial-amba-pl011-add-arm-pl011-axi-binding-for-RP1.patch"
+sha256 = "ca9adf0aed11a8b2372998477cc9e91ea3564cef7066d6ddc4fd0007dbe5d4e5"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/0005-arm64-dts-rpi5-add-RP1-UART0-GPIO14-15-console.patch"
+sha256 = "9884639546f2d7612518ba8e4d0b01ca2c5f919370059f2c71542a7adc031901"
+
+[[source]]
+url = "https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/c1ded2d2fabcabd8bbb6d748ab29fba2c27dee7f/core/linux-aarch64/config"
+sha256 = "6760467a62a492ef1b75c55216f957a33e83a2b3adbe2339d9a56f15607e8bf4"
+
+[[source]]
+url = "https://raw.githubusercontent.com/bigshans/cjktty-patches/master/v7.x/cjktty-7.2.patch"
+sha256 = "252c69ec48019660dce565c45e287626793f84939cec249d62644a11ea9842a8"

@@ -1,0 +1,35 @@
+schema_version = 2
+
+[package]
+name = "libinih"
+version = "61"
+release = "1"
+description = "inih INI file parser runtime library"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+dependencies = [
+]
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2"
+]
+provides = [
+    "libinih",
+    "so:libinih.so.0"
+]
+
+[upstream]
+url = "https://github.com/benhoyt/inih/tags"
+version_regex = 'r(\d+)'
+
+[source]
+url = "https://github.com/benhoyt/inih/archive/refs/tags/r61.tar.gz"
+sha256 = "7caf26a2202a4ca689df3fe4175dfa74e0faa18fcca07331bba934fd0ecb8f12"
+
+[build]
+system = "meson"
+configure_options = [
+    "-Ddefault_library=shared",
+    "-Ddistro_install=true",
+]

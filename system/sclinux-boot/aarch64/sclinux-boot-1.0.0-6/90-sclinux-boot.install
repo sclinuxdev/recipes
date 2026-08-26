@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+command_name=$1
+kernel_version=$2
+esp=${SCLINUX_ESP:-/boot/efi}
+
+case $command_name in
+    add)
+        exec /usr/bin/sclinux-update-boot "$kernel_version"
+        ;;
+    remove)
+        rm -f \
+            "$esp/EFI/sclinux/vmlinuz-$kernel_version" \
+            "$esp/EFI/sclinux/initramfs-$kernel_version.img" \
+            "/boot/initramfs-$kernel_version.img" \
+            "/boot/initramfs-$kernel_version-fallback.img"
+        ;;
+esac

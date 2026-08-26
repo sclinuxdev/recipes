@@ -1,0 +1,37 @@
+schema_version = 2
+
+[package]
+name = "ncurses"
+version = "6.6"
+release = "1"
+description = "ncurses terminal programs (clear, tic, infocmp, tput, toe, tabs)"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "ncurses-terminfo >= 6.6"
+]
+provides = [
+    "ncurses"
+]
+
+[upstream]
+url = "https://invisible-island.net/archives/ncurses/"
+version_regex = 'ncurses-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--mandir=/usr/share/man",
+    "--with-shared",
+    "--without-debug",
+    "--without-ada",
+    "--enable-widec",
+    "--enable-pc-files",
+    "--with-pkg-config-libdir=/usr/lib/pkgconfig",
+]

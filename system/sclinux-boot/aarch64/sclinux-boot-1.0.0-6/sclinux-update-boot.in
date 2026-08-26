@@ -1,0 +1,55 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+esp=${SCLINUX_ESP:-/boot/efi}
+cmdline_file=${SCLINUX_KERNEL_CMDLINE:-/etc/kernel/cmdline}
+kernel_version=${1:-}
+
+if [[ -z $kernel_version ]]; then
+    mapfile -t kernel_versions < <(
+        find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V
+    )
+    ((${#kernel_versions[@]} > 0)) || {
+        echo "error: no installed kernel modules found" >&2
+        exit 1
+    }
+    kernel_version=${kernel_versions[-1]}
+fi
+
+bootloader=/usr/lib/systemd/boot/efi/@SYSTEMD_BOOT_EFI@
+kernel=/usr/lib/modules/$kernel_version/vmlinuz
+initramfs=/boot/initramfs-$kernel_version.img
+
+for required in "$bootloader" "$kernel" "$cmdline_file"; do
+    [[ -f $required ]] || {
+        echo "error: required boot file is missing: $required" >&2
+        exit 1
+    }
+done
+
+mountpoint -q "$esp" || {
+    echo "error: EFI system partition is not mounted at $esp" >&2
+    exit 1
+}
+
+mkinitcpio -k "$kernel_version" -g "$initramfs"
+
+install -Dm644 "$bootloader" "$esp/EFI/BOOT/@EFI_BOOT_NAME@"
+install -Dm644 "$kernel" "$esp/EFI/sclinux/vmlinuz-$kernel_version"
+install -Dm644 "$initramfs" "$esp/EFI/sclinux/initramfs-$kernel_version.img"
+
+install -d "$esp/loader/entries"
+printf '%s\n' \
+    'default sclinux' \
+    'timeout 1' \
+    'console-mode keep' \
+    'editor no' \
+    >"$esp/loader/loader.conf"
+
+kernel_options=$(tr '\n' ' ' <"$cmdline_file")
+printf '%s\n' \
+    'title ShenChen Linux' \
+    "linux /EFI/sclinux/vmlinuz-$kernel_version" \
+    "initrd /EFI/sclinux/initramfs-$kernel_version.img" \
+    "options $kernel_options" \
+    >"$esp/loader/entries/sclinux.conf"

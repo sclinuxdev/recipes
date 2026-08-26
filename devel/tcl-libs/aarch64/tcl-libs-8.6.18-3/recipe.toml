@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "tcl-libs"
+version = "8.6.18"
+release = "3"
+description = "Tcl shared runtime library"
+license = "TCL"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.18/tcl8.6.18-src.tar.gz"
+sha256 = "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e"
+
+dependencies = [
+    "zlib >= 1.3.2"
+]
+
+build_dependencies = [
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "tcl-libs",
+    "so:libtcl8.6.so"
+]
+
+prepare = [
+]
+
+build = [
+    "cd unix && ./configure --prefix=/usr --mandir=/usr/share/man",
+    "cd unix && make"
+]
+
+# Tcl ships its runtime as an unversioned libtcl8.6.so (there is no
+# libtcl8.6.so.N), so unlike the other -libs splits the unversioned .so must
+# NOT be deleted here -- deleting it used to force this recipe to scavenge the
+# library back out of a tcl-dev payload. tclConfig.sh / tclooConfig.sh stay
+# dev-only and are removed.
+install = [
+    "cd unix && make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "rm -f $DESTDIR/usr/lib/tclConfig.sh $DESTDIR/usr/lib/tclooConfig.sh",
+    "[ -f $DESTDIR/usr/lib/libtcl8.6.so ] && [ -d $DESTDIR/usr/lib/tcl8.6 ] || { echo 'ERROR: tcl-libs payload incomplete' >&2; exit 1; }",
+    "[ ! -e $DESTDIR/usr/lib/tclConfig.sh ] || { echo 'ERROR: tcl-libs still ships dev config' >&2; exit 1; }"
+]

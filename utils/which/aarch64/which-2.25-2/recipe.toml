@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "which"
+version = "2.25"
+release = "2"
+arch = "aarch64"
+description = "GNU which"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://ftp.gnu.org/gnu/which/which-2.25.tar.gz"
+sha256 = "1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea"
+
+dependencies = [
+]
+
+build_dependencies = []
+
+provides = [
+    "which"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/share/info/dir"
+]

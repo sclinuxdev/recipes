@@ -1,0 +1,19 @@
+schema_version = 2
+
+# One-shot coldplug: synthesize uevents for devices that already existed when
+# udevd started (devtmpfs created their nodes, but udev never saw the events).
+# Runs once per boot after the daemon reports readiness; never restarts.
+# The shell is explicit argv, not an implicit wrapper, because coldplug needs
+# two udevadm invocations and udevadm has no "all" trigger type.
+[service]
+name = "systemd-udev-trigger"
+description = "udev coldplug event trigger for existing devices"
+command = [
+    "/usr/bin/sh",
+    "-c",
+    "/usr/bin/udevadm trigger --type=subsystems --action=add && /usr/bin/udevadm trigger --type=devices --action=add",
+]
+type = "oneshot"
+readiness = "exec"
+restart = "no"
+after = ["systemd-udevd"]

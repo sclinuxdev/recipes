@@ -1,0 +1,74 @@
+schema_version = 2
+
+[package]
+name = "systemd-dev"
+version = "261.2"
+release = "1"
+arch = "amd64"
+description = "systemd/udev headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+dependencies = [
+    "systemd-libs >= 261.2"
+]
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "python >= 3.14.7",
+    "jinja2 >= 3.1.6",
+    "markupsafe >= 3.0.3",
+    "gperf >= 3.3",
+    "gettext >= 1.0",
+    "kmod-dev >= 34.2",
+    "util-linux-dev >= 2.42.2",
+    "openssl-dev >= 4.0.1",
+    "pkgconf >= 3.0.5",
+    "libcap-dev >= 2.78",
+    "pcre2-dev >= 10.47",
+    "libseccomp-dev >= 2.6.0",
+    "acl-dev >= 2.4.0",
+    "libxcrypt-dev >= 4.5.2"
+]
+provides = [
+    "systemd-dev"
+]
+
+[upstream]
+url = "https://github.com/systemd/systemd/tags"
+version_regex = 'v(\d+(?:\.\d+)+)'
+
+[source]
+url = "https://github.com/systemd/systemd/archive/refs/tags/v261.2.tar.gz"
+sha256 = "ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec"
+
+[build]
+system = "meson"
+configure_options = [
+    "-Ddefault-dnssec=no",
+    "-Dfirstboot=false",
+    "-Dinstall-tests=false",
+    "-Dldconfig=false",
+    "-Dsysusers=false",
+    "-Drpmmacrosdir=no",
+    "-Dhomed=disabled",
+    "-Dman=disabled",
+    "-Dmode=release",
+    "-Dpamconfdir=no",
+    "-Ddev-kvm-mode=0660",
+    "-Dnobody-group=nogroup",
+    "-Dsysupdate=disabled",
+    "-Dukify=disabled",
+    "-Ddocdir=/usr/share/doc/systemd-261.2",
+    "-Dtranslations=false",
+]
+
+# core system software: pinned to gcc (v2 package default)
+[build.toolchain.compiler]
+family = "gcc"
+package = "gcc"
+minimum_version = "15.1"
+
+[build.toolchain.linker]
+family = "ld"
+package = "binutils"
+minimum_version = "2.40"

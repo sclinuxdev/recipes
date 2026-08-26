@@ -1,0 +1,66 @@
+#!/bin/sh
+# shc -- ShenChen Linux shorthand front-end for the Sage package manager.
+#
+# Installed as /usr/bin/shc. Expands ShenChen Linux's short command aliases
+# and then execs the real `sage` binary. Anything that is not an alias is
+# passed through untouched, so `shc <anything> ...` behaves exactly like
+# `sage <anything> ...`.
+#
+# The aliases deliberately live here rather than upstream: `sage` is a
+# general-purpose package manager and carries no distro-specific shorthand.
+# See https://github.com/antinomie1/sage
+#
+# Set SAGE_BIN to point at a sage binary other than /usr/bin/sage.
+
+set -eu
+
+SAGE="${SAGE_BIN:-/usr/bin/sage}"
+
+if [ "$#" -eq 0 ]; then
+    exec "$SAGE"
+fi
+
+# Global options may precede the subcommand (`shc --verbose in foo`), and
+# --root/--sysroot take a value, so we cannot simply inspect $1. Walk the
+# argument list, rotating each element to the back, and expand only the
+# first element that is a subcommand rather than an option or option value.
+expanded=0
+skip_value=0
+argc=$#
+
+while [ "$argc" -gt 0 ]; do
+    arg="$1"
+    shift
+
+    if [ "$skip_value" -eq 1 ]; then
+        skip_value=0
+    elif [ "$expanded" -eq 0 ]; then
+        case "$arg" in
+            --root|--sysroot)
+                skip_value=1
+                ;;
+            -*)
+                : # a global option, keep looking for the subcommand
+                ;;
+            *)
+                expanded=1
+                case "$arg" in
+                    in) arg=install   ;;
+                    rm) arg=remove    ;;
+                    rb) arg=rebuild   ;;
+                    q)  arg=query     ;;
+                    b)  arg=build     ;;
+                    ch) arg=channel   ;;
+                    sv) arg=service   ;;
+                    tc) arg=toolchain ;;
+                    st) arg=status    ;;
+                esac
+                ;;
+        esac
+    fi
+
+    set -- "$@" "$arg"
+    argc=$((argc - 1))
+done
+
+exec "$SAGE" "$@"

@@ -1,0 +1,33 @@
+schema_version = 2
+
+[package]
+name = "popt"
+version = "1.19"
+release = "1"
+description = "Command-line option parser library"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+dependencies = []
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+provides = [
+    "popt",
+    "so:libpopt.so.0"
+]
+
+[upstream]
+url = "https://ftp.osuosl.org/pub/rpm/popt/releases/popt-1.x/"
+version_regex = 'popt-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://ftp.osuosl.org/pub/rpm/popt/releases/popt-1.x/popt-1.19.tar.gz"
+sha256 = "c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--libdir=/usr/lib",
+    "--disable-static",
+]

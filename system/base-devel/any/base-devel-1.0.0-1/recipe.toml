@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "base-devel"
+version = "1.0.0"
+release = "1"
+description = "sclinux Build Environment (toolchain and autotools meta-package)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "any"
+
+dependencies = [
+    "base >= 1.0.0",
+    "virtual/linux-headers",
+    "glibc-dev >= 2.44",
+    "binutils >= 2.47",
+    "gcc >= 15.3.0",
+    "make >= 4.4.1",
+    "pkgconf >= 3.0.5",
+    "patch >= 2.8",
+    "m4 >= 1.4.21",
+    "autoconf >= 2.73",
+    "automake >= 1.18.1",
+    "libtool >= 2.6.2",
+    "flex >= 2.6.4",
+    "bison >= 3.8.2",
+    "gperf >= 3.3",
+    "texinfo >= 7.3",
+    "which >= 2.25",
+    "xmake >= 3.1.0",
+]
+
+provides = [
+    "base-devel"
+]
+
+prepare = []
+
+build = []
+
+install = []

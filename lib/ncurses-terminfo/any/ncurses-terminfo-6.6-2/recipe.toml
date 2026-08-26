@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "ncurses-terminfo"
+version = "6.6"
+release = "2"
+description = "Terminal terminfo database"
+license = "MIT"
+channel = "system"
+arch = "any"
+
+[source]
+url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
+
+dependencies = []
+
+provides = [
+    "ncurses-terminfo"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --mandir=/usr/share/man --with-shared --without-debug --without-ada --enable-widec --enable-pc-files --with-pkg-config-libdir=/usr/lib/pkgconfig",
+    "make"
+]
+
+install = [
+# tic regenerates terminfo during install and must run against the
+# tree's own libncursesw -- the legacy system's copy lacks the new
+# _nc_disable_period symbol.
+    "LD_LIBRARY_PATH=$SRCDIR/lib make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/lib $DESTDIR/usr/include $DESTDIR/usr/share/man $DESTDIR/usr/share/tabset $DESTDIR/usr/share/doc $DESTDIR/usr/share/pkgconfig $DESTDIR/usr/lib/pkgconfig"
+]

@@ -1,0 +1,36 @@
+--- a/install/lvm2
++++ b/install/lvm2
+@@ -17,4 +17,8 @@ build() {
+-    add_binary 'pdata_tools'
+-    while IFS='' read -r -d '' symlink; do
+-        add_symlink "$symlink"
+-    done < <(LC_ALL=C.UTF-8 find -L /usr/bin/ -samefile "$(type -P pdata_tools)" -xtype l -print0)
++    if command -v pdata_tools &>/dev/null; then
++        add_binary 'pdata_tools'
++        while IFS='' read -r -d '' symlink; do
++            add_symlink "$symlink"
++        done < <(LC_ALL=C.UTF-8 find -L /usr/bin/ -samefile "$(type -P pdata_tools)" -xtype l -print0)
++    fi
++
++    map add_binary lvm dmsetup
+--- a/install/fsck
++++ b/install/fsck
+@@ -18,6 +18,7 @@ build() {
+                 fi
+                 ;;
+             xfs)
++                add_binary sh
+                 add_binary fsck.xfs
+                 add_binary xfs_repair
+                 ;;
+--- a/install/sd-shutdown
++++ b/install/sd-shutdown
+@@ -3,7 +3,7 @@
+ 
+ build() {
+     # TODO: should be pulled inn by .notes.dlopen in the future
+-    add_binary /usr/lib/libmount.so
++    add_binary /usr/lib/libmount.so.1
+     add_binary /usr/lib/systemd/systemd-shutdown /shutdown
+ 
+     if type -P kexec >/dev/null; then

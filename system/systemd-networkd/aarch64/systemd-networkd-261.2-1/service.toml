@@ -1,0 +1,8 @@
+schema_version = 2
+
+[service]
+name = "systemd-networkd"
+description = "Network configuration daemon"
+command = ["/usr/lib/systemd/systemd-networkd"]
+restart = "always"
+after = ["systemd-udevd"]

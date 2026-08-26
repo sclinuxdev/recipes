@@ -1,0 +1,31 @@
+schema_version = 2
+
+[package]
+name = "tcl-dev"
+version = "8.6.18"
+release = "1"
+description = "Tcl headers, pkg-config and libtcl.so symlink"
+license = "TCL"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "tcl-libs >= 8.6.18"
+]
+provides = [
+    "tcl-dev"
+]
+
+[upstream]
+url = "https://sourceforge.net/projects/tcl/files/Tcl/"
+version_regex = '([0-9]+\.[0-9]+\.[0-9]+)/'
+
+[source]
+url = "https://downloads.sourceforge.net/project/tcl/Tcl/8.6.18/tcl8.6.18-src.tar.gz"
+sha256 = "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e"
+
+[build]
+system = "autotools"
+source_subdir = "unix"
+configure_options = [
+    "--mandir=/usr/share/man"
+]

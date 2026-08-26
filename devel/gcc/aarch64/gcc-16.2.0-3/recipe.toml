@@ -1,0 +1,65 @@
+schema_version = 1
+
+[package]
+name = "gcc"
+version = "16.2.0"
+release = "3"
+description = "GNU Compiler Collection (C, C++)"
+license = "GPL-3.0-or-later"
+channel = "toolchain/gcc:16"
+arch = "aarch64"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz"
+sha256 = "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e"
+
+dependencies = [
+    "binutils >= 2.47",
+    "gmp >= 6.3.0",
+    "mpfr >= 4.2.2",
+    "mpc >= 1.4.1",
+    "isl >= 0.27",
+    "zstd-libs >= 1.5.7",
+    "zlib >= 1.3.2"
+]
+
+build_dependencies = [
+    "gmp-dev >= 6.3.0",
+    "mpfr-dev >= 4.2.2",
+    "mpc-dev >= 1.4.1",
+    "isl-dev >= 0.27",
+    "zstd-dev >= 1.5.7",
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "gcc",
+    "cc",
+    "c++"
+]
+
+# GCC is core system software: it is pinned to gcc and never falls back to
+# the default clang toolchain (a failed pin fails the build). Each major
+# release self-hosts from the previously installed one.
+[build]
+cc = "gcc"
+cxx = "g++"
+prepare = [
+    "rm -rf build && mkdir -p build"
+]
+
+build = [
+    # --disable-nls: the toolchain ships English diagnostics only; this also
+    # keeps the build independent of the host msgfmt (gettext-1.0-2 in the
+    # old image links libxml2/libunistring that sclinux never shipped).
+    "cd build && CPPFLAGS=\"-I/usr/include\" LDFLAGS=\"-L/usr/lib\" ../configure --prefix=/opt/channels/gcc/16 --enable-languages=c,c++ --enable-default-pie --enable-default-ssp --disable-multilib --disable-bootstrap --disable-fixincludes --disable-nls --with-system-zlib --with-isl=/usr",
+    "cd build && make"
+]
+
+install = [
+    "cd build && make install DESTDIR=$DESTDIR",
+    "ln -sf gcc $DESTDIR/opt/channels/gcc/16/bin/cc",
+    "mkdir -p $DESTDIR/opt/channels/gcc/16/share/gdb/auto-load/usr/lib",
+    "mv -v $DESTDIR/opt/channels/gcc/16/lib/*gdb.py $DESTDIR/opt/channels/gcc/16/share/gdb/auto-load/usr/lib 2>/dev/null || true",
+    "rm -f $DESTDIR/opt/channels/gcc/16/share/info/dir"
+]

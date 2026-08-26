@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "zsh"
+version = "5.9.2"
+release = "1"
+arch = "aarch64"
+description = "Z shell, an interactive shell with advanced completion, themable prompts and scripting extensions"
+license = "Zsh"
+channel = "system"
+
+[source]
+url = "https://www.zsh.org/pub/zsh-5.9.2.tar.xz"
+sha256 = "36fa734374b44783582cec09bcd67822e2f992c779ec1624ab5596df078d2f81"
+
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "ncurses-terminfo >= 6.6"
+]
+
+build_dependencies = [
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "zsh"
+]
+
+prepare = []
+
+build = [
+    # Upstream widec ncurses keeps tgetent in libtinfow, so -lncursesw alone
+    # leaves it undefined; LIBS is baked into the generated Makefile.
+    "LIBS=\"-ltinfow\" ./configure --prefix=/usr --enable-multibyte --with-term-lib=ncursesw",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

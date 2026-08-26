@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "bison"
+version = "3.8.2"
+release = "2"
+description = "GNU parser generator"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/bison/bison-3.8.2.tar.xz"
+sha256 = "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2"
+
+dependencies = [
+    "m4 >= 1.4.21"
+]
+
+build_dependencies = [
+    "gettext >= 1.0",
+    "m4 >= 1.4.21"
+]
+
+provides = [
+    "bison"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/share/info/dir"
+]

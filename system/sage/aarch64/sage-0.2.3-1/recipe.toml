@@ -1,0 +1,68 @@
+# Sage 包管理器，使用 v0.2.3 标签构建；该版本包含 #31 的 manifest
+# producer 作用域修复与旧 manifest 解析救回。归档带 SHA-256，构建不依赖宿主
+# checkout。
+#
+# 每个新版本从 release 1 开始；发布后的同版本重建再递增 release。
+#
+# /etc/sage/build.toml 是 conffile：重装或升级不能覆盖管理员的编译器策略；
+# 这里安装的内容只为新系统提供默认配置。
+
+schema_version = 1
+
+[package]
+name = "sage"
+version = "0.2.3"
+release = "1"
+description = "Universal Multi-Layer Linux Package Manager"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "aarch64"
+
+dependencies = [
+    "lmdb >= 0.9.35",
+    "zstd-libs >= 1.5.7",
+    "tomlplusplus >= 3.4.0",
+    "curl-libs >= 8.21.0",
+    "gcc-libs >= 15.3.0",
+    "openssl-libs >= 4.0.1",
+    "libarchive-libs >= 3.8.9",
+    "zlib >= 1.3.2"
+]
+
+build_dependencies = [
+    "xmake >= 3.1.0",
+    "lmdb-dev >= 0.9.35",
+    "zstd-dev >= 1.5.7",
+    "tomlplusplus-dev >= 3.4.0",
+    "curl-dev >= 8.21.0",
+    "openssl-dev >= 4.0.1",
+    "libarchive-dev >= 3.8.9",
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "sage"
+]
+
+conffiles = [
+    "/etc/sage/build.toml"
+]
+
+prepare = []
+
+[build]
+cc = "gcc"
+cxx = "g++"
+
+build = [
+    "export XMAKE_ROOT=y; cd \"$SRCDIR\" && xmake f -c -m release --toolchain=gcc --cflags=\"$CFLAGS\" --cxxflags=\"$CXXFLAGS\" --ldflags=\"$LDFLAGS\" -y && xmake -y"
+]
+
+install = [
+    "install -Dm755 \"$SRCDIR/build/linux/arm64/release/sage\" \"$DESTDIR/usr/bin/sage\"",
+    "install -Dm644 /dev/null \"$DESTDIR/etc/sage/build.toml\" && printf '%s\\n' '# Sage build configuration: compiler policy and flag baseline.' '# Unlisted keys fall back to the built-in defaults; unknown keys are ignored.' 'schema_version = 1' 'cc = \"clang\"' 'cxx = \"clang++\"' 'fallback_cc = \"gcc\"' 'fallback_cxx = \"g++\"' 'cflags = \"-O3 -march=armv8-a\"' > \"$DESTDIR/etc/sage/build.toml\""
+]
+
+[source]
+url = "https://codeload.github.com/sclinuxdev/sage/tar.gz/refs/tags/v0.2.3"
+sha256 = "5138d773f03f095ce7d81f37cb90df2c7fba5cbf609251065ca608cf54487840"

@@ -1,0 +1,43 @@
+# popt-dev -- popt 的头文件、pkg-config 与链接期符号链接。
+
+schema_version = 1
+
+[package]
+name = "popt-dev"
+version = "1.19"
+release = "1"
+description = "popt headers, pkg-config and linker symlink"
+license = "MIT"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://ftp.osuosl.org/pub/rpm/popt/releases/popt-1.x/popt-1.19.tar.gz"
+sha256 = "c25a4838fc8e4c1c8aacb8bd620edb3084a3d63bf8987fdad3ca2758c63240f9"
+
+dependencies = [
+    "popt >= 1.19"
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "popt-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --libdir=/usr/lib --disable-static",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type f -o -type l \\) -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }"
+]

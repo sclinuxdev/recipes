@@ -1,0 +1,30 @@
+schema_version = 2
+
+[package]
+name = "findutils"
+version = "4.11.0"
+release = "1"
+arch = "amd64"
+description = "GNU find and xargs"
+license = "GPL-3.0-or-later"
+channel = "system"
+dependencies = []
+build_dependencies = []
+provides = [
+    "findutils"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/findutils/"
+version_regex = 'findutils-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/findutils/findutils-4.11.0.tar.xz"
+sha256 = "bfd19cb06cc71f3352d567e90284d8cdac02ac89774bbeadf0b533b0c11432fd"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--localstatedir=/var/lib/locate",
+    "--disable-nls"
+]

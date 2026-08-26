@@ -1,0 +1,35 @@
+schema_version = 2
+
+[package]
+name = "texinfo"
+version = "7.3"
+release = "1"
+arch = "amd64"
+description = "GNU documentation system"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+dependencies = [
+    "perl >= 5.44.0",
+    "ncurses-libs >= 6.6"
+]
+
+build_dependencies = [
+    "perl >= 5.44.0",
+    "ncurses-dev >= 6.6"
+]
+
+provides = [
+    "texinfo"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/texinfo/"
+version_regex = 'texinfo-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/texinfo/texinfo-7.3.tar.xz"
+sha256 = "51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e"
+
+[build]
+system = "autotools"

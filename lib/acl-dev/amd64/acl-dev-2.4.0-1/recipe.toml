@@ -1,0 +1,31 @@
+schema_version = 2
+
+[package]
+name = "acl-dev"
+version = "2.4.0"
+release = "1"
+description = "libacl headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "acl-libs >= 2.4.0",
+]
+provides = [
+    "acl-dev"
+]
+
+[upstream]
+url = "https://download.savannah.gnu.org/releases/acl/"
+version_regex = 'acl-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://download-mirror.savannah.gnu.org/releases/acl/acl-2.4.0.tar.xz"
+sha256 = "e661131456d2708a01c614a0f400e11d7d1bfaeb6f3e74b75bb980b72f0161a3"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static",
+    "--sysconfdir=/etc",
+]

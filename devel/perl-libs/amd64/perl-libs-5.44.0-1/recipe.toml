@@ -1,0 +1,58 @@
+schema_version = 1
+
+[package]
+name = "perl-libs"
+version = "5.44.0"
+release = "1"
+description = "libperl shared runtime library (system root)"
+license = "GPL-1.0-or-later OR Artistic-1.0-Perl"
+channel = "system"
+arch = "amd64"
+
+[source]
+url = "https://www.cpan.org/src/5.0/perl-5.44.0.tar.xz"
+sha256 = "505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91"
+
+# libperl.so itself links only libc/libm plus libcrypt: Configure's libswanted
+# probes -lcrypt and the shared build records it via $perllibs. gdbm/zlib/bzip2
+# are consumed by the dynamically loaded XS extensions under the toolchain
+# prefix, which belong to the perl package, not this one.
+dependencies = [
+    "libxcrypt >= 4.5.2"
+]
+
+build_dependencies = [
+    "gdbm-dev >= 1.26",
+    "bzip2-dev >= 1.0.8",
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "perl-libs",
+    "so:libperl.so"
+]
+
+prepare = []
+
+build = [
+    # .stamp-configure guards the Configure step: rerunning Configure on an
+    # already-built tree refreshes config.h timestamps and triggers a full
+    # recompile (same lesson as the kbuild .stamp-config pattern).
+    "[ -f .stamp-configure ] || { BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de -D prefix=/opt/channels/perl/5.44 -D vendorprefix=/opt/channels/perl/5.44 -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D man1dir=/opt/channels/perl/5.44/share/man/man1 -D man3dir=/opt/channels/perl/5.44/share/man/man3 -D pager=\"/usr/bin/cat\" -D useshrplib -D usethreads -D BUILD_ZLIB=0 -D BUILD_BZIP2=0 && touch .stamp-configure; }",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "mkdir -p $DESTDIR/usr/lib",
+    "find $DESTDIR/opt/channels/perl/5.44 -name 'libperl.so*' -exec cp -a {} $DESTDIR/usr/lib/ \\;",
+    # rm the whole opt subtree: leftover parent dirs would ship as empty
+    # payload directories otherwise.
+    "rm -rf $DESTDIR/opt $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    # Hardened: drop only dev *symlinks* named *.so, never real files --
+    # libperl.so IS the real shared object (its SONAME has no version), the
+    # old boilerplate deleted it and shipped an empty split.
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' -delete 2>/dev/null || true",
+    "[ -f $DESTDIR/usr/lib/libperl.so ] || { echo 'ERROR: perl-libs payload missing real libperl.so' >&2; exit 1; }"
+]

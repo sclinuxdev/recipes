@@ -1,0 +1,44 @@
+# mold -- 高性能 ELF 链接器（官方预编译二进制重分发）。
+#
+# 上游发布物为静态化链接的 Linux x86_64 二进制（仅依赖 glibc 与
+# libgcc_s/libatomic），因此本包不做本地编译；溯源字段记录的是上游
+# 生产者，而非本地构建行为。
+
+schema_version = 1
+
+[package]
+name = "mold"
+version = "2.42.0"
+release = "1"
+description = "mold: A Modern Linker (official prebuilt binaries)"
+license = "MIT OR AGPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "glibc >= 2.44",
+    "gcc-libs >= 15.3.0"
+]
+
+provides = [
+    "mold",
+    "ld-mold"
+]
+
+prepare = []
+
+build = []
+
+install = [
+    "mkdir -p \"$DESTDIR/usr/bin\" \"$DESTDIR/usr/lib/mold\" \"$DESTDIR/usr/libexec/mold\" \"$DESTDIR/usr/share\"",
+    "cp -a \"$SRCDIR/bin/.\" \"$DESTDIR/usr/bin/\"",
+    "cp -a \"$SRCDIR/lib/mold\" \"$DESTDIR/usr/lib/\"",
+    "cp -a \"$SRCDIR/libexec/mold\" \"$DESTDIR/usr/libexec/\"",
+    "mkdir -p $DESTDIR/usr/share/doc && cp -a \"$SRCDIR/share/doc/mold\" $DESTDIR/usr/share/doc/",
+    "chmod +x \"$DESTDIR/usr/bin/mold\" \"$DESTDIR/usr/bin/ld.mold\"",
+    "[ -x $DESTDIR/usr/bin/mold ] && [ -x $DESTDIR/usr/bin/ld.mold ] || { echo 'ERROR: mold payload incomplete' >&2; exit 1; }"
+]
+
+[source]
+url = "https://github.com/rui314/mold/releases/download/v2.42.0/mold-2.42.0-x86_64-linux.tar.gz"
+sha256 = "f5ed2f6e31d1ada4f07fe766fe0de7a73104d1c5cdc59086fcecc16a43720b6d"

@@ -1,0 +1,35 @@
+schema_version = 2
+
+[package]
+name = "libseccomp"
+version = "2.6.0"
+release = "1"
+description = "libseccomp shared runtime library"
+license = "LGPL-2.1-only"
+channel = "system"
+arch = "amd64"
+
+dependencies = []
+
+build_dependencies = [
+    "gperf >= 3.3"
+]
+
+provides = [
+    "libseccomp",
+    "so:libseccomp.so.2"
+]
+
+[upstream]
+url = "https://github.com/seccomp/libseccomp/tags"
+version_regex = 'v([0-9][0-9.]*)'
+
+[source]
+url = "https://github.com/seccomp/libseccomp/releases/download/v2.6.0/libseccomp-2.6.0.tar.gz"
+sha256 = "83b6085232d1588c379dc9b9cae47bb37407cf262e6e74993c61ba72d2a784dc"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static"
+]

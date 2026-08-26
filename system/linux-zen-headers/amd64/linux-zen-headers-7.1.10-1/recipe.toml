@@ -1,0 +1,29 @@
+schema_version = 2
+
+[package]
+name = "linux-zen-headers"
+version = "7.1.10"
+release = "1"
+arch = "amd64"
+description = "Linux ZEN kernel UAPI headers"
+license = "GPL-2.0-only"
+channel = "system"
+dependencies = []
+provides = [
+    "linux-zen-headers",
+    "linux-headers",
+    "virtual/linux-headers"
+]
+
+[upstream]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/"
+version_regex = 'linux-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
+sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
+
+[build]
+system = "make"
+build_targets = ["headers"]
+install_targets = []

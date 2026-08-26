@@ -1,0 +1,44 @@
+schema_version = 2
+
+[package]
+name = "device-mapper-dev"
+version = "2.03.42"
+release = "1"
+description = "libdevmapper headers and pkg-config data"
+license = "GPL-2.0-only AND LGPL-2.1-only"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "device-mapper = 2.03.42-3"
+]
+build_dependencies = [
+    "glibc-dev >= 2.44",
+    "util-linux-dev >= 2.42.2",
+    "pkgconf >= 3.0.5"
+]
+provides = [
+    "device-mapper-dev"
+]
+
+[upstream]
+url = "https://sourceware.org/ftp/lvm2/"
+version_regex = 'LVM2\.([0-9.]+)\.tgz'
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--bindir=/usr/bin",
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--sysconfdir=/etc",
+    "--localstatedir=/var",
+    "--enable-pkgconfig",
+    "--disable-selinux",
+    "--with-default-dm-run-dir=/run",
+]
+build_targets = ["device-mapper"]
+install_targets = ["install_device-mapper"]

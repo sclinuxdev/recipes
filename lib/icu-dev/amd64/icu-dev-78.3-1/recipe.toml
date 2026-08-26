@@ -1,0 +1,42 @@
+schema_version = 2
+
+[package]
+name = "icu-dev"
+version = "78.3"
+release = "1"
+description = "Development files for ICU"
+license = "ICU"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "icu-libs = 78.3-4"
+]
+build_dependencies = [
+    "gcc >= 15",
+    "glibc-dev >= 2.44",
+    "python >= 3.14.7"
+]
+provides = [
+    "icu-dev"
+]
+
+[upstream]
+url = "https://github.com/unicode-org/icu/tags"
+version_regex = 'release-([0-9.]+)'
+
+[source]
+url = "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz"
+sha256 = "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0"
+
+[build]
+system = "autotools"
+source_subdir = "source"
+configure_options = [
+    "--bindir=/usr/bin",
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--sysconfdir=/etc",
+    "--disable-samples",
+    "--disable-tests",
+    "--enable-static=no",
+]

@@ -1,0 +1,55 @@
+schema_version = 1
+
+[package]
+name = "glibc-dev"
+version = "2.44"
+release = "3"
+arch = "aarch64"
+description = "GNU C Library headers, static libraries and linker scripts"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.44.tar.xz"
+sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
+
+dependencies = [
+    "glibc >= 2.44",
+    "linux-headers >= 7.1.9"
+]
+
+build_dependencies = []
+
+provides = [
+    "glibc-dev"
+]
+
+# glibc and systemd are core system software: they are pinned to gcc and
+# never fall back to the default clang toolchain (a failed pin fails the build).
+[build]
+cc = "gcc"
+cxx = "g++"
+prepare = [
+    "rm -rf build && mkdir -p build"
+]
+
+build = [
+    "cd build && ../configure --prefix=/usr --enable-kernel=4.19 --enable-stack-protector=strong --disable-profile --disable-werror --without-gd libc_cv_slibdir=/usr/lib",
+    "cd build && make"
+]
+
+install = [
+    "cd build && make install DESTDIR=$DESTDIR",
+    # make install drops a few admin tools into both sbin spellings; the dev
+    # package is headers/libs/scripts only, and every bin/sbin entity path is
+    # illegal under the collapsed usr merge.
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/sbin $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/share $DESTDIR/usr/libexec",
+    # Dev keeps exactly what linking needs: headers, static archives, and the
+    # unversioned .so linker scripts/symlinks. Everything else top-level in
+    # usr/lib (versioned runtime libs, crt*.o, gconv/, audit/) is owned by
+    # the glibc runtime package and must not be claimed twice. These ten
+    # unversioned helpers ship inside the runtime package itself, so the dev
+    # tree's copies (symlinks into pruned files) go too.
+    "rm -f $DESTDIR/usr/lib/libanl.so $DESTDIR/usr/lib/libBrokenLocale.so $DESTDIR/usr/lib/libc_malloc_debug.so $DESTDIR/usr/lib/libmemusage.so $DESTDIR/usr/lib/libmvec.so $DESTDIR/usr/lib/libnss_compat.so $DESTDIR/usr/lib/libnss_db.so $DESTDIR/usr/lib/libnss_hesiod.so $DESTDIR/usr/lib/libpcprofile.so $DESTDIR/usr/lib/libthread_db.so",
+    "find $DESTDIR/usr/lib -mindepth 1 -maxdepth 1 ! -name '*.a' ! -name '*.so' ! -type l -exec rm -rf {} +"
+]

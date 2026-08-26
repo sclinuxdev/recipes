@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "bc"
+version = "7.0.3"
+release = "3"
+arch = "aarch64"
+description = "Arbitrary precision numeric processing language"
+license = "BSD-2-Clause"
+channel = "system"
+
+[source]
+url = "https://github.com/gavinhoward/bc/releases/download/7.0.3/bc-7.0.3.tar.xz"
+sha256 = "91eb74caed0ee6655b669711a4f350c25579778694df248e28363318e03c7fc4"
+
+# Internal history implementation: without `-r readline` upstream never links
+# libreadline, so there is nothing to declare.
+dependencies = []
+
+build_dependencies = []
+
+provides = [
+    "bc"
+]
+
+prepare = []
+
+build = [
+    "CFLAGS=\"$CFLAGS -std=gnu11\" ./configure --prefix=/usr -G -O3",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR"
+]

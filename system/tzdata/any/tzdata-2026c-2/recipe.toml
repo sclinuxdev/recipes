@@ -1,0 +1,45 @@
+# tzdata -- compiled IANA time zone data in /usr/share/zoneinfo.
+#
+# New package. Its absence is why the deployed system had no local time: glibc
+# reads /usr/share/zoneinfo at runtime and simply falls back to UTC when the
+# directory is not there, with no error.
+#
+# Arch-independent: the compiled zoneinfo files are a portable binary format,
+# so this builds once as `any`.
+
+schema_version = 1
+
+[package]
+name = "tzdata"
+version = "2026c"
+release = "2"
+description = "IANA time zone database"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "any"
+
+[source]
+url = "https://data.iana.org/time-zones/releases/tzdata2026c.tar.gz"
+sha256 = "e4a178a4477f3d0ea77cc31828ff72aa38feff8d61aa13e7e99e142e9d902be4"
+
+build_dependencies = [
+    "tzcode = 2026c-1"
+]
+
+provides = [
+    "tzdata"
+]
+
+prepare = []
+
+build = []
+
+# The backward file is included: dropping it breaks every TZ name that has
+# been renamed over the years (Asia/Chongqing, US/Pacific), and those are
+# exactly the ones sitting in people's existing configuration.
+install = [
+    "mkdir -p $DESTDIR/usr/share/zoneinfo/posix $DESTDIR/usr/share/zoneinfo/right",
+    "for tz in africa antarctica asia australasia europe northamerica southamerica etcetera backward factory; do zic -b fat -d $DESTDIR/usr/share/zoneinfo $tz; zic -b fat -d $DESTDIR/usr/share/zoneinfo/posix $tz; zic -b fat -L leapseconds -d $DESTDIR/usr/share/zoneinfo/right $tz; done",
+    "zic -b fat -d $DESTDIR/usr/share/zoneinfo -p America/New_York",
+    "install -m644 zone.tab zone1970.tab iso3166.tab leapseconds $DESTDIR/usr/share/zoneinfo/"
+]

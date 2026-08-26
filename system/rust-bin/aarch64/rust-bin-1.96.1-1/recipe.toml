@@ -1,0 +1,32 @@
+schema_version = 1
+
+[package]
+name = "rust-bin"
+version = "1.96.1"
+release = "1"
+description = "Rust compiler and Cargo binary distribution (toolchain channel)"
+license = "Apache-2.0 OR MIT"
+channel = "toolchain/rust:1.96.1"
+arch = "aarch64"
+
+dependencies = [
+    "gcc-libs >= 15.3.0",
+    "glibc >= 2.44"
+]
+
+provides = [
+    "rust",
+    "rustc",
+    "cargo"
+]
+
+prepare = []
+build = []
+install = [
+    "cd \"$SRCDIR\"/rust-*-unknown-linux-gnu && ./install.sh --prefix=/opt/channels/rust/1.96.1 --destdir=\"$DESTDIR\" --disable-ldconfig",
+    "[ -x $DESTDIR/opt/channels/rust/1.96.1/bin/cargo ] && [ -x $DESTDIR/opt/channels/rust/1.96.1/bin/rustc ] || { echo 'ERROR: rust toolchain payload incomplete' >&2; exit 1; }"
+]
+
+[source]
+url = "https://static.rust-lang.org/dist/rust-1.96.1-aarch64-unknown-linux-gnu.tar.xz"
+sha256 = "3abcb9489d001d95f30e8cfe68118be85afb0adbf0a9b21438909719689c08fb"

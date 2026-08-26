@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "mpdecimal-dev"
+version = "4.0.1"
+release = "3"
+description = "mpdecimal headers, pkg-config and linker symlink"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz"
+sha256 = "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
+
+dependencies = [
+    "mpdecimal >= 4.0.1"
+]
+
+provides = [
+    "mpdecimal-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
+    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }",
+]

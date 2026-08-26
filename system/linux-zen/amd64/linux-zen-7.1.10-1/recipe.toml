@@ -1,0 +1,110 @@
+# Linux ZEN kernel with CJK VT console support.
+#
+# Supersedes Stage2/recipes/linux-zen (release 2). Depends on
+# virtual/initramfs-generator: installing a kernel pulls in a builder for the
+# initramfs it cannot boot without, and sage's capability trigger regenerates
+# the image once the kernel lands. WHICH generator stays a system choice, so
+# dracut can satisfy this without touching the recipe.
+#
+# Four sources, each downloaded and sha256-verified by sage ([[source]]
+# multi-source support; the first entry is the primary archive):
+#
+#   1. The vanilla 7.1.10 tarball.
+#   2. The ZEN patchset for v7.1.10-zen1.
+#   3. bigshans' cjktty UTF-8 VT console patch, 7.2 series.
+#   4. Arch Linux's pinned default config for this exact kernel version
+#      (config.x86_64), fetched at build time from the packaging repo commit.
+#
+# Why the 7.2 cjktty patch on a 7.1.10 kernel: the v7.x patch applies to this
+# tree cleanly and keeps the UTF-8 virtual console support used by sclinux.
+# The FONT_CJK_* options default to y, so olddefconfig enables them.
+#
+# Both patches are applied with fatal failure semantics: a silently skipped
+# patch yields a kernel that builds fine but lacks the feature. The zen patch
+# is decompressed to a file first because a plain `zstd | patch` pipeline
+# reports only patch's exit status -- an empty stream from a failed zstd
+# would "succeed" while applying nothing.
+#
+# Layout note: every key below the [[source]] blocks belongs to its nearest
+# such block, so all root-scoped declarations come first and the two extra
+# sources close the file.
+
+schema_version = 1
+
+[package]
+name = "linux-zen"
+version = "7.1.10"
+release = "1"
+arch = "amd64"
+description = "Linux ZEN kernel with performance optimizations and CJK console support"
+license = "GPL-2.0-only"
+channel = "system"
+
+# virtual/initramfs-generator, not "mkinitcpio": a kernel is unbootable
+# without an initramfs, so the generator is a hard runtime dependency -- but
+# WHICH generator is a system choice.
+dependencies = [
+    "kmod >= 34.2",
+    "virtual/initramfs-generator",
+]
+
+build_dependencies = [
+    "bc >= 7.0.3",
+    "bison >= 3.8.2",
+    "flex >= 2.6.4",
+    "libelf-dev >= 0.196",
+    "openssl-dev >= 4.0.1",
+    "patch >= 2.8",
+    "perl >= 5.44.0",
+    "python >= 3.14.7",
+    "tar >= 1.35",
+    "xz >= 5.8.3",
+    "zlib-dev >= 1.3.2",
+    "zstd >= 1.5.7",
+    "llvm >= 22.1.8",
+    "clang >= 22.1.8",
+    "lld >= 22.1.8"
+]
+
+provides = [
+    "linux-zen",
+    "linux",
+    "virtual/linux",
+    "virtual/kernel"
+]
+
+# Patch steps stamp themselves (.stamp-*): `patch` exits non-zero even when
+# it skips already-applied hunks, which would kill every --reuse-src resume
+# on a patched tree. Stamped, fresh trees stay strict and resumed ones no-op.
+[build]
+ldflags = ""
+prepare = [
+    "[ -e .stamp-zen ] || { zstd -dc distfiles/linux-v7.1.10-zen1.patch.zst > zen-patch.diff && patch -p1 --batch < zen-patch.diff && touch .stamp-zen; }",
+    "[ -e .stamp-cjktty ] || { patch -p1 --batch < distfiles/cjktty-7.2.patch && touch .stamp-cjktty; }",
+    "CONFIG_STAMP=$(sha256sum \"$RECIPE_DIR/recipe.toml\" | cut -d' ' -f1); [ \"$(cat .stamp-config 2>/dev/null)\" = \"$CONFIG_STAMP\" ] || { cp distfiles/config.x86_64 .config && ./scripts/config --set-str DEFAULT_HOSTNAME sclinux --disable LTO --disable LTO_CLANG --disable LTO_CLANG_THIN --enable LTO_NONE && echo '-1' > localversion.10-pkgrel && echo '-zen' > localversion.20-pkgname && ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST && make LLVM=1 olddefconfig && printf '%s\\n' \"$CONFIG_STAMP\" > .stamp-config; }",
+]
+build = [
+    "P=\"$(dirname $(readlink -f \"$(command -v ld)\"))\"; export P; HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 -k KCFLAGS=\"-Wno-error -O3 -march=x86-64-v3\" all || HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 KCFLAGS=\"-Wno-error -O3 -march=x86-64-v3\" all",
+]
+install = [
+    "set -e; KVER=$(make -s kernelrelease); echo \"Installing kernel release: ${KVER}\"; mkdir -p $DESTDIR/boot $DESTDIR/usr/lib/modules; make INSTALL_MOD_PATH=$DESTDIR modules_install; if [ -d $DESTDIR/lib/modules ] && [ ! -L $DESTDIR/lib ]; then cp -a $DESTDIR/lib/modules $DESTDIR/usr/lib/ && rm -rf $DESTDIR/lib; fi; rm -f $DESTDIR/usr/lib/modules/$KVER/build $DESTDIR/usr/lib/modules/$KVER/source; install -Dm644 arch/x86/boot/bzImage $DESTDIR/boot/vmlinuz-${KVER}; install -Dm644 System.map $DESTDIR/boot/System.map-${KVER}; install -Dm644 .config $DESTDIR/boot/config-${KVER}; install -Dm644 arch/x86/boot/bzImage $DESTDIR/usr/lib/modules/$KVER/vmlinuz; install -d $DESTDIR/etc/mkinitcpio.d; PRESET=$DESTDIR/etc/mkinitcpio.d/linux-zen-$KVER.preset; printf '%s\\n' '# mkinitcpio preset for linux-zen' 'ALL_config=\"/etc/mkinitcpio.conf\"' \"ALL_kver=/boot/vmlinuz-$KVER\" \"PRESETS=('default' 'fallback')\" \"default_image=/boot/initramfs-$KVER.img\" \"fallback_image=/boot/initramfs-$KVER-fallback.img\" 'fallback_options=\"-S autodetect\"' > \"$PRESET\"; grep -q ALL_kver \"$PRESET\" || { echo 'ERROR: linux-zen preset missing from payload' >&2; exit 1; }",
+]
+
+# The primary archive unpacks to src/; the extra downloads land verbatim at
+# src/distfiles/, which the prepare commands above consume relative to that
+# work directory.
+[[source]]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
+sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
+
+[[source]]
+url = "https://github.com/zen-kernel/zen-kernel/releases/download/v7.1.10-zen1/linux-v7.1.10-zen1.patch.zst"
+sha256 = "37c44d77c8b3dd56665188157366257089458aaa89c0e99a31128c86d2c7297b"
+
+[[source]]
+url = "https://raw.githubusercontent.com/bigshans/cjktty-patches/master/v7.x/cjktty-7.2.patch"
+sha256 = "252c69ec48019660dce565c45e287626793f84939cec249d62644a11ea9842a8"
+
+[[source]]
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/linux-zen/-/raw/39cac79101020d87973b9cbbd6405c009a28c197/config.x86_64?inline=false"
+sha256 = "1cb633af33ae2bd1352ca806b35a0873d61dd2aaa349c05c7abf571a2edd10cd"

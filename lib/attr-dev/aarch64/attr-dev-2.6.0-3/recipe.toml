@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "attr-dev"
+version = "2.6.0"
+release = "3"
+description = "libattr headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://download-mirror.savannah.gnu.org/releases/attr/attr-2.6.0.tar.xz"
+sha256 = "6c8a2148a7b85043b68492bce43316b0e2e214fc4e628c7ede078e76e216330b"
+
+dependencies = [
+    "attr-libs >= 2.6.0"
+]
+
+provides = [
+    "attr-dev"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static --sysconfdir=/etc",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
+    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }",
+]

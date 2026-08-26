@@ -1,0 +1,30 @@
+schema_version = 2
+
+[package]
+name = "file"
+version = "5.48"
+release = "1"
+arch = "amd64"
+description = "File type identification utility"
+license = "BSD-2-Clause"
+channel = "system"
+dependencies = [
+    "file-libs >= 5.48"
+]
+provides = [
+    "file"
+]
+
+[upstream]
+url = "https://astron.com/pub/file/"
+version_regex = 'file-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static"
+]

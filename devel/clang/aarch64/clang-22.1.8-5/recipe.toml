@@ -1,0 +1,49 @@
+schema_version = 1
+
+[package]
+name = "clang"
+version = "22.1.8"
+release = "5"
+description = "C/C++ frontend for LLVM (default cc/c++ of the llvm toolchain)"
+license = "Apache-2.0 WITH LLVM-exception"
+channel = "toolchain/llvm:22"
+arch = "aarch64"
+
+dependencies = [
+    "llvm >= 22.1.8",
+    "gcc >= 15",
+    "binutils >= 2.47"
+]
+
+build_dependencies = [
+    "cmake >= 4.4.2",
+    "ninja >= 1.13.2"
+]
+
+provides = [
+    "clang",
+    "cc",
+    "c++"
+]
+
+prepare = [
+    "rm -rf build && mkdir -p build"
+]
+
+build = [
+    "cmake -G Ninja -S clang -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/channels/llvm/22 -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' -DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm -DCLANG_LINK_CLANG_DYLIB=ON -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_DOCS=OFF -DCLANG_INCLUDE_BENCHMARKS=OFF -DCLANG_DEFAULT_RTLIB=libgcc -DCLANG_DEFAULT_UNWINDLIB=libgcc && ninja -C build"
+]
+
+install = [
+    "DESTDIR=\"$DESTDIR\" ninja -C build install",
+    "ln -sf clang \"$DESTDIR/opt/channels/llvm/22/bin/cc\"",
+    "ln -sf clang++ \"$DESTDIR/opt/channels/llvm/22/bin/c++\"",
+    "P=\"$DESTDIR/opt/channels/llvm/22\"; mv \"$P/bin/clang++\" \"$P/libexec/clang++\"",
+    "P=\"$DESTDIR/opt/channels/llvm/22\"; for n in cc c++ clang clang++; do rm -f \"$P/bin/$n\" \"$P/bin/$n.cfg\"; done",
+    "P=\"$DESTDIR/opt/channels/llvm/22\"; for n in cc c++ clang clang++; do install -m755 \"$RECIPE_DIR/wrapper.sh\" \"$P/bin/$n\"; done",
+    "P=\"$DESTDIR/opt/channels/llvm/22\"; [ -x \"$P/bin/clang-22\" ] && [ -x \"$P/libexec/clang++\" ] && [ -x \"$P/bin/cc\" ] && [ -x \"$P/bin/c++\" ] && [ -x \"$P/bin/clang\" ] && [ ! -e \"$P/bin/cc.cfg\" ] || { echo 'ERROR: clang wrapper transform incomplete' >&2; exit 1; }",
+]
+
+[source]
+url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/llvm-project-22.1.8.src.tar.xz"
+sha256 = "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888"

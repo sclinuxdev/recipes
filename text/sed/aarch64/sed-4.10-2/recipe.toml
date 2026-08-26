@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "sed"
+version = "4.10"
+release = "2"
+arch = "aarch64"
+description = "GNU stream editor"
+license = "GPL-3.0-or-later"
+channel = "system"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/sed/sed-4.10.tar.xz"
+sha256 = "b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7"
+
+dependencies = [
+]
+
+build_dependencies = []
+
+provides = [
+    "sed"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-nls",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/share/info/dir"
+]

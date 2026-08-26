@@ -1,0 +1,38 @@
+schema_version = 1
+
+[package]
+name = "mpc"
+version = "1.4.1"
+release = "1"
+description = "MPC runtime library"
+license = "LGPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://mirrors.kernel.org/gnu/mpc/mpc-1.4.1.tar.xz"
+sha256 = "91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931"
+
+dependencies = [
+    "gmp >= 6.3.0",
+    "mpfr >= 4.2.2"
+]
+
+provides = [
+    "mpc",
+    "so:libmpc.so.3"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --disable-static",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

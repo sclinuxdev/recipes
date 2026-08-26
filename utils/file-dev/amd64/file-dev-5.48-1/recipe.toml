@@ -1,0 +1,30 @@
+schema_version = 2
+
+[package]
+name = "file-dev"
+version = "5.48"
+release = "1"
+description = "libmagic headers, pkg-config and linker symlink"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "file-libs >= 5.48"
+]
+provides = [
+    "file-dev"
+]
+
+[upstream]
+url = "https://astron.com/pub/file/"
+version_regex = 'file-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static",
+]

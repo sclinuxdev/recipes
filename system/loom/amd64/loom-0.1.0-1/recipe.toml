@@ -1,0 +1,144 @@
+# Loom -- Linux init and service manager, packaged from the released source.
+#
+# The [source] pins the exact commit the v0.1.0 tag points at. Rust comes from
+# the versioned toolchain channel; the build discovers the installed Cargo
+# path so a toolchain slot upgrade cannot strand a hard-coded version.
+
+schema_version = 1
+
+[package]
+name = "loom"
+version = "0.1.0"
+release = "1"
+description = "Linux init and service manager"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "glibc >= 2.44",
+    "gcc-libs >= 15.3.0"
+]
+
+build_dependencies = [
+    "rust-bin >= 1.96.1",
+    "python >= 3.14.7",
+    "patch >= 2.8"
+]
+
+provides = [
+    "loom",
+    "virtual/init"
+]
+
+prepare = [
+    "patch -p1 < \"$RECIPE_DIR/portable-c-char.patch\"",
+    "python3 \"$RECIPE_DIR/vendor-crates.py\""
+]
+
+build = [
+    "RUST_CARGO=$(find /opt/channels/rust -mindepth 3 -maxdepth 3 -path '*/bin/cargo' -perm -u+x | sort -V | tail -n1); [ -n \"$RUST_CARGO\" ] || { echo 'ERROR: no Rust cargo toolchain found' >&2; exit 1; }; export PATH=\"$(dirname \"$RUST_CARGO\"):$PATH\"; cargo build --release --locked --offline"
+]
+
+install = [
+    "install -Dm755 target/release/loom \"$DESTDIR/usr/lib/loom/loom\"",
+    "install -Dm755 target/release/loomctl \"$DESTDIR/usr/bin/loomctl\"",
+    "ln -s /usr/lib/loom/loom \"$DESTDIR/usr/bin/init\"",
+    "[ -x $DESTDIR/usr/lib/loom/loom ] && [ -x $DESTDIR/usr/bin/loomctl ] && [ -L $DESTDIR/usr/bin/init ] || { echo 'ERROR: loom payload incomplete' >&2; exit 1; }"
+]
+
+[[source]]
+url = "https://github.com/antinomie1/loom/archive/126b3bd80360dfaf5c4ff7757901d36a22659037.tar.gz"
+sha256 = "cbdfe7aaa6141c5302584c0325dd8b8a881343f2bdaa9a66bad414e189bb81b8"
+
+[[source]]
+url = "https://static.crates.io/crates/equivalent/equivalent-1.0.2.crate"
+sha256 = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
+
+[[source]]
+url = "https://static.crates.io/crates/hashbrown/hashbrown-0.17.1.crate"
+sha256 = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+
+[[source]]
+url = "https://static.crates.io/crates/indexmap/indexmap-2.14.0.crate"
+sha256 = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
+
+[[source]]
+url = "https://static.crates.io/crates/lexopt/lexopt-0.3.2.crate"
+sha256 = "803ec87c9cfb29b9d2633f20cba1f488db3fd53f2158b1024cbefb47ba05d413"
+
+[[source]]
+url = "https://static.crates.io/crates/libc/libc-0.2.189.crate"
+sha256 = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+
+[[source]]
+url = "https://static.crates.io/crates/memchr/memchr-2.8.3.crate"
+sha256 = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[source]]
+url = "https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.107.crate"
+sha256 = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
+
+[[source]]
+url = "https://static.crates.io/crates/quote/quote-1.0.47.crate"
+sha256 = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
+
+[[source]]
+url = "https://static.crates.io/crates/serde/serde-1.0.229.crate"
+sha256 = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
+
+[[source]]
+url = "https://static.crates.io/crates/serde_core/serde_core-1.0.229.crate"
+sha256 = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
+
+[[source]]
+url = "https://static.crates.io/crates/serde_derive/serde_derive-1.0.229.crate"
+sha256 = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
+
+[[source]]
+url = "https://static.crates.io/crates/serde_spanned/serde_spanned-1.1.1.crate"
+sha256 = "6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26"
+
+[[source]]
+url = "https://static.crates.io/crates/shlex/shlex-1.3.0.crate"
+sha256 = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
+
+[[source]]
+url = "https://static.crates.io/crates/syn/syn-3.0.3.crate"
+sha256 = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3"
+
+[[source]]
+url = "https://static.crates.io/crates/thiserror/thiserror-2.0.20.crate"
+sha256 = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
+
+[[source]]
+url = "https://static.crates.io/crates/thiserror-impl/thiserror-impl-2.0.20.crate"
+sha256 = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
+
+[[source]]
+url = "https://static.crates.io/crates/toml_datetime/toml_datetime-0.7.5+spec-1.1.0.crate"
+sha256 = "92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347"
+
+[[source]]
+url = "https://static.crates.io/crates/toml_edit/toml_edit-0.23.10+spec-1.0.0.crate"
+sha256 = "84c8b9f757e028cee9fa244aea147aab2a9ec09d5325a9b01e0a49730c2b5269"
+
+[[source]]
+url = "https://static.crates.io/crates/toml_parser/toml_parser-1.1.3+spec-1.1.0.crate"
+sha256 = "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56"
+
+[[source]]
+url = "https://static.crates.io/crates/toml_writer/toml_writer-1.1.2+spec-1.1.0.crate"
+sha256 = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
+
+[[source]]
+url = "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.24.crate"
+sha256 = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
+
+[[source]]
+url = "https://static.crates.io/crates/winnow/winnow-0.7.15.crate"
+sha256 = "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945"
+
+[[source]]
+url = "https://static.crates.io/crates/winnow/winnow-1.0.4.crate"
+sha256 = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"

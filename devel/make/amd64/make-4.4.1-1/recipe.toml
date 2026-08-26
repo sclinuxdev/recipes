@@ -1,0 +1,30 @@
+schema_version = 2
+
+[package]
+name = "make"
+version = "4.4.1"
+release = "1"
+description = "GNU make"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = [
+]
+build_dependencies = []
+provides = [
+    "make"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/make/"
+version_regex = 'make-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/make/make-4.4.1.tar.gz"
+sha256 = "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-nls"
+]

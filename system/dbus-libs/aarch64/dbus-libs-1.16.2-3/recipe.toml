@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "dbus-libs"
+version = "1.16.2"
+release = "3"
+description = "libdbus-1 shared runtime library"
+license = "GPL-2.0-or-later OR AFL-2.1"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://sources.buildroot.net/dbus/dbus-1.16.2.tar.xz"
+sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
+
+dependencies = [
+    "expat-libs >= 2.8.3",
+    "systemd-libs >= 261.2"
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5",
+    "expat-dev >= 2.8.3"
+]
+
+provides = [
+    "dbus-libs",
+    "so:libdbus-1.so.3"
+]
+
+prepare = []
+
+build = [
+    "mkdir build",
+    "cd build && meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback -Dsystemd_system_unitdir=/usr/lib/systemd/system ..",
+    "cd build && ninja"
+]
+
+install = [
+    "cd build && DESTDIR=$DESTDIR ninja install",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true",
+    "rm -rf $DESTDIR/usr/lib/dbus-1.0 $DESTDIR/usr/lib/systemd",
+    "rm -f $DESTDIR/usr/libexec/dbus-daemon-launch-helper",
+    "[ -f $DESTDIR/usr/lib/libdbus-1.so.3.38.3 ] && [ -L $DESTDIR/usr/lib/libdbus-1.so.3 ] || { echo 'ERROR: dbus-libs payload incomplete' >&2; exit 1; }",
+    "[ -f $DESTDIR/usr/lib/sysusers.d/dbus.conf ] && [ ! -e $DESTDIR/usr/lib/systemd ] || { echo 'ERROR: dbus-libs env setup wrong' >&2; exit 1; }",
+]

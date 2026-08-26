@@ -1,0 +1,53 @@
+# efibootmgr -- 增删查改 UEFI 启动项。
+#
+# 从 sclinux 的 Stage1 迁入。装机与 sclinux-boot 的引导器钩子都要用它写
+# BootOrder 与启动项。
+#
+# EFIDIR=sclinux 决定 ESP 上的厂商目录名（/EFI/sclinux）。
+# sbindir=/usr/bin 是 /usr merge 的要求：本发行版没有 /usr/sbin。
+#
+# Stage1 版本显式关掉 LTO（-O2 -g）—— 当时 lto-wrapper 会绕过 Stage1 的 GCC
+# 包装器直接启动原始编译器，落回宿主 glibc。本树原生构建没有包装器，
+# 保留该写法只是因为这个小工具不依赖 LTO 语义，改动它没有收益。
+
+schema_version = 1
+
+[package]
+name = "efibootmgr"
+version = "18"
+release = "1"
+arch = "aarch64"
+description = "EFI Boot Manager userspace utility"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+[source]
+url = "https://github.com/rhboot/efibootmgr/archive/refs/tags/18.tar.gz"
+sha256 = "442867d12f8525034a404fc8af3036dba8e1fc970998af2486c3b940dfad0874"
+
+dependencies = [
+    "efivar-libs >= 39",
+    "popt >= 1.19"
+]
+
+build_dependencies = [
+    "efivar-dev >= 39",
+    "popt-dev >= 1.19",
+    "glibc-dev >= 2.44",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "efibootmgr"
+]
+
+prepare = []
+
+build = [
+    "make CFLAGS='-O2 -g' libdir=/usr/lib sbindir=/usr/bin EFIDIR=sclinux"
+]
+
+install = [
+    "make CFLAGS='-O2 -g' DESTDIR=$DESTDIR libdir=/usr/lib sbindir=/usr/bin EFIDIR=sclinux install",
+    "[ -x $DESTDIR/usr/bin/efibootmgr ] || { echo 'ERROR: efibootmgr missing from payload' >&2; exit 1; }"
+]

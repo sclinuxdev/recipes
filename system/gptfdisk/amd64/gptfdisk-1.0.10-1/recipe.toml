@@ -1,0 +1,38 @@
+schema_version = 2
+
+[package]
+name = "gptfdisk"
+version = "1.0.10"
+release = "1"
+arch = "amd64"
+description = "GUID Partition Table disk utilities"
+license = "GPL-2.0-only"
+channel = "system"
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "popt >= 1.19",
+    "util-linux-libs >= 2.42.2"
+]
+build_dependencies = [
+    "ncurses-dev >= 6.6",
+    "popt-dev >= 1.19",
+    "util-linux-dev >= 2.42.2",
+    "glibc-dev >= 2.44"
+]
+provides = [
+    "gptfdisk",
+    "gdisk"
+]
+
+[upstream]
+url = "https://sourceforge.net/projects/gptfdisk/files/"
+version_regex = '([0-9.]+)/'
+
+[source]
+url = "https://downloads.sourceforge.net/project/gptfdisk/gptfdisk/1.0.10/gptfdisk-1.0.10.tar.gz"
+sha256 = "2abed61bc6d2b9ec498973c0440b8b804b7a72d7144069b5a9209b2ad693a282"
+
+[build]
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]

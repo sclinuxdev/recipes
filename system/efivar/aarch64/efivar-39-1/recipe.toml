@@ -1,0 +1,43 @@
+# efivar -- 读写 UEFI 变量的命令行工具。
+#
+# 运行库拆在 lib/efivar-libs，头文件在 lib/efivar-dev。
+
+schema_version = 1
+
+[package]
+name = "efivar"
+version = "39"
+release = "1"
+arch = "aarch64"
+description = "Tool to manipulate UEFI variables"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+[source]
+url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz"
+sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
+
+dependencies = [
+    "efivar-libs >= 39"
+]
+
+build_dependencies = [
+    "efivar-dev >= 39",
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "efivar"
+]
+
+prepare = []
+
+build = [
+    "make ERRORS='' ENABLE_DOCS=0"
+]
+
+install = [
+    "make ERRORS='' ENABLE_DOCS=0 DESTDIR=$DESTDIR libdir=/usr/lib bindir=/usr/bin mandir=/usr/share/man includedir=/usr/include install",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/lib 2>/dev/null || true",
+    "[ -x $DESTDIR/usr/bin/efivar ] || { echo 'ERROR: efivar CLI missing from payload' >&2; exit 1; }"
+]

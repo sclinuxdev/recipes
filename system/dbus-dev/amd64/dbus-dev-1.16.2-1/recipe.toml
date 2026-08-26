@@ -1,0 +1,37 @@
+schema_version = 2
+
+[package]
+name = "dbus-dev"
+version = "1.16.2"
+release = "1"
+description = "libdbus headers, pkg-config and linker symlink"
+license = "GPL-2.0-or-later OR AFL-2.1"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "dbus-libs >= 1.16.2"
+]
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5",
+    "expat-dev >= 2.8.3"
+]
+provides = [
+    "dbus-dev"
+]
+
+[upstream]
+url = "https://dbus.freedesktop.org/releases/dbus/"
+version_regex = 'dbus-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://sources.buildroot.net/dbus/dbus-1.16.2.tar.xz"
+sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
+
+[build]
+system = "meson"
+configure_options = [
+    "--wrap-mode=nofallback",
+    "-Dsystemd_system_unitdir=/usr/lib/systemd/system"
+]

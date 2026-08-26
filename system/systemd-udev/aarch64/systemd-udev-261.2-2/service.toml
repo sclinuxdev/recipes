@@ -1,0 +1,14 @@
+schema_version = 2
+
+# udevd stays in the foreground and announces readiness through sd_notify,
+# which Loom consumes via its NOTIFY_SOCKET readiness protocol. No after-list:
+# Loom mounts the API filesystems (including /run) before starting services,
+# and udevd creates its own control sockets without socket activation.
+[service]
+name = "systemd-udevd"
+description = "udev device event manager daemon"
+command = ["/usr/lib/systemd/systemd-udevd"]
+reload_command = ["/usr/bin/udevadm", "control", "--reload"]
+type = "simple"
+readiness = "notify"
+restart = "always"

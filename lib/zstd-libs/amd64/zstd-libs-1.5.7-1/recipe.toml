@@ -1,0 +1,29 @@
+schema_version = 2
+
+[package]
+name = "zstd-libs"
+version = "1.5.7"
+release = "1"
+description = "libzstd shared runtime library"
+license = "BSD-3-Clause OR GPL-2.0-only"
+channel = "system"
+arch = "amd64"
+dependencies = []
+provides = [
+    "zstd-libs",
+    "so:libzstd.so.1"
+]
+
+[upstream]
+url = "https://github.com/facebook/zstd/tags"
+version_regex = 'v([0-9][0-9.]*)'
+
+[source]
+url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz"
+sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3"
+
+[build]
+system = "make"
+source_subdir = "lib"
+build_targets = ["all"]
+install_targets = ["install"]

@@ -1,0 +1,37 @@
+schema_version = 2
+
+[package]
+name = "efivar"
+version = "39"
+release = "1"
+arch = "amd64"
+description = "Tool to manipulate UEFI variables"
+license = "LGPL-2.1-or-later"
+channel = "system"
+dependencies = [
+    "efivar-libs >= 39"
+]
+build_dependencies = [
+    "efivar-dev >= 39",
+    "glibc-dev >= 2.44"
+]
+provides = [
+    "efivar"
+]
+
+[upstream]
+url = "https://github.com/rhboot/efivar/tags"
+version_regex = '^(\d+)/'
+
+[source]
+url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz"
+sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
+
+[build]
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+
+[build.variables]
+ERRORS = ""
+ENABLE_DOCS = "0"

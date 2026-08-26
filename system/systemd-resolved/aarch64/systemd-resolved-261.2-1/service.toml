@@ -1,0 +1,8 @@
+schema_version = 2
+
+[service]
+name = "systemd-resolved"
+description = "Network Name Resolution daemon"
+command = ["/usr/lib/systemd/systemd-resolved"]
+restart = "always"
+after = ["systemd-udevd"]

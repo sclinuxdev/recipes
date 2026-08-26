@@ -1,0 +1,44 @@
+schema_version = 1
+
+[package]
+name = "lld"
+version = "22.1.8"
+release = "3"
+description = "LLVM linker family (ELF, Mach-O, WASM)"
+license = "Apache-2.0 WITH LLVM-exception"
+channel = "toolchain/llvm:22"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/llvm-project-22.1.8.src.tar.xz"
+sha256 = "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888"
+
+dependencies = [
+    "llvm >= 22.1.8"
+]
+
+build_dependencies = [
+    "cmake >= 4.4.2",
+    "ninja >= 1.13.2"
+]
+
+provides = [
+    "lld",
+    "ld.lld"
+]
+
+prepare = [
+    "rm -rf build && mkdir -p build"
+]
+
+build = [
+    "cmake -G Ninja -S lld -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/channels/llvm/22 -DCMAKE_INSTALL_RPATH='$ORIGIN/../lib' -DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm -DLLVM_LINK_LLVM_DYLIB=ON -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF && ninja -C build"
+]
+
+install = [
+    "DESTDIR=\"$DESTDIR\" ninja -C build install",
+    "test -x $DESTDIR/opt/channels/llvm/22/bin/ld.lld || { echo 'ERROR: ld.lld missing' >&2; exit 1; }",
+    "test -x $DESTDIR/opt/channels/llvm/22/bin/lld || { echo 'ERROR: lld driver missing' >&2; exit 1; }",
+    "test -x $DESTDIR/opt/channels/llvm/22/bin/wasm-ld || { echo 'ERROR: wasm-ld missing' >&2; exit 1; }",
+    "test -x $DESTDIR/opt/channels/llvm/22/bin/lld-link || { echo 'ERROR: lld-link missing' >&2; exit 1; }",
+]

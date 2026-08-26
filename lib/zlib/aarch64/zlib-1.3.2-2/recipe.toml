@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "zlib"
+version = "1.3.2"
+release = "2"
+description = "zlib compression runtime library"
+license = "Zlib"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://zlib.net/zlib-1.3.2.tar.gz"
+sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+
+dependencies = [
+]
+
+provides = [
+    "zlib",
+    "so:libz.so.1"
+]
+
+prepare = []
+
+build = [
+    # sage injects LDFLAGS=-fuse-ld=lld; fed into zlib's configure it
+    # clobbers LDSHARED down to bare "clang" (no -shared), the shared-lib
+    # self-test fails, and the split ships empty. Let zlib compute its own.
+    "unset LDFLAGS; ./configure --prefix=/usr",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true",
+    "[ -f $DESTDIR/usr/lib/libz.so.1 ] || { echo 'ERROR: zlib payload missing libz.so.1' >&2; exit 1; }"
+]

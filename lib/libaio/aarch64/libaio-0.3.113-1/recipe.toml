@@ -1,0 +1,46 @@
+# libaio -- Linux 原生异步 I/O 库。lvm2 链接它。
+#
+# 从 sclinux 的 Stage1 迁入并按本树惯例拆出 -dev。
+# prepare 去掉 -Werror：测试 harness 在新编译器下会因新增警告而中断构建。
+
+schema_version = 1
+
+[package]
+name = "libaio"
+version = "0.3.113"
+release = "1"
+description = "Linux native asynchronous I/O library"
+license = "LGPL-2.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://sources.buildroot.net/libaio/libaio-0.3.113.tar.gz"
+sha256 = "2c44d1c5fd0d43752287c9ae1eb9c023f04ef848ea8d4aafa46e9aedb678200b"
+
+dependencies = [
+]
+
+build_dependencies = [
+    "glibc-dev >= 2.44"
+]
+
+provides = [
+    "libaio",
+    "so:libaio.so.1"
+]
+
+prepare = [
+    "sed -i 's/-Werror//' harness/Makefile"
+]
+
+build = [
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/share $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

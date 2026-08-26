@@ -1,0 +1,60 @@
+# inetutils -- basic networking utilities.
+#
+# Supersedes Stage2/recipes/inetutils (release 2), which had two defects:
+#
+#   1. It moved ifconfig and hostname into /usr/sbin after install. /usr/sbin
+#      is a symlink to bin under merged-/usr, so the move wrote back through
+#      the link -- and the recipe was creating the directory it wrote into,
+#      which is what makes the breakage silent.
+#   2. It shipped `hostname`, which coreutils also ships. Two packages owning
+#      the same path is a file-ownership conflict at install time, and which
+#      one wins depends on install order. coreutils keeps hostname -- it is the
+#      more complete implementation and the package every root already has --
+#      so this one is dropped here.
+
+schema_version = 1
+
+[package]
+name = "inetutils"
+version = "2.8"
+release = "2"
+description = "Basic networking utilities (ping, ifconfig, ftp, ...)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://ftpmirror.gnu.org/inetutils/inetutils-2.8.tar.gz"
+sha256 = "57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5"
+
+dependencies = [
+    "readline >= 8.3",
+    "libxcrypt >= 4.5.2",
+]
+
+build_dependencies = [
+    "ncurses-dev >= 6.6",
+    "readline-dev >= 8.3",
+    "libxcrypt-dev >= 4.5.2"
+]
+
+provides = [
+    "inetutils"
+]
+
+prepare = []
+
+# --disable-hostname: coreutils owns /usr/bin/hostname. Disabling it at
+# configure time rather than deleting the file afterwards means the man page
+# and any build-time references go with it.
+build = [
+    "./configure --prefix=/usr --bindir=/usr/bin --sbindir=/usr/bin --localstatedir=/var --disable-hostname --disable-logger --disable-whois --disable-rcp --disable-rexec --disable-rlogin --disable-rsh --disable-servers --disable-telnet",
+    "make"
+]
+
+# Everything stays in /usr/bin. Nothing is moved to /usr/sbin.
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -f $DESTDIR/usr/bin/hostname $DESTDIR/usr/share/man/man1/hostname.1",
+    "rm -f $DESTDIR/usr/share/info/dir"
+]

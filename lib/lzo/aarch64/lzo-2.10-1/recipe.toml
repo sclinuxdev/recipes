@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "lzo"
+version = "2.10"
+release = "1"
+description = "LZO real-time data compression runtime library"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz"
+sha256 = "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072"
+
+dependencies = [
+]
+
+provides = [
+    "lzo",
+    "so:liblzo2.so.2"
+]
+
+prepare = []
+
+build = [
+    "./configure --prefix=/usr --enable-shared --disable-static",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

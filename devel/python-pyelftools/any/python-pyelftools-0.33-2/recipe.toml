@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+arch = "any"
+name = "python-pyelftools"
+version = "0.33"
+release = "2"
+description = "Python library for analyzing ELF and DWARF files"
+license = "Unlicense"
+channel = "system"
+
+dependencies = [
+    "python >= 3.10",
+]
+
+build_dependencies = [
+    "python >= 3.10",
+    "setuptools >= 46.4.0",
+    "wheel >= 0.40.0",
+]
+
+provides = [
+    "python-pyelftools",
+]
+
+prepare = [
+]
+
+build = [
+    "python3 -c \"import setuptools.build_meta as b; b.build_wheel('dist')\"",
+]
+
+install = [
+    "PYVER=$(python3 -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")'); SITE=\"$DESTDIR/usr/lib/python$PYVER/site-packages\"; mkdir -p \"$SITE\"; python3 -c \"import glob, sys, zipfile; [zipfile.ZipFile(path).extractall(sys.argv[1]) for path in glob.glob('dist/*.whl')]\" \"$SITE\"",
+]
+
+[source]
+url = "https://github.com/eliben/pyelftools/archive/refs/tags/v0.33.tar.gz"
+sha256 = "5507d69b42ac7211e5db57b42f427376b2cf3e3ab9a72b9239f4fc243566869d"

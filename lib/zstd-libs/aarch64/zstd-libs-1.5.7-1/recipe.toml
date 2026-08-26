@@ -1,0 +1,35 @@
+schema_version = 1
+
+[package]
+name = "zstd-libs"
+version = "1.5.7"
+release = "1"
+description = "libzstd shared runtime library"
+license = "BSD-3-Clause OR GPL-2.0-only"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz"
+sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3"
+
+dependencies = [
+]
+
+provides = [
+    "zstd-libs",
+    "so:libzstd.so.1"
+]
+
+prepare = []
+
+build = [
+    "make -C lib prefix=/usr"
+]
+
+install = [
+    "make -C lib prefix=/usr install DESTDIR=$DESTDIR",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

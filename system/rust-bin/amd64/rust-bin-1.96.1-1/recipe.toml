@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "rust-bin"
+version = "1.96.1"
+release = "1"
+description = "Rust compiler and Cargo binary distribution (toolchain channel)"
+license = "Apache-2.0 OR MIT"
+channel = "toolchain/rust:1.96.1"
+arch = "amd64"
+
+dependencies = [
+    "gcc-libs >= 15.3.0",
+    "glibc >= 2.44"
+]
+
+provides = [
+    "rust",
+    "rustc",
+    "cargo"
+]
+
+prepare = []
+build = []
+# Toolchain channel payload: everything lives under /opt/channels/rust/1.96.1,
+# mirroring how llvm:22 lands in /opt/channels/llvm/22.
+install = [
+    "cd \"$SRCDIR\"/rust-*-unknown-linux-gnu && ./install.sh --prefix=/opt/channels/rust/1.96.1 --destdir=\"$DESTDIR\" --disable-ldconfig",
+    "[ -x $DESTDIR/opt/channels/rust/1.96.1/bin/cargo ] && [ -x $DESTDIR/opt/channels/rust/1.96.1/bin/rustc ] || { echo 'ERROR: rust toolchain payload incomplete' >&2; exit 1; }"
+]
+
+[source]
+url = "https://static.rust-lang.org/dist/rust-1.96.1-x86_64-unknown-linux-gnu.tar.xz"
+sha256 = "d29ccb1559a177c4e72291f6e5f629de7fe8885e7521ca47802627544b121e95"

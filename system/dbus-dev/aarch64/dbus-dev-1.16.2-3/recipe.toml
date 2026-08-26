@@ -1,0 +1,49 @@
+schema_version = 1
+
+[package]
+name = "dbus-dev"
+version = "1.16.2"
+release = "3"
+description = "libdbus headers, pkg-config and linker symlink"
+license = "GPL-2.0-or-later OR AFL-2.1"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://sources.buildroot.net/dbus/dbus-1.16.2.tar.xz"
+sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
+
+dependencies = [
+    "dbus-libs >= 1.16.2"
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "pkgconf >= 3.0.5",
+    "expat-dev >= 2.8.3"
+]
+
+provides = [
+    "dbus-dev"
+]
+
+prepare = []
+
+build = [
+    "mkdir build",
+    "cd build && meson setup --prefix=/usr --buildtype=release --wrap-mode=nofallback -Dsystemd_system_unitdir=/usr/lib/systemd/system ..",
+    "cd build && ninja"
+]
+
+install = [
+    "cd build && DESTDIR=$DESTDIR ninja install",
+    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
+    "rm -rf $DESTDIR/usr/lib/systemd $DESTDIR/usr/lib/sysusers.d $DESTDIR/usr/lib/tmpfiles.d",
+    "rm -f $DESTDIR/usr/libexec/dbus-daemon-launch-helper",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
+    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
+    "[ -f $DESTDIR/usr/include/dbus-1.0/dbus/dbus.h ] && [ -f $DESTDIR/usr/lib/dbus-1.0/include/dbus/dbus-arch-deps.h ] && [ -L $DESTDIR/usr/lib/libdbus-1.so ] || { echo 'ERROR: dbus-dev payload incomplete' >&2; exit 1; }",
+    "[ ! -e $DESTDIR/usr/lib/systemd ] || { echo 'ERROR: dbus-dev still ships units' >&2; exit 1; }",
+]

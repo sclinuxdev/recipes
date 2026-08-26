@@ -1,0 +1,33 @@
+schema_version = 2
+
+[package]
+name = "pcre2-dev"
+version = "10.47"
+release = "1"
+description = "PCRE2 headers, pkg-config and linker symlink"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "pcre2-libs >= 10.47"
+]
+provides = [
+    "pcre2-dev"
+]
+
+[upstream]
+url = "https://github.com/PCRE2Project/pcre2/tags"
+version_regex = 'pcre2-([0-9]+\.[0-9.]+)'
+
+[source]
+url = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.bz2"
+sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--enable-pcre2-16",
+    "--enable-pcre2-32",
+    "--enable-jit",
+    "--disable-static"
+]

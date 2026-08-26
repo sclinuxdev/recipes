@@ -1,0 +1,51 @@
+schema_version = 2
+
+[package]
+name = "xfsprogs"
+version = "7.1.1"
+release = "1"
+arch = "amd64"
+description = "XFS filesystem utilities"
+license = "GPL-2.0-or-later"
+channel = "system"
+
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libinih >= 61",
+    "userspace-rcu >= 0.15.6",
+    "lzo >= 2.10",
+    "device-mapper >= 2.03.42",
+    "icu-libs >= 78.3",
+    "readline >= 8.3"
+]
+
+build_dependencies = [
+    "util-linux-dev >= 2.42.2",
+    "libinih-dev >= 61",
+    "userspace-rcu-dev >= 0.15.6",
+    "lzo-dev >= 2.10",
+    "device-mapper-dev >= 2.03.42",
+    "icu-dev >= 78.3",
+    "gettext >= 1.0"
+]
+
+provides = [
+    "xfsprogs"
+]
+
+[upstream]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/"
+version_regex = 'xfsprogs-v?([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/fs/xfs/xfsprogs/xfsprogs-7.1.1.tar.xz"
+sha256 = "063edc31ba8e85c95c7faf9be465a04898bba7c6e622fdd9b146eed4ca5415e8"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--bindir=/usr/bin",
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--enable-gettext=no"
+]

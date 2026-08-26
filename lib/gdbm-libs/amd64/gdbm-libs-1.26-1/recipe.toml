@@ -1,0 +1,36 @@
+schema_version = 2
+
+[package]
+name = "gdbm-libs"
+version = "1.26"
+release = "1"
+description = "libgdbm/libgdbm_compat shared runtime libraries"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+dependencies = [
+]
+build_dependencies = [
+    "readline-dev >= 8.3",
+    "ncurses-dev >= 6.6"
+]
+provides = [
+    "gdbm-libs",
+    "so:libgdbm.so.6",
+    "so:libgdbm_compat.so.4"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/gdbm/"
+version_regex = 'gdbm-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/gdbm/gdbm-1.26.tar.gz"
+sha256 = "6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-static",
+    "--enable-libgdbm-compat"
+]

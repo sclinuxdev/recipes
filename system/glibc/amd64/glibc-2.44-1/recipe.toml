@@ -1,0 +1,49 @@
+schema_version = 2
+
+[package]
+name = "glibc"
+version = "2.44"
+release = "1"
+arch = "amd64"
+description = "GNU C Library runtime, loader and locale data"
+license = "LGPL-2.1-or-later"
+channel = "system"
+
+dependencies = []
+build_dependencies = []
+
+provides = [
+    "glibc",
+    "virtual/libc",
+    "so:libc.so.6",
+    "so:ld-linux-x86-64.so.2"
+]
+
+[upstream]
+url = "https://ftp.gnu.org/gnu/glibc/"
+version_regex = 'glibc-([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.kernel.org/gnu/glibc/glibc-2.44.tar.xz"
+sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
+
+# core system software: pinned to gcc (v2 package default)
+[build]
+system = "autotools"
+configure_options = [
+    "--disable-profile",
+    "--enable-kernel=4.19",
+    "--enable-stack-protector=strong",
+    "--disable-nscd",
+    "libc_cv_slibdir=/usr/lib"
+]
+
+[build.toolchain.compiler]
+family = "gcc"
+package = "gcc"
+minimum_version = "15.1"
+
+[build.toolchain.linker]
+family = "ld"
+package = "binutils"
+minimum_version = "2.40"

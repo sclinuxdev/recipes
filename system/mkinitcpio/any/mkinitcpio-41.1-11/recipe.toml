@@ -1,0 +1,102 @@
+# mkinitcpio -- initramfs generator.
+#
+# Supersedes Stage2/recipes/mkinitcpio (release 2). Two changes:
+#
+#   1. Declares a capability hook for virtual/initramfs-generator, so sage's
+#      post-transaction trigger can regenerate the initramfs after a kernel
+#      lands without any recipe hardcoding mkinitcpio's path. Swapping in
+#      dracut later is then one line in system.toml.
+#   2. Two install hooks iterate /usr/lib/nvpcr/*.nvpcr without a match guard:
+#      the `systemd` hook's for-loop and sd-encrypt's `map add_file` both run
+#      their body once on the literal unexpanded pattern when no nvpcr files
+#      are installed, and add_file errors out on the nonexistent path. Both
+#      call sites are patched to skip a non-match.
+#
+# The source is the GitLab tag archive; sources.archlinux.org does not carry
+# this release.
+
+schema_version = 1
+
+[package]
+name = "mkinitcpio"
+version = "41.1"
+release = "11"
+arch = "any"
+description = "Modular initramfs image creation utility"
+license = "GPL-2.0-only"
+channel = "system"
+
+dependencies = [
+    "bash >= 5.3.15",
+    "kmod >= 34.2",
+    "virtual/coreutils",
+    "util-linux >= 2.42.2",
+    "findutils >= 4.11.0",
+    "grep >= 3.12",
+    "gawk >= 5.4.1",
+    "sed >= 4.10",
+    "zstd >= 1.5.7",
+    "libarchive >= 3.8.9",
+    "systemd-udev >= 261.2",
+    "busybox >= 1.38.0-2",
+    "kbd >= 2.10.0",
+    "e2fsprogs >= 1.47.4",
+    "lvm2 >= 2.03.42",
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "patch >= 2.8",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "mkinitcpio",
+    "virtual/initramfs-generator"
+]
+
+conffiles = [
+    "/etc/mkinitcpio.conf"
+]
+
+# Guard both nvpcr glob call sites: without a match the shell hands the loop
+# the literal pattern and add_file errors on a path that does not exist. The
+# second sed no-ops if upstream grows its own guard.
+#
+# The meson seds adapt to this root: systemd 261 ships libsystemd.pc under
+# its modern name and exports none of the install-dir variables mkinitcpio
+# queries, so the dirs are pinned to our layout and udevd gains the
+# /usr/lib/systemd search path.
+prepare = [
+    "patch -p1 < \"$RECIPE_DIR/sclinux-runtime.patch\"",
+    "grep -rl 'for nvpcr in /usr/lib/nvpcr/\\*.nvpcr' . | while read -r f; do sed -i 's#for nvpcr in /usr/lib/nvpcr/\\*\\.nvpcr; do#for nvpcr in /usr/lib/nvpcr/*.nvpcr; do [ -e \"$nvpcr\" ] || continue#' \"$f\"; done",
+    "sed -i 's|map add_file /usr/lib/nvpcr/\\*\\.nvpcr|for nvpcr in /usr/lib/nvpcr/*.nvpcr; do if [ -e \"$nvpcr\" ]; then add_file \"$nvpcr\"; fi; done|' install/sd-encrypt 2>/dev/null || true",
+    "sed -i \"s/dependency('systemd',/dependency('libsystemd',/\" meson.build",
+    "sed -i \"s|systemd.get_variable('systemd_util_dir')|'/usr/bin'|\" meson.build",
+    "sed -i \"s|systemd.get_variable('systemd_system_unit_dir')|'/usr/lib/systemd/system'|\" meson.build",
+    "sed -i \"s|systemd.get_variable('tmpfiles_dir')|'/usr/lib/tmpfiles.d'|\" meson.build",
+    "sed -i \"s|udevd_dirs = \\[systemd_util_dir\\]|udevd_dirs = ['/usr/bin', '/usr/lib/systemd']|\" meson.build",
+]
+
+build = [
+    "meson setup build --prefix=/usr --sysconfdir=/etc -Ddocs=false",
+    "ninja -C build"
+]
+
+install = [
+    "DESTDIR=$DESTDIR ninja -C build install",
+    "mkdir -p $DESTDIR/etc/mkinitcpio.conf.d",
+    "printf '%s\\n' 'MODULES=()' 'BINARIES=()' 'FILES=()' 'HOOKS=(base udev modconf block lvm2 filesystems fsck)' 'COMPRESSION=\"zstd\"' > $DESTDIR/etc/mkinitcpio.conf",
+    "grep -q 'HOOKS=(base udev modconf block lvm2 filesystems fsck)' $DESTDIR/etc/mkinitcpio.conf || { echo 'ERROR: mkinitcpio.conf must keep the init-agnostic base/udev/lvm2 chain' >&2; exit 1; }"
+]
+
+[source]
+url = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio/-/archive/v41.1/mkinitcpio-v41.1.tar.gz"
+sha256 = "202ffca349ceb6b62513cc65a67d6fc0c0c15cacc72710ce5228b444cf1317e6"
+
+# -P regenerates every preset, which is what "the kernel changed" means.
+[[capability_hooks]]
+capability = "virtual/initramfs-generator"
+exec = "/usr/bin/mkinitcpio"
+args = ["-P"]

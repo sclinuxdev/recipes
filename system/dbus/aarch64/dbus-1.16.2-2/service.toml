@@ -1,0 +1,10 @@
+schema_version = 2
+
+# Universal service definition: `sage rebuild` compiles this into the native
+# definition of whichever init system is active, unless the package ships that
+# definition itself.
+[service]
+name = "dbus"
+description = "D-Bus System Message Bus"
+command = ["/usr/bin/dbus-daemon", "--system", "--nofork", "--nopidfile"]
+restart = "on-failure"

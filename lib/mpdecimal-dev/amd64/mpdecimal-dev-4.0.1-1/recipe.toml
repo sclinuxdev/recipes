@@ -1,0 +1,27 @@
+schema_version = 2
+
+[package]
+name = "mpdecimal-dev"
+version = "4.0.1"
+release = "1"
+description = "mpdecimal headers, pkg-config and linker symlink"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+dependencies = [
+    "mpdecimal >= 4.0.1"
+]
+provides = [
+    "mpdecimal-dev"
+]
+
+[upstream]
+url = "https://www.bytereef.org/software/mpdecimal/releases/"
+version_regex = 'mpdecimal-([0-9]+\.[0-9.]+)\.tar'
+
+[source]
+url = "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz"
+sha256 = "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
+
+[build]
+system = "autotools"

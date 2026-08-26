@@ -1,0 +1,48 @@
+schema_version = 2
+
+[package]
+name = "util-linux"
+version = "2.42.2"
+release = "1"
+arch = "amd64"
+description = "Essential system utilities (mount, fdisk, sulogin, ...)"
+license = "GPL-2.0-or-later"
+channel = "system"
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libxcrypt >= 4.5.2"
+]
+build_dependencies = [
+    "libxcrypt-dev >= 4.5.2"
+]
+provides = [
+    "util-linux"
+]
+
+[upstream]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/"
+version_regex = 'util-linux-v?([0-9][0-9.]*)\.tar'
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-2.42.2.tar.xz"
+sha256 = "03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--bindir=/usr/bin",
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--sysconfdir=/etc",
+    "--disable-static",
+    "--without-python",
+    "--without-systemd",
+    "--disable-liblastlog2",
+    "--disable-pam-lastlog2",
+    "--disable-makeinstall-chown",
+    "--without-bash-completion-dir",
+    "--disable-login",
+    "--disable-su",
+    "--disable-nologin",
+    "--docdir=/usr/share/doc/util-linux-2.42.2",
+]

@@ -1,0 +1,46 @@
+schema_version = 1
+
+[package]
+name = "openssl-libs"
+version = "4.0.1"
+release = "1"
+description = "libssl/libcrypto shared runtime libraries"
+license = "Apache-2.0"
+channel = "system"
+arch = "amd64"
+
+[source]
+url = "https://www.openssl.org/source/openssl-4.0.1.tar.gz"
+sha256 = "2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09"
+
+dependencies = [
+    "zlib >= 1.3.2"
+]
+
+build_dependencies = [
+    "zlib-dev >= 1.3.2"
+]
+
+provides = [
+    "openssl-libs",
+    "so:libssl.so.4",
+    "so:libcrypto.so.4",
+    "so:libssl.so.3",
+    "so:libcrypto.so.3"
+]
+
+prepare = []
+
+build = [
+    "./config --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic no-apps enable-deprecated enable-tls1-method enable-tls1_1-method",
+    "make"
+]
+
+install = [
+    "make INSTALL_LIBS= MANSUFFIX=ssl install DESTDIR=$DESTDIR",
+    "ln -sf libssl.so.4 $DESTDIR/usr/lib/libssl.so.3",
+    "ln -sf libcrypto.so.4 $DESTDIR/usr/lib/libcrypto.so.3",
+    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
+    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+]

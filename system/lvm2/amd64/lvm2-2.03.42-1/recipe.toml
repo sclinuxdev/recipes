@@ -1,0 +1,74 @@
+schema_version = 2
+
+[package]
+name = "lvm2"
+version = "2.03.42"
+release = "1"
+arch = "amd64"
+description = "Logical Volume Manager userspace tools"
+license = "GPL-2.0-only AND LGPL-2.1-only"
+channel = "system"
+
+dependencies = [
+    "bash >= 5.3.15",
+    "device-mapper >= 2.03.42",
+    "libaio >= 0.3.113",
+    "readline >= 8.3",
+    "systemd >= 261.2",
+    "util-linux-libs >= 2.42.2"
+]
+
+build_dependencies = [
+    "libaio-dev >= 0.3.113",
+    "readline-dev >= 8.3",
+    "util-linux-dev >= 2.42.2",
+    "glibc-dev >= 2.44",
+    "pkgconf >= 3.0.5"
+]
+
+provides = [
+    "lvm2"
+]
+
+[upstream]
+url = "https://sourceware.org/ftp/lvm2/"
+version_regex = 'LVM2\.([0-9.]+)\.tgz'
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
+
+[build]
+system = "autotools"
+configure_options = [
+    "--sbindir=/usr/bin",
+    "--libdir=/usr/lib",
+    "--sysconfdir=/etc",
+    "--localstatedir=/var",
+    "--enable-cmdlib",
+    "--enable-dmeventd",
+    "--enable-lvmpolld",
+    "--enable-pkgconfig",
+    "--enable-readline",
+    "--enable-udev_rules",
+    "--enable-udev_sync",
+    "--enable-write_install",
+    "--with-cache=internal",
+    "--with-cache-check=",
+    "--with-cache-dump=",
+    "--with-cache-repair=",
+    "--with-cache-restore=",
+    "--with-default-dm-run-dir=/run",
+    "--with-default-locking-dir=/run/lock/lvm",
+    "--with-default-pid-dir=/run",
+    "--with-default-run-dir=/run/lvm",
+    "--with-libexecdir=/usr/lib/lvm2",
+    "--with-systemdsystemunitdir=/usr/lib/systemd/system",
+    "--with-udev-prefix=/usr",
+    "--with-udevdir=/usr/lib/udev/rules.d",
+    "--with-thin=internal",
+    "--with-thin-check=",
+    "--with-thin-dump=",
+    "--with-thin-repair=",
+    "--with-thin-restore="
+]

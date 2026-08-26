@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "xmake"
+version = "3.1.0"
+release = "1"
+description = "xmake C/C++ build utility"
+license = "Apache-2.0"
+channel = "system"
+arch = "aarch64"
+
+[source]
+url = "https://github.com/xmake-io/xmake/releases/download/v3.1.0/xmake-v3.1.0.tar.gz"
+sha256 = "84aae0926d293f486297dfb63fc4cd802218124c9c91b141f2004dcc4d509fdd"
+
+dependencies = [
+    "gcc-libs >= 15.3.0"
+]
+
+provides = [
+    "xmake"
+]
+
+prepare = []
+
+build = [
+    "./configure --runtime=lua --prefix=/usr",
+    "make"
+]
+
+install = [
+    "make install DESTDIR=$DESTDIR PREFIX=/usr"
+]

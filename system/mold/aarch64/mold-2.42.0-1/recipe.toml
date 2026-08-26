@@ -1,0 +1,39 @@
+# mold -- high-performance ELF linker from the upstream AArch64 binary release.
+
+schema_version = 1
+
+[package]
+name = "mold"
+version = "2.42.0"
+release = "1"
+description = "mold: A Modern Linker (official prebuilt binaries)"
+license = "MIT OR AGPL-3.0-or-later"
+channel = "system"
+arch = "aarch64"
+
+dependencies = [
+    "glibc >= 2.44",
+    "gcc-libs >= 15.3.0"
+]
+
+provides = [
+    "mold",
+    "ld-mold"
+]
+
+prepare = []
+build = []
+
+install = [
+    "mkdir -p \"$DESTDIR/usr/bin\" \"$DESTDIR/usr/lib/mold\" \"$DESTDIR/usr/libexec/mold\" \"$DESTDIR/usr/share\"",
+    "cp -a \"$SRCDIR/bin/.\" \"$DESTDIR/usr/bin/\"",
+    "cp -a \"$SRCDIR/lib/mold\" \"$DESTDIR/usr/lib/\"",
+    "cp -a \"$SRCDIR/libexec/mold\" \"$DESTDIR/usr/libexec/\"",
+    "mkdir -p $DESTDIR/usr/share/doc && cp -a \"$SRCDIR/share/doc/mold\" $DESTDIR/usr/share/doc/",
+    "chmod +x \"$DESTDIR/usr/bin/mold\" \"$DESTDIR/usr/bin/ld.mold\"",
+    "[ -x $DESTDIR/usr/bin/mold ] && [ -x $DESTDIR/usr/bin/ld.mold ] || { echo 'ERROR: mold payload incomplete' >&2; exit 1; }"
+]
+
+[source]
+url = "https://github.com/rui314/mold/releases/download/v2.42.0/mold-2.42.0-aarch64-linux.tar.gz"
+sha256 = "3c9a0a3624aac8a2007569ae50c33b3129a0f0ae8bcc974aeee2f8939d295190"

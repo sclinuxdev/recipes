@@ -1,0 +1,43 @@
+schema_version = 2
+
+[package]
+name = "lld"
+version = "22.1.8"
+release = "1"
+description = "LLVM linker family (ELF, Mach-O, WASM)"
+license = "Apache-2.0 WITH LLVM-exception"
+channel = "toolchain/llvm:22"
+arch = "amd64"
+
+dependencies = [
+    "llvm >= 22.1.8"
+]
+
+build_dependencies = [
+    "cmake >= 4.4.2",
+    "ninja >= 1.13.2"
+]
+
+provides = [
+    "lld",
+    "ld.lld"
+]
+
+[upstream]
+url = "https://github.com/llvm/llvm-project/tags"
+version_regex = 'llvmorg-([0-9]+\.[0-9.]+)'
+
+[source]
+url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/llvm-project-22.1.8.src.tar.xz"
+sha256 = "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888"
+
+[build]
+system = "cmake"
+source_subdir = "lld"
+build_dir = "build"
+configure_options = [
+    "-DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm",
+    "-DLLVM_LINK_LLVM_DYLIB=ON",
+    "-DLLVM_INCLUDE_TESTS=OFF",
+    "-DLLVM_INCLUDE_DOCS=OFF"
+]
