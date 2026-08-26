@@ -34,6 +34,10 @@ sha256 = "aa1b66a70eace83dc624508745646c08ae561de512ab403adffb93ac87fc72e6"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/lib/*.so.*",
+]
 configure_options = [
     "--disable-static",
     "--with-openssl",

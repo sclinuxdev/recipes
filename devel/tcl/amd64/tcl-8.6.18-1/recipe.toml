@@ -25,6 +25,17 @@ sha256 = "14f9af32b1767ff718477a8f974ad03c34341097e6b43f4ce54644ee974e268e"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_excludes = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/*.so.*",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 source_subdir = "unix"
 configure_options = [
     "--mandir=/usr/share/man",

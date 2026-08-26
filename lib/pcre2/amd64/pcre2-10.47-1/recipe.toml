@@ -34,6 +34,17 @@ sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_excludes = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/*.so.*",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 configure_options = [
     "--enable-pcre2-16",
     "--enable-pcre2-32",

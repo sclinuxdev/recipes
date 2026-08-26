@@ -27,6 +27,16 @@ sha256 = "71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 configure_options = [
     "--enable-hashes=strong,glibc",
     "--enable-obsolete-api=no",

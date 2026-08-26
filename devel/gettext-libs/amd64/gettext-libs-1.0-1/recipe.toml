@@ -28,6 +28,10 @@ sha256 = "71132a3fb71e68245b8f2ac4e9e97137d3e5c02f415636eb508ae607bc01add7"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/lib/*.so.*",
+]
 configure_options = [
     "--disable-static",
     "--docdir=/usr/share/doc/gettext-1.0"

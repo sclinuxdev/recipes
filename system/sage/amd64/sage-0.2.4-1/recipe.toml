@@ -20,7 +20,6 @@ channel = "system"
 arch = "amd64"
 
 dependencies = [
-    "fakeroot",
     "lmdb >= 0.9.35",
     "zstd-libs >= 1.5.7",
     "curl-libs >= 8.21.0",
@@ -31,6 +30,7 @@ dependencies = [
 ]
 
 build_dependencies = [
+    "fakeroot >= 2.1.4",
     "xmake >= 3.1.0",
     "lmdb-dev >= 0.9.35",
     "zstd-dev >= 1.5.7",
@@ -55,3 +55,7 @@ sha256 = "da380f14b14f5f70e785d52ed4e097a7a6c528f55bb5c35d3c389cdbaf6c3469"
 [build]
 system = "xmake"
 configure_options = ["-c", "-y"]
+install_files = [
+    "usr/bin/sage",
+    "etc/sage/build.toml",
+]

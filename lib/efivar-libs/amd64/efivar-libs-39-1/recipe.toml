@@ -28,6 +28,9 @@ sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
 
 [build]
 system = "make"
+install_files = [
+    "usr/lib/*.so.*",
+]
 build_targets = ["all"]
 install_targets = ["install"]
 

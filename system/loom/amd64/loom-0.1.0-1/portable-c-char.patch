@@ -1,0 +1,20 @@
+--- a/src/linux/reactor.rs
++++ b/src/linux/reactor.rs
+@@ -430,7 +430,7 @@ impl NotifySocket {
+             ));
+         }
+         for (destination, source) in address.sun_path.iter_mut().zip(bytes) {
+-            *destination = i8::from_ne_bytes([*source]);
++            *destination = libc::c_char::from_ne_bytes([*source]);
+         }
+         let length = libc::socklen_t::try_from(size_of::<libc::sa_family_t>() + bytes.len() + 1)
+             .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "socket path is too long"))?;
+@@ -522,7 +522,7 @@ impl NotifyClient {
+             ));
+         }
+         for (destination, source) in address.sun_path.iter_mut().zip(bytes) {
+-            *destination = i8::from_ne_bytes([*source]);
++            *destination = libc::c_char::from_ne_bytes([*source]);
+         }
+         let length = libc::socklen_t::try_from(size_of::<libc::sa_family_t>() + bytes.len() + 1)
+             .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "socket path is too long"))?;

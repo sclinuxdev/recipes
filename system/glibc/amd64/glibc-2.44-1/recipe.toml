@@ -30,13 +30,26 @@ sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
 # core system software: pinned to gcc (v2 package default)
 [build]
 system = "autotools"
+build_dir = "build"
+install_targets = ["install"]
+install_excludes = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 configure_options = [
     "--disable-profile",
     "--enable-kernel=4.19",
     "--enable-stack-protector=strong",
-    "--disable-nscd",
-    "libc_cv_slibdir=/usr/lib"
+    "--disable-nscd"
 ]
+
+[build.variables]
+libc_cv_slibdir = "/usr/lib"
 
 [build.toolchain.compiler]
 family = "gcc"

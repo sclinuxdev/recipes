@@ -25,3 +25,13 @@ sha256 = "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]

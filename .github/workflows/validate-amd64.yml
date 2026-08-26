@@ -1,0 +1,14 @@
+name: validate-amd64-recipes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  schema-and-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate every amd64 recipe
+        run: python3 tools/validate-amd64-v2.py --json

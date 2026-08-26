@@ -25,5 +25,15 @@ sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269"
 
 [build]
 system = "make"
+install_files = [
+    "usr/lib/libbz2.so.1.0.8",
+    "usr/lib/libbz2.so.1.0",
+]
 build_targets = ["-f", "Makefile-libbz2_so"]
 install_targets = ["install"]
+install_copies = [
+    { from = "libbz2.so.1.0.8", to = "usr/lib/libbz2.so.1.0.8" },
+]
+install_symlinks = [
+    { path = "usr/lib/libbz2.so.1.0", target = "libbz2.so.1.0.8" },
+]

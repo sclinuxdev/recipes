@@ -28,7 +28,16 @@ sha256 = "5b46e74377ed7409c5b75e7a96f95377b095623b689d8522620927964a41499c"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 configure_options = [
-    "--libdir=/usr/lib",
     "--disable-static"
 ]

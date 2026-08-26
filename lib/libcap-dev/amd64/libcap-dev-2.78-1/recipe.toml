@@ -25,6 +25,15 @@ sha256 = "0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11"
 
 [build]
 system = "make"
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 build_targets = ["all"]
 install_targets = ["install"]
 

@@ -1,0 +1,50 @@
+schema_version = 2
+
+[package]
+name = "fakeroot"
+version = "2.1.4"
+release = "1"
+description = "tool for simulating superuser privileges during package builds"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "acl-libs >= 2.4.0",
+    "libcap-libs >= 2.78",
+]
+
+build_dependencies = [
+    "meson >= 1.12.0",
+    "ninja >= 1.13.2",
+    "acl-dev >= 2.4.0",
+    "libcap-dev >= 2.78",
+]
+
+provides = [
+    "fakeroot",
+]
+
+[upstream]
+url = "https://salsa.debian.org/clint/fakeroot/-/tags"
+version_regex = '(?:v)?([0-9]+\\.[0-9]+(?:\\.[0-9]+)*)'
+
+[source]
+url = "https://deb.debian.org/debian/pool/main/f/fakeroot/fakeroot_2.1.4.orig.tar.xz"
+sha256 = "0822bd5a9f0cf19d2ba0546b88b0432d4d3d9917db62c57b74044ccadba06e49"
+
+[build]
+system = "meson"
+configure_options = [
+    "-Dipc=sysv",
+    "-Ddocs=false",
+]
+install_files = [
+    "usr/bin/fakeroot",
+    "usr/bin/faked",
+    "usr/lib/libfakeroot-0.so",
+    "usr/lib/libfakeroot.so",
+]
+install_copies = [
+    { from = "build/faked", to = "usr/bin/faked" },
+]

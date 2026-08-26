@@ -37,6 +37,9 @@ sha256 = "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e"
 # core system software: pinned to gcc (v2 package default)
 [build]
 system = "autotools"
+install_files = [
+    "usr/lib/*.so.*",
+]
 configure_options = [
     "--enable-languages=c,c++",
     "--enable-default-pie",

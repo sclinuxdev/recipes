@@ -33,10 +33,18 @@ sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
 
 [build]
 system = "autotools"
+install_excludes = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+]
 configure_options = [
     "--bindir=/usr/bin",
     "--sbindir=/usr/bin",
-    "--libdir=/usr/lib",
     "--sysconfdir=/etc",
     "--localstatedir=/var",
     "--enable-pkgconfig",

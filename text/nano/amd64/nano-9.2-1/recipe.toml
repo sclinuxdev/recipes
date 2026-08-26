@@ -31,6 +31,7 @@ sha256 = "05ecb99247b782e8a5b3a25ed4101dd034b0236902f7449bc9795b717642f7e9"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
 configure_options = [
     "--sysconfdir=/etc",
     "--enable-utf8"

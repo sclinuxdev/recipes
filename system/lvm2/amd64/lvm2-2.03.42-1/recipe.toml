@@ -40,9 +40,9 @@ sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
 
 [build]
 system = "autotools"
+install_targets = ["install"]
 configure_options = [
     "--sbindir=/usr/bin",
-    "--libdir=/usr/lib",
     "--sysconfdir=/etc",
     "--localstatedir=/var",
     "--enable-cmdlib",

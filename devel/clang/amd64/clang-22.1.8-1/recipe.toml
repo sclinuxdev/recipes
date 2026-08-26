@@ -38,6 +38,17 @@ sha256 = "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888"
 system = "cmake"
 source_subdir = "clang"
 build_dir = "build"
+install_files = [
+    "usr/bin/clang*",
+    "usr/bin/cc",
+    "usr/bin/c++",
+    "usr/lib/clang/**",
+    "usr/lib/cmake/clang/**",
+]
+install_symlinks = [
+    { path = "usr/bin/cc", target = "clang" },
+    { path = "usr/bin/c++", target = "clang++" },
+]
 configure_options = [
     "-DLLVM_DIR=/opt/channels/llvm/22/lib/cmake/llvm",
     "-DCLANG_LINK_CLANG_DYLIB=ON",
