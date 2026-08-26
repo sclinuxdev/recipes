@@ -44,7 +44,7 @@ provides = [
     "linux-zen",
     "linux",
     "virtual/linux",
-    "virtual/kernel"
+    "virtual/kernel = 7.1.10"
 ]
 
 [upstream]

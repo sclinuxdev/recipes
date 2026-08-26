@@ -45,6 +45,11 @@ install_files = [
     "usr/lib/initcpio/busybox",
 ]
 
+# Busybox ships no manuals or locales; strip the static binary so the same
+# payload is reproducible on a clean builder without a host strip.
+[build.content]
+strip = "unneeded"
+
 [[build.steps]]
 name = "configure-static"
 phase = "prepare"

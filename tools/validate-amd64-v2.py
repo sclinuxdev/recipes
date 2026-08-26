@@ -23,7 +23,7 @@ from pathlib import Path
 
 INSTALL_KEYS = ("install_files", "install_excludes")
 TRANSFORM_KEYS = ("install_copies", "install_moves", "install_removes", "install_generates", "install_symlinks")
-BUILD_SYSTEMS = {"autotools", "cmake", "meson", "xmake", "cargo", "make", "script"}
+BUILD_SYSTEMS = {"autotools", "cmake", "meson", "xmake", "cargo", "go", "make", "script"}
 STEP_PHASES = {"prepare", "pre-build", "post-build", "check", "pre-install", "install", "post-install"}
 STEP_CWDS = {"source", "build", "package"}
 SUPPORTED_ARCHES = {"amd64", "aarch64", "riscv64", "armv7", "any"}
@@ -35,7 +35,7 @@ HASH_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 # claims in the old tree).
 ROOT_KEYS = {
     "schema_version", "package", "upstream", "source", "build",
-    "capability_hooks", "triggers",
+    "capability_hooks", "triggers", "sysusers", "alternatives",
 }
 PACKAGE_KEYS = {
     "name", "version", "release", "description", "license", "channel",
@@ -50,12 +50,17 @@ BUILD_KEYS = {
     "install_excludes", "install_copies", "install_symlinks", "install_moves",
     "install_removes", "install_generates", "outputs", "steps", "patches",
     "patch_checksums", "patch_strip", "allowed_compilers", "allowed_linkers",
-    "variables", "flag_env", "tool_env", "toolchain",
+    "variables", "flag_env", "tool_env", "toolchain", "tools",
+    "flag_policy", "content", "network",
 }
-TOOLCHAIN_KEYS = {"compiler", "linker", "rust"}
+TOOLCHAIN_KEYS = {"compiler", "linker", "rust", "go"}
 TOOL_KEYS = {"family", "package", "minimum_version"}
 FLAG_ENV_KEYS = {"cflags", "cxxflags", "cppflags", "ldflags", "rustflags"}
 TOOL_ENV_KEYS = {"cc", "cxx", "linker"}
+FLAG_POLICY_KEYS = {"lto", "march", "as-needed"}
+CONTENT_KEYS = {"strip", "man_compress", "shebangs", "locales"}
+SYSUSER_KEYS = {"type", "name", "id", "description", "home", "shell", "group"}
+ALTERNATIVE_KEYS = {"link", "target", "priority"}
 TRANSFORM_ENTRY_KEYS = {
     "install_copies": {"from", "to"},
     "install_moves": {"from", "to"},
@@ -398,6 +403,15 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
         if key in package and (not isinstance(package[key], list)
                                or not all(isinstance(item, str) and item for item in package[key])):
             errors.append(f"{path}: package.{key} must be an array of non-empty strings")
+    # Versioned provides ("virtual/libc = 2.44") parse as `name <op> version`;
+    # reject malformed entries before they reach the solver's provider index.
+    for item in package.get("provides", []) if isinstance(package.get("provides"), list) else []:
+        if not isinstance(item, str):
+            errors.append(f"{path}: package.provides entries must be strings")
+            continue
+        name, _, _ = item.partition(" ")
+        if not name or name in {".", ".."}:
+            errors.append(f"{path}: invalid package.provides entry: {item!r}")
     if ("upstream" in package) != ("upstream_regex" in package):
         errors.append(f"{path}: package.upstream and package.upstream_regex must be provided together")
     if "upstream" in recipe:
@@ -425,15 +439,19 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
     for key in ("source_subdir", "build_dir"):
         if key in build and not isinstance(build[key], str):
             errors.append(f"{path}: build.{key} must be a string")
-    if "kernel" in build and not isinstance(build["kernel"], bool):
-        errors.append(f"{path}: build.kernel must be boolean")
-    if build.get("kernel") and system != "make":
-        errors.append(f"{path}: build.kernel=true requires system=make")
     if "patch_strip" in build and (not isinstance(build["patch_strip"], int)
                                    or not 0 <= build["patch_strip"] <= 9):
         errors.append(f"{path}: build.patch_strip must be an integer from 0 to 9")
+    if "tools" in build:
+        if not isinstance(build["tools"], bool):
+            errors.append(f"{path}: build.tools must be boolean")
+        elif build["tools"] and system != "script":
+            errors.append(f"{path}: build.tools=true is valid only for script recipes")
+    if "network" in build and not isinstance(build["network"], bool):
+        errors.append(f"{path}: build.network must be boolean")
     for nested, allowed in (("variables", None), ("flag_env", FLAG_ENV_KEYS),
-                            ("tool_env", TOOL_ENV_KEYS), ("toolchain", TOOLCHAIN_KEYS)):
+                            ("tool_env", TOOL_ENV_KEYS), ("toolchain", TOOLCHAIN_KEYS),
+                            ("flag_policy", FLAG_POLICY_KEYS), ("content", CONTENT_KEYS)):
         if nested not in build:
             continue
         value = build[nested]
@@ -442,22 +460,44 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
             continue
         if allowed is not None:
             reject_unknown(value, allowed, path, f"build.{nested}", errors)
+        if nested == "flag_policy":
+            for key, item in value.items():
+                if not isinstance(item, bool):
+                    errors.append(f"{path}: build.flag_policy.{key} must be boolean")
+                elif item:
+                    errors.append(f"{path}: build.flag_policy.{key}=true is the default and "
+                                  f"cannot weaken a recipe; flag_policy declares downgrades only")
+        elif nested == "content":
+            if "strip" in value and value["strip"] not in {"none", "unneeded", "debug"}:
+                errors.append(f"{path}: build.content.strip must be none, unneeded, or debug")
+            if "man_compress" in value and value["man_compress"] not in {"none", "gzip"}:
+                errors.append(f"{path}: build.content.man_compress must be none or gzip")
+            if "shebangs" in value and value["shebangs"] != "absolute":
+                errors.append(f"{path}: build.content.shebangs must be \"absolute\"")
+            if "locales" in value and not all(isinstance(item, str) and item
+                                              and "/" not in item for item in value["locales"]):
+                errors.append(f"{path}: build.content.locales must be an array of plain locale names")
         elif nested == "variables":
             for key, item in value.items():
                 if not isinstance(key, str) or not isinstance(item, str):
                     errors.append(f"{path}: build.variables values must be strings")
         else:
-            for role, tool in value.items():
-                reject_unknown(tool, TOOL_KEYS, path, f"build.toolchain.{role}", errors)
-                if not isinstance(tool, dict):
-                    continue
-                for field in TOOL_KEYS:
-                    if field in tool and not isinstance(tool[field], str):
-                        errors.append(f"{path}: build.toolchain.{role}.{field} must be a string")
-                if role in {"compiler", "linker", "rust"}:
-                    for field in ("family", "package", "minimum_version"):
-                        if field not in tool or not isinstance(tool[field], str) or not tool[field]:
-                            errors.append(f"{path}: build.toolchain.{role} requires {field}")
+            if nested == "toolchain":
+                for role, tool in value.items():
+                    reject_unknown(tool, TOOL_KEYS, path, f"build.toolchain.{role}", errors)
+                    if not isinstance(tool, dict):
+                        continue
+                    for field in TOOL_KEYS:
+                        if field in tool and not isinstance(tool[field], str):
+                            errors.append(f"{path}: build.toolchain.{role}.{field} must be a string")
+                    if role in {"compiler", "linker", "rust", "go"}:
+                        for field in ("family", "package", "minimum_version"):
+                            if field not in tool or not isinstance(tool[field], str) or not tool[field]:
+                                errors.append(f"{path}: build.toolchain.{role} requires {field}")
+                    if role == "rust" and system != "cargo":
+                        errors.append(f"{path}: build.toolchain.rust is valid only for Cargo recipes")
+                    if role == "go" and system != "go":
+                        errors.append(f"{path}: build.toolchain.go is valid only for Go recipes")
     for key, allowed in TRANSFORM_ENTRY_KEYS.items():
         values = build.get(key, [])
         if not isinstance(values, list):
@@ -547,6 +587,47 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
         errors.append(f"{path}: outputs require payload=outputs")
     if system == "script" and (payload == "all" or (not outputs and not build.get("install_files"))):
         errors.append(f"{path}: script requires an explicit payload boundary")
+    # Root [[sysusers]]: declarative system user/group requests.
+    sysusers = recipe.get("sysusers")
+    if sysusers is not None:
+        if not isinstance(sysusers, list) or not all(isinstance(item, dict) for item in sysusers):
+            errors.append(f"{path}: sysusers must be an array of tables")
+        else:
+            seen: set[str] = set()
+            for entry in sysusers:
+                reject_unknown(entry, SYSUSER_KEYS, path, "sysusers[]", errors)
+                name = entry.get("name")
+                if not isinstance(name, str) or not name or "/" in name or name in {".", ".."}:
+                    errors.append(f"{path}: sysusers entries require a simple non-empty name")
+                elif name in seen:
+                    errors.append(f"{path}: duplicate sysusers name: {name}")
+                seen.add(name) if isinstance(name, str) else None
+                etype = entry.get("type")
+                if etype not in {"user", "group"}:
+                    errors.append(f"{path}: sysusers type must be user or group")
+                if "id" in entry and (not isinstance(entry["id"], int) or not 0 < entry["id"] <= 0x7FFFFFFF):
+                    errors.append(f"{path}: sysusers id must be a positive system uid/gid")
+    # Root [[alternatives]]: cross-package symlink arbitration.
+    alternatives = recipe.get("alternatives")
+    if alternatives is not None:
+        if not isinstance(alternatives, list) or not all(isinstance(item, dict) for item in alternatives):
+            errors.append(f"{path}: alternatives must be an array of tables")
+        else:
+            links: set[str] = set()
+            for entry in alternatives:
+                reject_unknown(entry, ALTERNATIVE_KEYS, path, "alternatives[]", errors)
+                link = entry.get("link")
+                target = entry.get("target")
+                if not isinstance(link, str) or not link or link.startswith("/") or not rel_safe(link):
+                    errors.append(f"{path}: alternatives require a relative link path")
+                elif link in links:
+                    errors.append(f"{path}: duplicate alternative link: {link}")
+                links.add(link) if isinstance(link, str) else None
+                if not isinstance(target, str) or not target or target.startswith("/"):
+                    errors.append(f"{path}: alternatives require a relative target")
+                if "priority" in entry and (not isinstance(entry["priority"], int)
+                                            or not 0 <= entry["priority"] <= 1000):
+                    errors.append(f"{path}: alternatives priority must be between 0 and 1000")
 
 
 def main() -> int:

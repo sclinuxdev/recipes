@@ -46,6 +46,29 @@ provides = [
     "virtual/init"
 ]
 
+# systemd's runtime accounts. Sage applies these inside the target root at
+# install time and ships the generated sysusers.d fragment in the payload.
+[[sysusers]]
+type = "user"
+name = "systemd-network"
+description = "systemd Network Management"
+home = "/"
+shell = "/usr/bin/nologin"
+
+[[sysusers]]
+type = "user"
+name = "systemd-resolve"
+description = "systemd Resolver"
+home = "/"
+shell = "/usr/bin/nologin"
+
+[[sysusers]]
+type = "user"
+name = "systemd-timesync"
+description = "systemd Time Synchronization"
+home = "/"
+shell = "/usr/bin/nologin"
+
 [upstream]
 url = "https://github.com/systemd/systemd/tags"
 version_regex = 'v(\d+(?:\.\d+)+)'
