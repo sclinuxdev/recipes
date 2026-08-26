@@ -26,6 +26,7 @@ sha256 = "84aae0926d293f486297dfb63fc4cd802218124c9c91b141f2004dcc4d509fdd"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--runtime=lua"

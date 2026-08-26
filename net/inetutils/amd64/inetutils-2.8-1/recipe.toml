@@ -31,6 +31,7 @@ sha256 = "57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--bindir=/usr/bin",

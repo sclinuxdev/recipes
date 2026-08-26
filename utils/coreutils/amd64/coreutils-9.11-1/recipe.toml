@@ -37,6 +37,7 @@ sha256 = "394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--enable-install-program=hostname",

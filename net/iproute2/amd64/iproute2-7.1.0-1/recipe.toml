@@ -34,6 +34,7 @@ sha256 = "fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c"
 
 [build]
 system = "make"
+payload = "all"
 build_targets = ["all"]
 install_targets = ["install"]
 

@@ -57,6 +57,8 @@ sha256 = "ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec"
 # core system software: pinned to gcc (v2 package default)
 [build]
 system = "meson"
+payload = "allowlist"
+install_files = ["**"]
 install_excludes = [
     "usr/include/**",
     "usr/lib/*.a",

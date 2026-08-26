@@ -76,6 +76,7 @@ version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)-zen'
 
 [build]
 system = "make"
+payload = "allowlist"
 kernel = true
 build_targets = ["all"]
 install_targets = ["modules_install"]

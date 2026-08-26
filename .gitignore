@@ -3,3 +3,4 @@ src/
 pkg/
 distfiles/
 *.pkg.tar.zst
+__pycache__/

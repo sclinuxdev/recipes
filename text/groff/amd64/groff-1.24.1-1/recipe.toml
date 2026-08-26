@@ -29,4 +29,5 @@ sha256 = "74e2819795b6aff431aeac983d63a9c8968eeaba2a2eba7df8ba4c7b41e7cfd8"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]

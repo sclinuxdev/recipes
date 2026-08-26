@@ -36,6 +36,7 @@ version_regex = 'tzcode([0-9]{4}[a-z])\.tar'
 # src/. The data tarball is just as flat and lands on top of it.
 [build]
 system = "make"
+payload = "allowlist"
 build_targets = ["zic", "zdump"]
 # tzcode has no package-oriented install target; rebuilding the two tools is
 # idempotent and leaves the actual payload copy to the managed install step.

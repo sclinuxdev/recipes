@@ -38,6 +38,7 @@ sha256 = "d1f55cc2971398c9142eaa79d203e63d586a3b4b867f956664a1d68322cd4e34"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--disable-documentation",

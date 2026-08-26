@@ -9,17 +9,16 @@ license = "blessing"
 channel = "system"
 arch = "amd64"
 
-[source]
-url = "https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz"
-sha256 = "0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c"
-
 dependencies = [
     "sqlite-libs >= 3.53.4"
 ]
-
 provides = [
     "sqlite-dev"
 ]
+
+[source]
+url = "https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz"
+sha256 = "0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c"
 
 [upstream]
 url = "https://www.sqlite.org/download.html"
@@ -27,6 +26,7 @@ version_regex = 'sqlite-autoconf-(\d{7})\.tar'
 
 [build]
 system = "autotools"
+payload = "allowlist"
 install_targets = ["install"]
 install_files = [
     "usr/include/**",

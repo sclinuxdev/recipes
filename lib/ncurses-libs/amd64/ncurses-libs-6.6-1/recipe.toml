@@ -32,6 +32,7 @@ sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
 
 [build]
 system = "autotools"
+payload = "allowlist"
 install_targets = ["install"]
 install_files = [
     "usr/lib/*.so.*",

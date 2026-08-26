@@ -29,6 +29,7 @@ sha256 = "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--docdir=/usr/share/doc/bison-3.8.2"

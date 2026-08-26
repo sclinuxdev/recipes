@@ -37,6 +37,7 @@ version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)'
 
 [build]
 system = "cargo"
+payload = "allowlist"
 install_targets = ["--bin", "loom", "--bin", "loomctl"]
 install_files = [
     "usr/lib/loom/loom",
@@ -46,7 +47,6 @@ install_files = [
 install_symlinks = [
     { path = "usr/bin/init", target = "../lib/loom/loom" },
 ]
-allowed_linkers = ["mold", "lld", "ld"]
 
 [[build.steps]]
 name = "vendor-crates"

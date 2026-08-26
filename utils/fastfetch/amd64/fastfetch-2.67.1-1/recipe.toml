@@ -35,6 +35,7 @@ sha256 = "52489550d1fdeac8bde8b3442064e3bc78d28fda752a171dc46a6cd97454f237"
 
 [build]
 system = "cmake"
+payload = "all"
 configure_options = [
     "-DBUILD_TESTS=OFF"
 ]

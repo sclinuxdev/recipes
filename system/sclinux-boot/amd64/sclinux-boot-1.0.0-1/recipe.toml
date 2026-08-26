@@ -27,6 +27,9 @@ description = "ShenChen Linux initramfs and systemd-boot integration"
 license = "GPL-3.0-or-later"
 channel = "system"
 arch = "amd64"
+conffiles = [
+    "/etc/kernel/cmdline"
+]
 
 dependencies = [
     "coreutils >= 9.11",
@@ -51,12 +54,9 @@ provides = [
 url = "https://github.com/sclinuxdev/sclinux/tree/451534b483cb310525d1728b6eb436b08d35bdfc/Stage1/recipes/sclinux-boot"
 version_regex = 'version = "([0-9]+\.[0-9]+\.[0-9]+)"'
 
-conffiles = [
-    "/etc/kernel/cmdline"
-]
-
 [build]
 system = "script"
+payload = "allowlist"
 install_files = [
     "usr/bin/sclinux-update-boot",
     "usr/lib/kernel/install.d/90-sclinux-boot.install",

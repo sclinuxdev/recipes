@@ -29,6 +29,7 @@ sha256 = "58c55d9c1402474065adae669511c191de374b0871eec781239ab400b907c327"
 
 [build]
 system = "autotools"
+payload = "all"
 install_targets = ["install"]
 configure_options = [
     "--disable-static",

@@ -9,21 +9,13 @@ license = "Apache-2.0"
 channel = "system"
 arch = "amd64"
 
+dependencies = ["gcc-libs >= 15.3.0"]
+build_dependencies = ["python >= 3.14.7"]
+provides = ["ninja"]
+
 [source]
 url = "https://github.com/ninja-build/ninja/archive/refs/tags/v1.13.2.tar.gz"
 sha256 = "974d6b2f4eeefa25625d34da3cb36bdcebe7fbce40f4c16ac0835fd1c0cbae17"
-
-dependencies = [
-    "gcc-libs >= 15.3.0"
-]
-
-build_dependencies = [
-    "python >= 3.14.7"
-]
-
-provides = [
-    "ninja"
-]
 
 [upstream]
 url = "https://github.com/ninja-build/ninja/releases"
@@ -33,6 +25,7 @@ version_regex = 'v([0-9][0-9.]*)'
 # configure.py performs the native C++ bootstrap. The generated Makefile is a
 # no-op adapter so Sage still owns the build and install phase boundaries.
 system = "make"
+payload = "allowlist"
 build_targets = ["all"]
 install_targets = ["install"]
 install_files = [

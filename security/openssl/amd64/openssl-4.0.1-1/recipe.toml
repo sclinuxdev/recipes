@@ -28,6 +28,8 @@ sha256 = "2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09"
 
 [build]
 system = "make"
+payload = "allowlist"
+install_files = ["**"]
 install_excludes = [
     "usr/include/**",
     "usr/lib/*.a",

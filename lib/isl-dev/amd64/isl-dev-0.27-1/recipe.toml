@@ -28,6 +28,7 @@ sha256 = "6d8babb59e7b672e8cb7870e874f3f7b813b6e00e6af3f8b04f7579965643d5c"
 
 [build]
 system = "autotools"
+payload = "allowlist"
 install_targets = ["install"]
 install_files = [
     "usr/include/**",

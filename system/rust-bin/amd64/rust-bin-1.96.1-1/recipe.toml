@@ -28,6 +28,7 @@ version_regex = 'rust-([0-9][0-9.]*)-x86_64-unknown-linux-gnu'
 # This is an upstream binary distribution, not a Sage compilation. Keep it a
 # script recipe so no compiler/linker provenance is invented for the payload.
 system = "script"
+payload = "allowlist"
 install_files = [
     "opt/channels/rust/1.96.1/**",
 ]

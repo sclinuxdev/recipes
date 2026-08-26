@@ -9,18 +9,12 @@ license = "Apache-2.0"
 channel = "system"
 arch = "amd64"
 
-[source]
-url = "https://www.openssl.org/source/openssl-4.0.1.tar.gz"
-sha256 = "2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09"
-
 dependencies = [
     "zlib >= 1.3.2"
 ]
-
 build_dependencies = [
     "zlib-dev >= 1.3.2"
 ]
-
 provides = [
     "openssl-libs",
     "so:libssl.so.4",
@@ -29,12 +23,17 @@ provides = [
     "so:libcrypto.so.3"
 ]
 
+[source]
+url = "https://www.openssl.org/source/openssl-4.0.1.tar.gz"
+sha256 = "2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09"
+
 [upstream]
 url = "https://www.openssl.org/source/"
 version_regex = 'openssl-([0-9][0-9.]*)\.tar'
 
 [build]
 system = "make"
+payload = "allowlist"
 build_targets = ["all"]
 install_targets = ["install"]
 install_files = [

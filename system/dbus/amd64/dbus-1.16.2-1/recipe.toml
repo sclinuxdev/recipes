@@ -34,6 +34,8 @@ sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
 
 [build]
 system = "meson"
+payload = "allowlist"
+install_files = ["**"]
 install_excludes = [
     "usr/include/**",
     "usr/lib/*.a",

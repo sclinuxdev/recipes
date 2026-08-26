@@ -31,6 +31,7 @@ version_regex = 'v([0-9][0-9.]*)'
 
 [build]
 system = "script"
+payload = "allowlist"
 install_files = [
     "usr/bin/mold",
     "usr/bin/ld.mold",

@@ -18,23 +18,18 @@ description = "Single-binary implementation of common UNIX utilities"
 license = "GPL-2.0-only"
 channel = "system"
 
-[source]
-url = "https://busybox.net/downloads/busybox-1.38.0.tar.bz2"
-sha256 = "34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2"
-
 dependencies = []
-
 build_dependencies = [
     "glibc-dev >= 2.44",
     "perl >= 5.44.0"
 ]
-
-# Deliberately no `provides` for the applets. busybox is a fallback, not the
-# system's coreutils/sed/grep -- claiming those names would let the solver
-# satisfy a real dependency with the stripped-down applet.
 provides = [
     "busybox"
 ]
+
+[source]
+url = "https://busybox.net/downloads/busybox-1.38.0.tar.bz2"
+sha256 = "34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2"
 
 [upstream]
 url = "https://busybox.net/downloads/"
@@ -42,6 +37,7 @@ version_regex = 'busybox-([0-9][0-9.]*)\.tar'
 
 [build]
 system = "make"
+payload = "allowlist"
 build_targets = ["busybox"]
 install_targets = ["busybox"]
 install_files = [

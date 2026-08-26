@@ -35,6 +35,7 @@ sha256 = "0822bd5a9f0cf19d2ba0546b88b0432d4d3d9917db62c57b74044ccadba06e49"
 
 [build]
 system = "meson"
+payload = "allowlist"
 configure_options = [
     "-Dipc=sysv",
     "-Ddocs=false",

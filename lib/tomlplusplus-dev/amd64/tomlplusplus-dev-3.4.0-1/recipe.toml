@@ -22,6 +22,7 @@ sha256 = "8517f65938a4faae9ccf8ebb36631a38c1cadfb5efa85d9a72e15b9e97d25155"
 
 [build]
 system = "cmake"
+payload = "allowlist"
 install_files = [
     "usr/include/**",
     "usr/lib/*.a",

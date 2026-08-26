@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -26,6 +27,51 @@ BUILD_SYSTEMS = {"autotools", "cmake", "meson", "xmake", "cargo", "make", "scrip
 STEP_PHASES = {"prepare", "pre-build", "post-build", "pre-install", "install", "post-install"}
 STEP_CWDS = {"source", "build", "package"}
 HASH_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+
+# Keep the repository-side checker in lockstep with Sage's v2 parser.  A
+# recipe that passes this script must not rely on a key that Sage silently
+# ignores (the common source of accidental compiler/prefix or split-payload
+# claims in the old tree).
+ROOT_KEYS = {
+    "schema_version", "package", "upstream", "source", "build",
+    "capability_hooks", "triggers",
+}
+PACKAGE_KEYS = {
+    "name", "version", "release", "description", "license", "channel",
+    "arch", "dependencies", "build_dependencies", "provides", "conflicts",
+    "conffiles", "upstream", "upstream_regex",
+}
+UPSTREAM_KEYS = {"url", "version_regex"}
+SOURCE_KEYS = {"url", "sha256"}
+BUILD_KEYS = {
+    "system", "payload", "kernel", "source_subdir", "build_dir",
+    "configure_options", "build_targets", "install_targets", "install_files",
+    "install_excludes", "install_copies", "install_symlinks", "install_moves",
+    "install_removes", "install_generates", "outputs", "steps", "patches",
+    "patch_checksums", "patch_strip", "allowed_compilers", "allowed_linkers",
+    "variables", "flag_env", "tool_env", "toolchain",
+}
+TOOLCHAIN_KEYS = {"compiler", "linker", "rust"}
+TOOL_KEYS = {"family", "package", "minimum_version"}
+FLAG_ENV_KEYS = {"cflags", "cxxflags", "cppflags", "ldflags", "rustflags"}
+TOOL_ENV_KEYS = {"cc", "cxx", "linker"}
+TRANSFORM_ENTRY_KEYS = {
+    "install_copies": {"from", "to"},
+    "install_moves": {"from", "to"},
+    "install_removes": {"path"},
+    "install_symlinks": {"path", "target"},
+    "install_generates": {"path", "content", "mode"},
+}
+
+
+def reject_unknown(mapping: object, allowed: set[str], path: Path,
+                   scope: str, errors: list[str]) -> None:
+    if not isinstance(mapping, dict):
+        errors.append(f"{path}: {scope} must be a table")
+        return
+    for key in mapping:
+        if key not in allowed:
+            errors.append(f"{path}: unknown key {scope}.{key}")
 
 
 def rel_safe(value: str) -> bool:
@@ -68,7 +114,10 @@ def check_backend_options(path: Path, system: str, build: dict, errors: list[str
     lowered = [item.lower() for item in options]
     forbidden: tuple[str, ...] = ()
     if system == "meson":
-        forbidden = ("-dprefix", "-dlibdir", "-dbindir", "-dsbindir", "-dincludedir",
+        forbidden = ("--prefix", "--bindir", "--sbindir", "--libexecdir", "--libdir", "--datadir",
+                     "--includedir", "--infodir", "--localedir", "--mandir",
+                     "--sysconfdir", "--localstatedir", "--sharedstatedir",
+                     "-dprefix", "-dlibdir", "-dbindir", "-dsbindir", "-dincludedir",
                      "-ddatadir", "-dsysconfdir", "-dlocalstatedir", "-dlocaledir",
                      "-dmandir", "-drunstatedir", "-dlibexecdir", "--native-file",
                      "--cross-file", "--backend", "--buildtype", "-dc_args=",
@@ -122,6 +171,8 @@ def check_steps(path: Path, system: str, build: dict, errors: list[str]) -> None
         if not isinstance(entry, dict):
             errors.append(f"{path}: build.steps entries must be inline tables: {entry!r}")
             continue
+        reject_unknown(entry, {"name", "phase", "cwd", "command"}, path,
+                       "build.steps[]", errors)
         name, phase, cwd, command = (entry.get(key) for key in ("name", "phase", "cwd", "command"))
         if not all(isinstance(value, str) and value for value in (name, phase, command)):
             errors.append(f"{path}: build.steps entries require non-empty name/phase/command: {entry!r}")
@@ -139,15 +190,18 @@ def check_steps(path: Path, system: str, build: dict, errors: list[str]) -> None
         errors.append(f"{path}: script build requires at least one build.steps entry")
 
 
-def check_sources(path: Path, recipe: dict, build: dict, errors: list[str], warnings: list[str]) -> set[str]:
+def check_sources(path: Path, recipe: dict, build: dict, errors: list[str], warnings: list[str], *, strict: bool = False) -> set[str]:
+    raw = recipe.get("source")
     entries = source_entries(recipe)
-    if recipe.get("source") not in (None, [], {}) and not entries:
+    if raw not in (None, [], {}) and not entries:
         errors.append(f"{path}: source must be a table or array of tables")
     names: set[str] = set()
     for index, source in enumerate(entries):
         if not isinstance(source, dict):
             errors.append(f"{path}: source entry {index} must be a table")
             continue
+        if strict:
+            reject_unknown(source, SOURCE_KEYS, path, f"source[{index}]", errors)
         url, sha256 = source.get("url"), source.get("sha256")
         if not isinstance(url, str) or not url:
             errors.append(f"{path}: source entry {index} has no URL")
@@ -155,15 +209,44 @@ def check_sources(path: Path, recipe: dict, build: dict, errors: list[str], warn
             errors.append(f"{path}: source entry {index} must contain a 64-hex SHA-256")
         if isinstance(url, str):
             name = Path(url.split("?", 1)[0].split("#", 1)[0]).name
-            if name and index > 0:
+            if not name:
+                errors.append(f"{path}: source entry {index} URL has no filename")
+            elif name in names:
+                errors.append(f"{path}: source URLs must have unique filenames: {name}")
+            else:
                 names.add(name)
             if url.startswith("file:"):
                 warnings.append(f"{path}: file source is intentionally builder-local: {url}")
-    for patch in build.get("patches", []) if isinstance(build.get("patches", []), list) else []:
+    patches = build.get("patches", []) if isinstance(build.get("patches", []), list) else []
+    checksums = build.get("patch_checksums", {})
+    if strict and not isinstance(checksums, dict):
+        errors.append(f"{path}: build.patch_checksums must be a table")
+        checksums = {}
+    if strict:
+        for patch_name, checksum in checksums.items():
+            if not isinstance(patch_name, str) or Path(patch_name).name != patch_name:
+                errors.append(f"{path}: patch checksum key must be a basename: {patch_name!r}")
+            if not isinstance(checksum, str) or not HASH_RE.fullmatch(checksum):
+                errors.append(f"{path}: patch checksum must be a 64-hex SHA-256: {patch_name!r}")
+    for patch in patches:
         if not isinstance(patch, str) or Path(patch).name != patch:
             errors.append(f"{path}: patch must be a distfiles basename: {patch!r}")
-        elif not ((path.parent / patch).exists() or (path.parent / "distfiles" / patch).exists()) and patch not in names:
-            errors.append(f"{path}: local patch attachment is absent: {patch}")
+        else:
+            local = (path.parent / patch)
+            if not local.is_file():
+                local = path.parent / "distfiles" / patch
+            if local.is_file() and patch not in checksums:
+                errors.append(f"{path}: local patch needs build.patch_checksums entry: {patch}")
+            elif (local.is_file() and patch in checksums
+                  and isinstance(checksums[patch], str)
+                  and HASH_RE.fullmatch(checksums[patch])):
+                actual = hashlib.sha256(local.read_bytes()).hexdigest()
+                if actual != checksums[patch].lower():
+                    errors.append(
+                        f"{path}: local patch SHA-256 mismatch for {patch}: "
+                        f"declared {checksums[patch]}, actual {actual}")
+            elif not local.is_file() and patch not in names:
+                errors.append(f"{path}: local patch attachment is absent: {patch}")
     return names
 
 
@@ -180,6 +263,173 @@ def check_staging(recipe: dict, staging: Path, label: str, errors: list[str]) ->
     for path in actual:
         if not payload_match(files, path) or payload_match(excludes, path):
             errors.append(f"{label}: staged payload is outside declared boundary: {path}")
+
+
+def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
+                   system: str, errors: list[str]) -> None:
+    """Apply the same structural and boundary rules as Recipe::parse_toml."""
+    reject_unknown(recipe, ROOT_KEYS, path, "recipe", errors)
+    if not isinstance(package, dict):
+        errors.append(f"{path}: package must be a table")
+        package = {}
+    reject_unknown(package, PACKAGE_KEYS, path, "package", errors)
+    for key in ("name", "version", "license", "channel", "arch"):
+        if not isinstance(package.get(key), str) or not package[key]:
+            errors.append(f"{path}: package.{key} must be a non-empty string")
+    if any(ch in package.get("name", "") for ch in ("/", "\\")):
+        errors.append(f"{path}: package.name must be a simple package name")
+    for key in ("description", "upstream", "upstream_regex"):
+        if key in package and not isinstance(package[key], str):
+            errors.append(f"{path}: package.{key} must be a string")
+    for key in ("dependencies", "conflicts", "build_dependencies", "provides", "conffiles"):
+        if key in package and (not isinstance(package[key], list)
+                               or not all(isinstance(item, str) and item for item in package[key])):
+            errors.append(f"{path}: package.{key} must be an array of non-empty strings")
+    if ("upstream" in package) != ("upstream_regex" in package):
+        errors.append(f"{path}: package.upstream and package.upstream_regex must be provided together")
+    if "upstream" in recipe:
+        upstream = recipe["upstream"]
+        reject_unknown(upstream, UPSTREAM_KEYS, path, "upstream", errors)
+        if not isinstance(upstream, dict):
+            return
+        for key in ("url", "version_regex"):
+            if key not in upstream or not isinstance(upstream[key], str) or not upstream[key]:
+                errors.append(f"{path}: upstream requires non-empty {key}")
+        if isinstance(upstream.get("version_regex"), str):
+            try:
+                re.compile(upstream["version_regex"])
+            except re.error as exc:
+                errors.append(f"{path}: invalid upstream.version_regex: {exc}")
+    reject_unknown(build, BUILD_KEYS, path, "build", errors)
+    payload = build.get("payload")
+    if payload not in {"all", "allowlist", "outputs"}:
+        errors.append(f"{path}: build.payload must be all, allowlist, or outputs")
+    for key in ("configure_options", "build_targets", "install_targets", "install_files",
+                "install_excludes", "patches", "allowed_compilers", "allowed_linkers"):
+        if key in build and (not isinstance(build[key], list)
+                             or not all(isinstance(item, str) for item in build[key])):
+            errors.append(f"{path}: build.{key} must be an array of strings")
+    for key in ("source_subdir", "build_dir"):
+        if key in build and not isinstance(build[key], str):
+            errors.append(f"{path}: build.{key} must be a string")
+    if "kernel" in build and not isinstance(build["kernel"], bool):
+        errors.append(f"{path}: build.kernel must be boolean")
+    if build.get("kernel") and system != "make":
+        errors.append(f"{path}: build.kernel=true requires system=make")
+    if "patch_strip" in build and (not isinstance(build["patch_strip"], int)
+                                   or not 0 <= build["patch_strip"] <= 9):
+        errors.append(f"{path}: build.patch_strip must be an integer from 0 to 9")
+    for nested, allowed in (("variables", None), ("flag_env", FLAG_ENV_KEYS),
+                            ("tool_env", TOOL_ENV_KEYS), ("toolchain", TOOLCHAIN_KEYS)):
+        if nested not in build:
+            continue
+        value = build[nested]
+        if not isinstance(value, dict):
+            errors.append(f"{path}: build.{nested} must be a table")
+            continue
+        if allowed is not None:
+            reject_unknown(value, allowed, path, f"build.{nested}", errors)
+        elif nested == "variables":
+            for key, item in value.items():
+                if not isinstance(key, str) or not isinstance(item, str):
+                    errors.append(f"{path}: build.variables values must be strings")
+        else:
+            for role, tool in value.items():
+                reject_unknown(tool, TOOL_KEYS, path, f"build.toolchain.{role}", errors)
+                if not isinstance(tool, dict):
+                    continue
+                for field in TOOL_KEYS:
+                    if field in tool and not isinstance(tool[field], str):
+                        errors.append(f"{path}: build.toolchain.{role}.{field} must be a string")
+                if role in {"compiler", "linker", "rust"}:
+                    for field in ("family", "package", "minimum_version"):
+                        if field not in tool or not isinstance(tool[field], str) or not tool[field]:
+                            errors.append(f"{path}: build.toolchain.{role} requires {field}")
+    for key, allowed in TRANSFORM_ENTRY_KEYS.items():
+        values = build.get(key, [])
+        if not isinstance(values, list):
+            errors.append(f"{path}: build.{key} must be an array")
+            continue
+        for entry in values:
+            if not isinstance(entry, dict):
+                errors.append(f"{path}: build.{key} entries must be inline tables")
+                continue
+            reject_unknown(entry, allowed, path, f"build.{key}[]", errors)
+            if key in {"install_copies", "install_moves"}:
+                if not all(isinstance(entry.get(field), str) and rel_safe(entry[field])
+                           for field in ("from", "to")):
+                    errors.append(f"{path}: invalid build.{key} entry: {entry!r}")
+            elif key == "install_removes":
+                if not isinstance(entry.get("path"), str) or not rel_safe(entry["path"]):
+                    errors.append(f"{path}: invalid build.install_removes entry: {entry!r}")
+            elif key == "install_symlinks":
+                if (not isinstance(entry.get("path"), str) or not rel_safe(entry["path"])
+                        or not isinstance(entry.get("target"), str) or not entry["target"]):
+                    errors.append(f"{path}: invalid build.install_symlinks entry: {entry!r}")
+                else:
+                    target = Path(entry["target"])
+                    resolved = (Path(entry["path"]).parent / target).as_posix().split("/")
+                    depth = 0
+                    escapes = target.is_absolute()
+                    for component in resolved:
+                        if component in ("", "."):
+                            continue
+                        if component == "..":
+                            depth -= 1
+                            escapes |= depth < 0
+                        else:
+                            depth += 1
+                    if escapes:
+                        errors.append(f"{path}: symlink target escapes staging root: {entry!r}")
+            else:
+                if (not isinstance(entry.get("path"), str) or not rel_safe(entry["path"])
+                        or not isinstance(entry.get("content"), str)
+                        or not isinstance(entry.get("mode", 0o644), int)
+                        or not 0 <= entry.get("mode", 0o644) <= 0o7777):
+                    errors.append(f"{path}: invalid build.install_generates entry: {entry!r}")
+    outputs = build.get("outputs", [])
+    if not isinstance(outputs, list):
+        return
+    output_names: set[str] = set()
+    for output in outputs:
+        if not isinstance(output, dict):
+            errors.append(f"{path}: build.outputs entries must be inline tables")
+            continue
+        reject_unknown(output, {"name", "description", "license", "dependencies",
+                                "provides", "conflicts", "conffiles", "install_files",
+                                "install_excludes"}, path, "build.outputs[]", errors)
+        name = output.get("name")
+        if not isinstance(name, str) or not name or "/" in name or name in {".", ".."}:
+            errors.append(f"{path}: invalid output name: {name!r}")
+        elif name in output_names:
+            errors.append(f"{path}: duplicate output name: {name}")
+        output_names.add(name) if isinstance(name, str) else None
+        for key in ("description", "license"):
+            if key in output and not isinstance(output[key], str):
+                errors.append(f"{path}: output {name!r}.{key} must be a string")
+        for key in ("dependencies", "conflicts", "provides", "conffiles"):
+            if key in output and (not isinstance(output[key], list)
+                                  or not all(isinstance(item, str) and item for item in output[key])):
+                errors.append(f"{path}: output {name!r}.{key} must be an array of non-empty strings")
+        files = output.get("install_files")
+        if not isinstance(files, list) or not files:
+            errors.append(f"{path}: output {name!r} needs non-empty install_files")
+        for key in ("install_files", "install_excludes"):
+            for value in output.get(key, []) if isinstance(output.get(key, []), list) else []:
+                if not isinstance(value, str) or not rel_safe(value):
+                    errors.append(f"{path}: invalid outputs.{key} pattern: {value!r}")
+    if outputs and (build.get("install_files") or build.get("install_excludes")):
+        errors.append(f"{path}: outputs cannot be combined with top-level install_files/install_excludes")
+    if payload == "all" and (build.get("install_files") or build.get("install_excludes") or outputs):
+        errors.append(f"{path}: payload=all cannot have an allowlist or outputs")
+    if payload == "allowlist" and not build.get("install_files"):
+        errors.append(f"{path}: payload=allowlist requires non-empty install_files")
+    if payload == "outputs" and not outputs:
+        errors.append(f"{path}: payload=outputs requires outputs")
+    if outputs and payload != "outputs":
+        errors.append(f"{path}: outputs require payload=outputs")
+    if system == "script" and (payload == "all" or (not outputs and not build.get("install_files"))):
+        errors.append(f"{path}: script requires an explicit payload boundary")
 
 
 def main() -> int:
@@ -223,6 +473,9 @@ def main() -> int:
             continue
         counts["v2"] += 1
         package = recipe.get("package", {})
+        if not isinstance(package, dict):
+            errors.append(f"{path}: package must be a table")
+            package = {}
         name = package.get("name", path.parent.name)
         if not isinstance(name, str) or not name:
             errors.append(f"{path}: package.name must be a non-empty string")
@@ -236,6 +489,7 @@ def main() -> int:
         if system not in BUILD_SYSTEMS:
             errors.append(f"{path}: unsupported v2 build.system: {system!r}")
             continue
+        check_v2_shape(path, recipe, package, build, system, errors)
         check_backend_options(path, system, build, errors)
         check_steps(path, system, build, errors)
         outputs = build.get("outputs", [])
@@ -307,7 +561,7 @@ def main() -> int:
                         depth += 1
                 if target.is_absolute() or escapes:
                     errors.append(f"{path}: symlink target escapes staging root: {entry!r}")
-        check_sources(path, recipe, build, errors, warnings)
+        check_sources(path, recipe, build, errors, warnings, strict=True)
         if args.staging and path.parent == args.staging.parent:
             check_staging(recipe, args.staging, str(path), errors)
 

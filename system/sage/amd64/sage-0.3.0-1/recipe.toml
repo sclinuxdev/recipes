@@ -51,6 +51,7 @@ sha256 = "d71f6c9ae68e6237cf15335b7b4592cc51bcb0cfcbfa49ae676f16819a88397d"
 
 [build]
 system = "xmake"
+payload = "allowlist"
 install_files = [
     "usr/bin/sage",
     "etc/sage/build.toml",
