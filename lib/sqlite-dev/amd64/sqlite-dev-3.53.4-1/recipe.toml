@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "sqlite-dev"
@@ -21,18 +21,26 @@ provides = [
     "sqlite-dev"
 ]
 
-prepare = []
+[upstream]
+url = "https://www.sqlite.org/download.html"
+version_regex = 'sqlite-autoconf-(\d{7})\.tar'
 
-build = [
-    "./configure --prefix=/usr --disable-static --enable-fts5 CFLAGS=\"$CFLAGS -DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_ENABLE_UNLOCK_NOTIFY=1 -DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_FTS3_TOKENIZER=1 -DSQLITE_SECURE_DELETE=1\"",
-    "make"
+[build]
+system = "autotools"
+install_targets = ["install"]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
 ]
-
-install = [
-    "make install DESTDIR=$DESTDIR",
-    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var 2>/dev/null || true",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f -name '*.so.*' -delete 2>/dev/null || true",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so.*' -delete 2>/dev/null || true",
-    "! find $DESTDIR/usr -type l -name '*.so.*' 2>/dev/null | grep -q . || { echo 'ERROR: leftover versioned soname links in dev split' >&2; exit 1; }",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' 2>/dev/null | grep -q . || { echo 'ERROR: dev linker symlink missing' >&2; exit 1; }",
+install_excludes = [
+    "usr/lib/*.so.*",
+]
+configure_options = [
+    "--disable-static",
+    "--enable-fts5",
 ]

@@ -1,0 +1,57 @@
+# Sage 0.2.4 amd64 v2 recipe, pinned to the latest Sage commit.
+#
+# This recipe intentionally contains no compiler, linker, or flag settings.
+# Sage selects and audits those from the build environment configuration; the
+# recipe only declares the source, requirements, and expected payload.
+
+schema_version = 2
+
+[package]
+name = "sage"
+version = "0.2.4"
+release = "3"
+description = "Universal Multi-Layer Linux Package Manager"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "lmdb >= 0.9.35",
+    "zstd-libs >= 1.5.7",
+    "curl-libs >= 8.21.0",
+    "gcc-libs >= 15.3.0",
+    "openssl-libs >= 4.0.1",
+    "libarchive-libs >= 3.8.9",
+    "zlib >= 1.3.2",
+]
+
+build_dependencies = [
+    "fakeroot >= 2.1.4",
+    "bubblewrap >= 0.11.0",
+    "xmake >= 3.1.0",
+    "lmdb-dev >= 0.9.35",
+    "zstd-dev >= 1.5.7",
+    "tomlplusplus-dev >= 3.4.0",
+    "curl-dev >= 8.21.0",
+    "openssl-dev >= 4.0.1",
+    "libarchive-dev >= 3.8.9",
+    "zlib-dev >= 1.3.2",
+]
+
+provides = ["sage"]
+conffiles = ["/etc/sage/build.toml"]
+
+[upstream]
+url = "https://github.com/sclinuxdev/sage"
+version_regex = 'v(\d+\.\d+\.\d+)'
+
+[source]
+url = "https://codeload.github.com/sclinuxdev/sage/legacy.tar.gz/2c510a51c16880b45f57d26fc044a3b42c536061"
+sha256 = "a0c6d2504df9b7420012a281c18c64da1be710626538e6d60ba8fbc61c362006"
+
+[build]
+system = "xmake"
+install_files = [
+    "usr/bin/sage",
+    "etc/sage/build.toml",
+]

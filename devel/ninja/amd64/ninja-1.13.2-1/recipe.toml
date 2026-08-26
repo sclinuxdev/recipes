@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "ninja"
@@ -25,14 +25,37 @@ provides = [
     "ninja"
 ]
 
-prepare = []
+[upstream]
+url = "https://github.com/ninja-build/ninja/releases"
+version_regex = 'v([0-9][0-9.]*)'
 
-build = [
-    "python3 configure.py --bootstrap --verbose"
+[build]
+# configure.py performs the native C++ bootstrap. The generated Makefile is a
+# no-op adapter so Sage still owns the build and install phase boundaries.
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+install_files = [
+    "usr/bin/ninja",
+    "usr/share/bash-completion/completions/ninja",
+    "usr/share/zsh/site-functions/_ninja",
 ]
 
-install = [
-    "install -vDm755 ninja $DESTDIR/usr/bin/ninja",
-    "install -vDm644 misc/bash-completion $DESTDIR/usr/share/bash-completion/completions/ninja 2>/dev/null || true",
-    "install -vDm644 misc/zsh-completion $DESTDIR/usr/share/zsh/site-functions/_ninja 2>/dev/null || true"
-]
+[[build.steps]]
+name = "bootstrap"
+phase = "pre-build"
+cwd = "source"
+command = '''set -e
+python3 configure.py --bootstrap --verbose
+printf '%s\n' 'all:' 'install:' > Makefile
+'''
+
+[[build.steps]]
+name = "install-files"
+phase = "install"
+cwd = "source"
+command = '''set -e
+install -vDm755 ninja "$DESTDIR/usr/bin/ninja"
+install -vDm644 misc/bash-completion "$DESTDIR/usr/share/bash-completion/completions/ninja"
+install -vDm644 misc/zsh-completion "$DESTDIR/usr/share/zsh/site-functions/_ninja"
+'''

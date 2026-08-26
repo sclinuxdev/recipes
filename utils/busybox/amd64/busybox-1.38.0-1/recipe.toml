@@ -7,7 +7,7 @@
 # Built static: the whole point of the copy in an initramfs is that it works
 # before any shared library is reachable.
 
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "busybox"
@@ -36,27 +36,40 @@ provides = [
     "busybox"
 ]
 
-prepare = [
-    "make defconfig",
-    "sed -i 's|^# CONFIG_STATIC is not set|CONFIG_STATIC=y|' .config",
-    "sed -i 's|^CONFIG_STATIC=n|CONFIG_STATIC=y|' .config",
-    # Applets that need a shared-library-only interface or conflict with the
-    # real packages when installed into /usr/bin.
-    "sed -i 's|^CONFIG_INSTALL_APPLET_SYMLINKS=y|# CONFIG_INSTALL_APPLET_SYMLINKS is not set|' .config",
-    "sed -i 's|^CONFIG_INSTALL_APPLET_HARDLINKS=y|# CONFIG_INSTALL_APPLET_HARDLINKS is not set|' .config",
-    "sed -i 's|^# CONFIG_INSTALL_APPLET_DONT is not set|CONFIG_INSTALL_APPLET_DONT=y|' .config",
-    "sed -i 's|^CONFIG_TC=y|# CONFIG_TC is not set|' .config",
-    "yes '' | make oldconfig >/dev/null"
+[upstream]
+url = "https://busybox.net/downloads/"
+version_regex = 'busybox-([0-9][0-9.]*)\.tar'
+
+[build]
+system = "make"
+build_targets = ["busybox"]
+install_targets = ["busybox"]
+install_files = [
+    "usr/bin/busybox",
+    "usr/lib/initcpio/busybox",
 ]
 
-build = [
-    "make"
-]
+[[build.steps]]
+name = "configure-static"
+phase = "prepare"
+cwd = "source"
+command = '''set -e
+make defconfig
+sed -i 's|^# CONFIG_STATIC is not set|CONFIG_STATIC=y|' .config
+sed -i 's|^CONFIG_STATIC=n|CONFIG_STATIC=y|' .config
+sed -i 's|^CONFIG_INSTALL_APPLET_SYMLINKS=y|# CONFIG_INSTALL_APPLET_SYMLINKS is not set|' .config
+sed -i 's|^CONFIG_INSTALL_APPLET_HARDLINKS=y|# CONFIG_INSTALL_APPLET_HARDLINKS is not set|' .config
+sed -i 's|^# CONFIG_INSTALL_APPLET_DONT is not set|CONFIG_INSTALL_APPLET_DONT=y|' .config
+sed -i 's|^CONFIG_TC=y|# CONFIG_TC is not set|' .config
+yes '' | make oldconfig >/dev/null
+'''
 
-# 用户路径与 mkinitcpio 约定的输入路径都安装真实静态二进制。后者如果是软链接，
-# base hook 把它写成 initramfs 的 /bin/busybox 时会生成指向自身的循环链接。
-install = [
-    "mkdir -p $DESTDIR/usr/bin $DESTDIR/usr/lib/initcpio",
-    "install -m755 busybox $DESTDIR/usr/bin/busybox",
-    "install -m755 busybox $DESTDIR/usr/lib/initcpio/busybox"
-]
+[[build.steps]]
+name = "install-static-tools"
+phase = "install"
+cwd = "source"
+command = '''set -e
+mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/lib/initcpio"
+install -m755 busybox "$DESTDIR/usr/bin/busybox"
+install -m755 busybox "$DESTDIR/usr/lib/initcpio/busybox"
+'''

@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "glibc-dev"
@@ -24,33 +24,44 @@ provides = [
     "glibc-dev"
 ]
 
-# glibc and systemd are core system software: they are pinned to gcc and
-# never fall back to the default clang toolchain (a failed pin fails the build).
+[upstream]
+url = "https://ftp.gnu.org/gnu/glibc/"
+version_regex = 'glibc-([0-9][0-9.]*)\.tar'
+
 [build]
-cc = "gcc"
-cxx = "g++"
-prepare = [
-    "rm -rf build && mkdir -p build"
+system = "autotools"
+source_subdir = ""
+build_dir = "build"
+install_targets = ["install"]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+]
+install_excludes = [
+    "usr/lib/libanl.so",
+    "usr/lib/libBrokenLocale.so",
+    "usr/lib/libc_malloc_debug.so",
+    "usr/lib/libmemusage.so",
+    "usr/lib/libmvec.so",
+    "usr/lib/libnss_compat.so",
+    "usr/lib/libnss_db.so",
+    "usr/lib/libnss_hesiod.so",
+    "usr/lib/libpcprofile.so",
+    "usr/lib/libthread_db.so",
+]
+configure_options = [
+    "--enable-kernel=4.19",
+    "--enable-stack-protector=strong",
+    "--disable-profile",
+    "--disable-werror",
+    "--without-gd",
 ]
 
-build = [
-    "cd build && ../configure --prefix=/usr --enable-kernel=4.19 --enable-stack-protector=strong --disable-profile --disable-werror --without-gd libc_cv_slibdir=/usr/lib",
-    "cd build && make"
-]
+[build.variables]
+libc_cv_slibdir = "/usr/lib"
 
-install = [
-    "cd build && make install DESTDIR=$DESTDIR",
-    # make install drops a few admin tools into both sbin spellings; the dev
-    # package is headers/libs/scripts only, and every bin/sbin entity path is
-    # illegal under the collapsed usr merge.
-    "rm -rf $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/sbin $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/share $DESTDIR/usr/libexec",
-    # Dev keeps exactly what linking needs: headers, static archives, and the
-    # unversioned .so linker scripts/symlinks. Everything else top-level in
-    # usr/lib (versioned runtime libs, crt*.o, gconv/, audit/) is owned by
-    # the glibc runtime package and must not be claimed twice. These ten
-    # unversioned helpers ship inside the runtime package itself, so the dev
-    # tree's copies (symlinks into pruned files) go too.
-    "rm -f $DESTDIR/usr/lib/libanl.so $DESTDIR/usr/lib/libBrokenLocale.so $DESTDIR/usr/lib/libc_malloc_debug.so $DESTDIR/usr/lib/libmemusage.so $DESTDIR/usr/lib/libmvec.so $DESTDIR/usr/lib/libnss_compat.so $DESTDIR/usr/lib/libnss_db.so $DESTDIR/usr/lib/libnss_hesiod.so $DESTDIR/usr/lib/libpcprofile.so $DESTDIR/usr/lib/libthread_db.so",
-    "find $DESTDIR/usr/lib -mindepth 1 -maxdepth 1 ! -name '*.a' ! -name '*.so' ! -type l -exec rm -rf {} +"
-]
-
+[build.toolchain.compiler]
+family = "gcc"
+package = "gcc"
+minimum_version = "16.2.0"

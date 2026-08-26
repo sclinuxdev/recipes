@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "markupsafe"
@@ -26,13 +26,35 @@ provides = [
     "markupsafe"
 ]
 
-prepare = []
+[upstream]
+url = "https://pypi.org/project/MarkupSafe/"
+version_regex = 'markupsafe-([0-9][0-9.]*)\.tar'
 
-build = [
-    "python3 -c \"import setuptools.build_meta as b; b.build_wheel('dist')\""
+[build]
+# The wheel build may compile MarkupSafe's optional C speedups. Running it as
+# a managed Make recipe keeps that compiler invocation inside Sage's normal
+# compiler/linker audit while the generated Makefile remains a no-op adapter.
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+install_files = [
+    "usr/lib/python3.14/site-packages/**",
 ]
 
-install = [
-    "mkdir -p $DESTDIR/usr/lib/python3.14/site-packages",
-    "python3 -c \"import sys, zipfile, glob; [zipfile.ZipFile(f).extractall(sys.argv[1]) for f in glob.glob('dist/*.whl')]\" $DESTDIR/usr/lib/python3.14/site-packages"
-]
+[[build.steps]]
+name = "build-wheel"
+phase = "pre-build"
+cwd = "source"
+command = '''set -e
+python3 -c 'import setuptools.build_meta as b; b.build_wheel("dist")'
+printf '%s\n' 'all:' 'install:' > Makefile
+'''
+
+[[build.steps]]
+name = "install-wheel"
+phase = "install"
+cwd = "source"
+command = '''set -e
+mkdir -p "$DESTDIR/usr/lib/python3.14/site-packages"
+python3 -c 'import sys, zipfile, glob; [zipfile.ZipFile(f).extractall(sys.argv[1]) for f in glob.glob("dist/*.whl")]' "$DESTDIR/usr/lib/python3.14/site-packages"
+'''

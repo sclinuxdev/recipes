@@ -32,6 +32,8 @@ install_excludes = [
     "usr/include/**",
     "usr/lib/*.a",
     "usr/lib/*.so",
+    "usr/lib/libssl.so.*",
+    "usr/lib/libcrypto.so.*",
     "usr/lib/pkgconfig/**",
     "usr/lib/cmake/**",
     "usr/share/aclocal/**",

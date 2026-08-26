@@ -29,7 +29,7 @@
 # such block, so all root-scoped declarations come first and the two extra
 # sources close the file.
 
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "linux-zen"
@@ -73,22 +73,80 @@ provides = [
     "virtual/kernel"
 ]
 
-# Patch steps stamp themselves (.stamp-*): `patch` exits non-zero even when
-# it skips already-applied hunks, which would kill every --reuse-src resume
-# on a patched tree. Stamped, fresh trees stay strict and resumed ones no-op.
+[upstream]
+url = "https://github.com/zen-kernel/zen-kernel/releases"
+version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)-zen'
+
 [build]
-ldflags = ""
-prepare = [
-    "[ -e .stamp-zen ] || { zstd -dc distfiles/linux-v7.1.10-zen1.patch.zst > zen-patch.diff && patch -p1 --batch < zen-patch.diff && touch .stamp-zen; }",
-    "[ -e .stamp-cjktty ] || { patch -p1 --batch < distfiles/cjktty-7.2.patch && touch .stamp-cjktty; }",
-    "CONFIG_STAMP=$(sha256sum \"$RECIPE_DIR/recipe.toml\" | cut -d' ' -f1); [ \"$(cat .stamp-config 2>/dev/null)\" = \"$CONFIG_STAMP\" ] || { cp distfiles/config.x86_64 .config && ./scripts/config --set-str DEFAULT_HOSTNAME sclinux --disable LTO --disable LTO_CLANG --disable LTO_CLANG_THIN --enable LTO_NONE && echo '-1' > localversion.10-pkgrel && echo '-zen' > localversion.20-pkgname && ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST && make LLVM=1 olddefconfig && printf '%s\\n' \"$CONFIG_STAMP\" > .stamp-config; }",
+system = "make"
+build_targets = ["all"]
+install_targets = ["modules_install"]
+install_files = [
+    "boot/vmlinuz-*",
+    "boot/System.map-*",
+    "boot/config-*",
+    "usr/lib/modules/**",
+    "etc/mkinitcpio.d/**",
 ]
-build = [
-    "P=\"$(dirname $(readlink -f \"$(command -v ld)\"))\"; export P; HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 -k KCFLAGS=\"-Wno-error -O3 -march=x86-64-v3\" all || HOSTCFLAGS=\"-I$P/../include\" HOSTLDFLAGS=\"-L$P/../lib\" CPATH=\"$P/../include\" make LLVM=1 KCFLAGS=\"-Wno-error -O3 -march=x86-64-v3\" all",
-]
-install = [
-    "set -e; KVER=$(make -s kernelrelease); echo \"Installing kernel release: ${KVER}\"; mkdir -p $DESTDIR/boot $DESTDIR/usr/lib/modules; make INSTALL_MOD_PATH=$DESTDIR modules_install; if [ -d $DESTDIR/lib/modules ] && [ ! -L $DESTDIR/lib ]; then cp -a $DESTDIR/lib/modules $DESTDIR/usr/lib/ && rm -rf $DESTDIR/lib; fi; rm -f $DESTDIR/usr/lib/modules/$KVER/build $DESTDIR/usr/lib/modules/$KVER/source; install -Dm644 arch/x86/boot/bzImage $DESTDIR/boot/vmlinuz-${KVER}; install -Dm644 System.map $DESTDIR/boot/System.map-${KVER}; install -Dm644 .config $DESTDIR/boot/config-${KVER}; install -Dm644 arch/x86/boot/bzImage $DESTDIR/usr/lib/modules/$KVER/vmlinuz; install -d $DESTDIR/etc/mkinitcpio.d; PRESET=$DESTDIR/etc/mkinitcpio.d/linux-zen-$KVER.preset; printf '%s\\n' '# mkinitcpio preset for linux-zen' 'ALL_config=\"/etc/mkinitcpio.conf\"' \"ALL_kver=/boot/vmlinuz-$KVER\" \"PRESETS=('default' 'fallback')\" \"default_image=/boot/initramfs-$KVER.img\" \"fallback_image=/boot/initramfs-$KVER-fallback.img\" 'fallback_options=\"-S autodetect\"' > \"$PRESET\"; grep -q ALL_kver \"$PRESET\" || { echo 'ERROR: linux-zen preset missing from payload' >&2; exit 1; }",
-]
+allowed_compilers = ["clang"]
+allowed_linkers = ["mold", "lld", "ld"]
+
+[build.variables]
+LLVM = "1"
+INSTALL_MOD_PATH = "{destdir}"
+
+[build.flag_env]
+cflags = ["KCFLAGS"]
+
+[[build.steps]]
+name = "apply-kernel-patches"
+phase = "prepare"
+cwd = "source"
+command = '''set -e
+[ -e .stamp-zen ] || { zstd -dc distfiles/linux-v7.1.10-zen1.patch.zst > zen-patch.diff && patch -p1 --batch < zen-patch.diff && touch .stamp-zen; }
+[ -e .stamp-cjktty ] || { patch -p1 --batch < distfiles/cjktty-7.2.patch && touch .stamp-cjktty; }
+'''
+
+[[build.steps]]
+name = "configure-kernel"
+phase = "prepare"
+cwd = "source"
+command = '''set -e
+CONFIG_STAMP=$(sha256sum "$RECIPE_DIR/recipe.toml" | cut -d' ' -f1)
+[ "$(cat .stamp-config 2>/dev/null)" = "$CONFIG_STAMP" ] || {
+    cp distfiles/config.x86_64 .config
+    ./scripts/config --set-str DEFAULT_HOSTNAME sclinux
+    ./scripts/config --disable LTO --disable LTO_CLANG --disable LTO_CLANG_THIN --enable LTO_NONE
+    echo '-1' > localversion.10-pkgrel
+    echo '-zen' > localversion.20-pkgname
+    ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST
+    make LLVM=1 olddefconfig
+    printf '%s\n' "$CONFIG_STAMP" > .stamp-config
+}
+'''
+
+[[build.steps]]
+name = "install-kernel"
+phase = "install"
+cwd = "source"
+command = '''set -e
+KVER=$(make -s kernelrelease)
+echo "Installing kernel release: ${KVER}"
+mkdir -p "$DESTDIR/boot" "$DESTDIR/usr/lib/modules"
+if [ -d "$DESTDIR/lib/modules" ] && [ ! -L "$DESTDIR/lib" ]; then
+    cp -a "$DESTDIR/lib/modules" "$DESTDIR/usr/lib/"
+    rm -rf "$DESTDIR/lib"
+fi
+rm -f "$DESTDIR/usr/lib/modules/$KVER/build" "$DESTDIR/usr/lib/modules/$KVER/source"
+install -Dm644 arch/x86/boot/bzImage "$DESTDIR/boot/vmlinuz-${KVER}"
+install -Dm644 System.map "$DESTDIR/boot/System.map-${KVER}"
+install -Dm644 .config "$DESTDIR/boot/config-${KVER}"
+install -Dm644 arch/x86/boot/bzImage "$DESTDIR/usr/lib/modules/$KVER/vmlinuz"
+install -d "$DESTDIR/etc/mkinitcpio.d"
+PRESET="$DESTDIR/etc/mkinitcpio.d/linux-zen-$KVER.preset"
+printf '%s\n' '# mkinitcpio preset for linux-zen' 'ALL_config="/etc/mkinitcpio.conf"' "ALL_kver=/boot/vmlinuz-$KVER" "PRESETS=('default' 'fallback')" "default_image=/boot/initramfs-$KVER.img" "fallback_image=/boot/initramfs-$KVER-fallback.img" 'fallback_options="-S autodetect"' > "$PRESET"
+grep -q ALL_kver "$PRESET"
+'''
 
 # The primary archive unpacks to src/; the extra downloads land verbatim at
 # src/distfiles/, which the prepare commands above consume relative to that

@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "perl-libs"
@@ -32,27 +32,50 @@ provides = [
     "so:libperl.so"
 ]
 
-prepare = []
+[upstream]
+url = "https://www.cpan.org/src/5.0/"
+version_regex = 'perl-([0-9][0-9.]*)\.tar'
 
-build = [
-    # .stamp-configure guards the Configure step: rerunning Configure on an
-    # already-built tree refreshes config.h timestamps and triggers a full
-    # recompile (same lesson as the kbuild .stamp-config pattern).
-    "[ -f .stamp-configure ] || { BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de -D prefix=/opt/channels/perl/5.44 -D vendorprefix=/opt/channels/perl/5.44 -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D man1dir=/opt/channels/perl/5.44/share/man/man1 -D man3dir=/opt/channels/perl/5.44/share/man/man3 -D pager=\"/usr/bin/cat\" -D useshrplib -D usethreads -D BUILD_ZLIB=0 -D BUILD_BZIP2=0 && touch .stamp-configure; }",
-    "make"
+[build]
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+install_files = [
+    "usr/lib/libperl.so*",
 ]
 
-install = [
-    "make install DESTDIR=$DESTDIR",
-    "mkdir -p $DESTDIR/usr/lib",
-    "find $DESTDIR/opt/channels/perl/5.44 -name 'libperl.so*' -exec cp -a {} $DESTDIR/usr/lib/ \\;",
-    # rm the whole opt subtree: leftover parent dirs would ship as empty
-    # payload directories otherwise.
-    "rm -rf $DESTDIR/opt $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig 2>/dev/null || true",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
-    # Hardened: drop only dev *symlinks* named *.so, never real files --
-    # libperl.so IS the real shared object (its SONAME has no version), the
-    # old boilerplate deleted it and shipped an empty split.
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type l -name '*.so' -delete 2>/dev/null || true",
-    "[ -f $DESTDIR/usr/lib/libperl.so ] || { echo 'ERROR: perl-libs payload missing real libperl.so' >&2; exit 1; }"
-]
+[[build.steps]]
+name = "configure"
+phase = "pre-build"
+cwd = "source"
+command = '''set -e
+if [ ! -f .stamp-configure ]; then
+    BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de \
+        -D prefix=/opt/channels/perl/5.44 \
+        -D vendorprefix=/opt/channels/perl/5.44 \
+        -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl \
+        -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl \
+        -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl \
+        -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl \
+        -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl \
+        -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl \
+        -D man1dir=/opt/channels/perl/5.44/share/man/man1 \
+        -D man3dir=/opt/channels/perl/5.44/share/man/man3 \
+        -D pager=/usr/bin/cat -D useshrplib -D usethreads \
+        -D BUILD_ZLIB=0 -D BUILD_BZIP2=0
+    touch .stamp-configure
+fi
+'''
+
+[[build.steps]]
+name = "split-runtime-library"
+phase = "install"
+cwd = "source"
+command = '''set -e
+mkdir -p "$DESTDIR/usr/lib"
+find "$DESTDIR/opt/channels/perl/5.44" -name 'libperl.so*' -exec cp -a {} "$DESTDIR/usr/lib/" \;
+rm -rf "$DESTDIR/opt" "$DESTDIR/usr/include" "$DESTDIR/usr/bin" "$DESTDIR/usr/sbin" "$DESTDIR/usr/share" "$DESTDIR/etc" "$DESTDIR/var" "$DESTDIR/usr/lib/pkgconfig" 2>/dev/null || true
+find "$DESTDIR/usr/lib" "$DESTDIR/usr/lib64" -type f \( -name '*.a' -o -name '*.la' \) -delete 2>/dev/null || true
+find "$DESTDIR/usr/lib" "$DESTDIR/usr/lib64" -type l -name '*.so' -delete 2>/dev/null || true
+test -f "$DESTDIR/usr/lib/libperl.so"
+'''

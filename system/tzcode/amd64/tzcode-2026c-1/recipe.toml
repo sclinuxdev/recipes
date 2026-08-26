@@ -6,7 +6,7 @@
 # archives ride along as verified [[source]] entries; the primary unpacks
 # flat into src/, the data one is untarred over it in prepare.
 
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "tzcode"
@@ -28,21 +28,38 @@ provides = [
     "tzcode"
 ]
 
+[upstream]
+url = "https://data.iana.org/time-zones/releases/"
+version_regex = 'tzcode([0-9]{4}[a-z])\.tar'
+
 # The code tarball has no top-level directory: it unpacks straight into
 # src/. The data tarball is just as flat and lands on top of it.
-prepare = [
-    "tar -xf distfiles/tzdata2026c.tar.gz"
+[build]
+system = "make"
+build_targets = ["zic", "zdump"]
+# tzcode has no package-oriented install target; rebuilding the two tools is
+# idempotent and leaves the actual payload copy to the managed install step.
+install_targets = ["zic", "zdump"]
+install_files = [
+    "usr/bin/zic",
+    "usr/bin/zdump",
 ]
 
-build = [
-    "make CFLAGS=\"$CFLAGS -DHAVE_GETTEXT=0\" zic zdump"
-]
+[[build.steps]]
+name = "stage-timezone-data"
+phase = "prepare"
+cwd = "source"
+command = "tar -xf distfiles/tzdata2026c.tar.gz"
 
-install = [
-    "mkdir -p $DESTDIR/usr/bin",
-    "install -m755 zic $DESTDIR/usr/bin/zic",
-    "install -m755 zdump $DESTDIR/usr/bin/zdump"
-]
+[[build.steps]]
+name = "install-tools"
+phase = "install"
+cwd = "source"
+command = '''set -e
+mkdir -p "$DESTDIR/usr/bin"
+install -m755 zic "$DESTDIR/usr/bin/zic"
+install -m755 zdump "$DESTDIR/usr/bin/zdump"
+'''
 
 [[source]]
 url = "https://data.iana.org/time-zones/releases/tzcode2026c.tar.gz"

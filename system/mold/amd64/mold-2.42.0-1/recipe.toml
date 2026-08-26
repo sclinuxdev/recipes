@@ -4,7 +4,7 @@
 # libgcc_s/libatomic），因此本包不做本地编译；溯源字段记录的是上游
 # 生产者，而非本地构建行为。
 
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "mold"
@@ -25,19 +25,33 @@ provides = [
     "ld-mold"
 ]
 
-prepare = []
+[upstream]
+url = "https://github.com/rui314/mold/releases"
+version_regex = 'v([0-9][0-9.]*)'
 
-build = []
-
-install = [
-    "mkdir -p \"$DESTDIR/usr/bin\" \"$DESTDIR/usr/lib/mold\" \"$DESTDIR/usr/libexec/mold\" \"$DESTDIR/usr/share\"",
-    "cp -a \"$SRCDIR/bin/.\" \"$DESTDIR/usr/bin/\"",
-    "cp -a \"$SRCDIR/lib/mold\" \"$DESTDIR/usr/lib/\"",
-    "cp -a \"$SRCDIR/libexec/mold\" \"$DESTDIR/usr/libexec/\"",
-    "mkdir -p $DESTDIR/usr/share/doc && cp -a \"$SRCDIR/share/doc/mold\" $DESTDIR/usr/share/doc/",
-    "chmod +x \"$DESTDIR/usr/bin/mold\" \"$DESTDIR/usr/bin/ld.mold\"",
-    "[ -x $DESTDIR/usr/bin/mold ] && [ -x $DESTDIR/usr/bin/ld.mold ] || { echo 'ERROR: mold payload incomplete' >&2; exit 1; }"
+[build]
+system = "script"
+install_files = [
+    "usr/bin/mold",
+    "usr/bin/ld.mold",
+    "usr/lib/mold/**",
+    "usr/libexec/mold/**",
+    "usr/share/doc/mold/**",
 ]
+
+[[build.steps]]
+name = "install-prebuilt"
+phase = "install"
+cwd = "source"
+command = '''set -e
+mkdir -p "$DESTDIR/usr/bin" "$DESTDIR/usr/lib/mold" "$DESTDIR/usr/libexec/mold" "$DESTDIR/usr/share/doc"
+cp -a "$SRCDIR/bin/." "$DESTDIR/usr/bin/"
+cp -a "$SRCDIR/lib/mold/." "$DESTDIR/usr/lib/mold/"
+cp -a "$SRCDIR/libexec/mold/." "$DESTDIR/usr/libexec/mold/"
+cp -a "$SRCDIR/share/doc/mold" "$DESTDIR/usr/share/doc/"
+chmod +x "$DESTDIR/usr/bin/mold" "$DESTDIR/usr/bin/ld.mold"
+test -x "$DESTDIR/usr/bin/mold" && test -x "$DESTDIR/usr/bin/ld.mold"
+'''
 
 [source]
 url = "https://github.com/rui314/mold/releases/download/v2.42.0/mold-2.42.0-x86_64-linux.tar.gz"

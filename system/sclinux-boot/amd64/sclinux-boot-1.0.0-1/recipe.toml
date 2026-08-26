@@ -17,7 +17,7 @@
 # 卷组名与 ESP 挂载点必须与 docs/INSTALLATION.md 的磁盘布局一致：
 # root=/dev/mapper/vg0-root，ESP 挂在 /boot/efi。
 
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "sclinux-boot"
@@ -44,22 +44,37 @@ provides = [
     "virtual/bootloader"
 ]
 
+# This is a distribution integration package, not an independently released
+# upstream project. The URL points at the exact source recipe in sclinux;
+# payload files remain local attachments because no release archive exists.
+[upstream]
+url = "https://github.com/sclinuxdev/sclinux/tree/451534b483cb310525d1728b6eb436b08d35bdfc/Stage1/recipes/sclinux-boot"
+version_regex = 'version = "([0-9]+\.[0-9]+\.[0-9]+)"'
+
 conffiles = [
     "/etc/kernel/cmdline"
 ]
 
-prepare = []
-
-build = []
-
-install = [
-    "install -Dm755 $RECIPE_DIR/sclinux-update-boot.in $DESTDIR/usr/bin/sclinux-update-boot",
-    "sed -i -e 's/@SYSTEMD_BOOT_EFI@/systemd-bootx64.efi/g' -e 's/@EFI_BOOT_NAME@/BOOTX64.EFI/g' $DESTDIR/usr/bin/sclinux-update-boot",
-    "! grep -q '@[A-Z_]*@' $DESTDIR/usr/bin/sclinux-update-boot || { echo 'ERROR: unresolved placeholder in sclinux-update-boot' >&2; exit 1; }",
-    "install -Dm755 $RECIPE_DIR/90-sclinux-boot.install $DESTDIR/usr/lib/kernel/install.d/90-sclinux-boot.install",
-    "install -d $DESTDIR/etc/kernel",
-    "printf 'root=/dev/mapper/vg0-root rd.lvm.lv=vg0/root rw rootfstype=xfs console=ttyS0,115200\n' > $DESTDIR/etc/kernel/cmdline"
+[build]
+system = "script"
+install_files = [
+    "usr/bin/sclinux-update-boot",
+    "usr/lib/kernel/install.d/90-sclinux-boot.install",
+    "etc/kernel/cmdline",
 ]
+
+[[build.steps]]
+name = "install-boot-integration"
+phase = "install"
+cwd = "source"
+command = '''set -e
+install -Dm755 sclinux-update-boot.in "$DESTDIR/usr/bin/sclinux-update-boot"
+sed -i -e 's/@SYSTEMD_BOOT_EFI@/systemd-bootx64.efi/g' -e 's/@EFI_BOOT_NAME@/BOOTX64.EFI/g' "$DESTDIR/usr/bin/sclinux-update-boot"
+! grep -q '@[A-Z_]*@' "$DESTDIR/usr/bin/sclinux-update-boot"
+install -Dm755 90-sclinux-boot.install "$DESTDIR/usr/lib/kernel/install.d/90-sclinux-boot.install"
+install -d "$DESTDIR/etc/kernel"
+printf 'root=/dev/mapper/vg0-root rd.lvm.lv=vg0/root rw rootfstype=xfs console=ttyS0,115200\n' > "$DESTDIR/etc/kernel/cmdline"
+'''
 
 [[capability_hooks]]
 capability = "virtual/bootloader"

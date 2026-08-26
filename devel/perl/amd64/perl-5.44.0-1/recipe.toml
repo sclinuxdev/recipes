@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "perl"
@@ -35,16 +35,53 @@ provides = [
     "perl"
 ]
 
-prepare = []
+[upstream]
+url = "https://www.cpan.org/src/5.0/"
+version_regex = 'perl-([0-9][0-9.]*)\.tar'
 
-build = [
-    "BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de -D prefix=/opt/channels/perl/5.44 -D vendorprefix=/opt/channels/perl/5.44 -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl -D man1dir=/opt/channels/perl/5.44/share/man/man1 -D man3dir=/opt/channels/perl/5.44/share/man/man3 -D pager=\"/usr/bin/cat\" -D useshrplib -D usethreads -D BUILD_ZLIB=0 -D BUILD_BZIP2=0",
-    "make"
+[build]
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+install_files = [
+    "opt/channels/perl/5.44/**",
+    "usr/bin/perl",
+]
+install_excludes = [
+    "usr/lib/libperl.so*",
+]
+install_symlinks = [
+    { path = "usr/bin/perl", target = "../../opt/channels/perl/5.44/bin/perl" },
 ]
 
-install = [
-    "make install DESTDIR=$DESTDIR",
-    "rm -f $DESTDIR/usr/lib/libperl.so $DESTDIR/usr/lib/libperl.so.*",
-    "mkdir -p $DESTDIR/usr/bin",
-    "ln -sfn /opt/channels/perl/5.44/bin/perl $DESTDIR/usr/bin/perl"
-]
+[[build.steps]]
+name = "configure"
+phase = "pre-build"
+cwd = "source"
+command = '''set -e
+if [ ! -f .stamp-configure ]; then
+    BUILD_ZLIB=False BUILD_BZIP2=0 sh Configure -de \
+        -D prefix=/opt/channels/perl/5.44 \
+        -D vendorprefix=/opt/channels/perl/5.44 \
+        -D privlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl \
+        -D archlib=/opt/channels/perl/5.44/lib/perl5/5.44/core_perl \
+        -D sitelib=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl \
+        -D sitearch=/opt/channels/perl/5.44/lib/perl5/5.44/site_perl \
+        -D vendorlib=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl \
+        -D vendorarch=/opt/channels/perl/5.44/lib/perl5/5.44/vendor_perl \
+        -D man1dir=/opt/channels/perl/5.44/share/man/man1 \
+        -D man3dir=/opt/channels/perl/5.44/share/man/man3 \
+        -D pager=/usr/bin/cat -D useshrplib -D usethreads \
+        -D BUILD_ZLIB=0 -D BUILD_BZIP2=0
+    touch .stamp-configure
+fi
+'''
+
+[[build.steps]]
+name = "remove-split-library"
+phase = "install"
+cwd = "source"
+command = '''set -e
+rm -f "$DESTDIR/usr/lib/libperl.so" "$DESTDIR/usr/lib/libperl.so.*"
+mkdir -p "$DESTDIR/usr/bin"
+'''

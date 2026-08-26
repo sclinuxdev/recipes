@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 
 [package]
 name = "openssl-libs"
@@ -29,18 +29,30 @@ provides = [
     "so:libcrypto.so.3"
 ]
 
-prepare = []
+[upstream]
+url = "https://www.openssl.org/source/"
+version_regex = 'openssl-([0-9][0-9.]*)\.tar'
 
-build = [
-    "./config --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic no-apps enable-deprecated enable-tls1-method enable-tls1_1-method",
-    "make"
+[build]
+system = "make"
+build_targets = ["all"]
+install_targets = ["install"]
+install_files = [
+    "usr/lib/libssl.so.*",
+    "usr/lib/libcrypto.so.*",
 ]
 
-install = [
-    "make INSTALL_LIBS= MANSUFFIX=ssl install DESTDIR=$DESTDIR",
-    "ln -sf libssl.so.4 $DESTDIR/usr/lib/libssl.so.3",
-    "ln -sf libcrypto.so.4 $DESTDIR/usr/lib/libcrypto.so.3",
-    "rm -rf $DESTDIR/usr/include $DESTDIR/usr/bin $DESTDIR/usr/sbin $DESTDIR/usr/share $DESTDIR/etc $DESTDIR/var $DESTDIR/usr/lib/pkgconfig $DESTDIR/usr/lib/cmake 2>/dev/null || true",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 -type f \\( -name '*.a' -o -name '*.la' \\) -delete 2>/dev/null || true",
-    "find $DESTDIR/usr/lib $DESTDIR/usr/lib64 \\( -type l -o -type f \\) -name '*.so' ! -name '*.so.*' -delete 2>/dev/null || true"
+install_symlinks = [
+    { path = "usr/lib/libssl.so.3", target = "libssl.so.4" },
+    { path = "usr/lib/libcrypto.so.3", target = "libcrypto.so.4" },
 ]
+
+[build.variables]
+INSTALL_LIBS = ""
+MANSUFFIX = "ssl"
+
+[[build.steps]]
+name = "configure"
+phase = "pre-build"
+cwd = "source"
+command = "./config --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic no-apps enable-deprecated enable-tls1-method enable-tls1_1-method"
