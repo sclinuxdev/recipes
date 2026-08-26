@@ -60,10 +60,7 @@ build_dependencies = [
     "tar >= 1.35",
     "xz >= 5.8.3",
     "zlib-dev >= 1.3.2",
-    "zstd >= 1.5.7",
-    "llvm >= 22.1.8",
-    "clang >= 22.1.8",
-    "lld >= 22.1.8"
+    "zstd >= 1.5.7"
 ]
 
 provides = [
@@ -79,6 +76,7 @@ version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)-zen'
 
 [build]
 system = "make"
+kernel = true
 build_targets = ["all"]
 install_targets = ["modules_install"]
 install_files = [
@@ -88,15 +86,9 @@ install_files = [
     "usr/lib/modules/**",
     "etc/mkinitcpio.d/**",
 ]
-allowed_compilers = ["clang"]
-allowed_linkers = ["mold", "lld", "ld"]
 
 [build.variables]
-LLVM = "1"
 INSTALL_MOD_PATH = "{destdir}"
-
-[build.flag_env]
-cflags = ["KCFLAGS"]
 
 [[build.steps]]
 name = "apply-kernel-patches"
@@ -120,7 +112,7 @@ CONFIG_STAMP=$(sha256sum "$RECIPE_DIR/recipe.toml" | cut -d' ' -f1)
     echo '-1' > localversion.10-pkgrel
     echo '-zen' > localversion.20-pkgname
     ./scripts/config --disable DEBUG_INFO --enable DEBUG_INFO_NONE --disable DEBUG_INFO_DWARF5 --disable DEBUG_INFO_DWARF4 --disable DEBUG_INFO_BTF --disable DEBUG_INFO_BTF_MODULES --disable RUST
-    make LLVM=1 olddefconfig
+    make olddefconfig
     printf '%s\n' "$CONFIG_STAMP" > .stamp-config
 }
 '''

@@ -1,15 +1,15 @@
-# Sage 0.2.4 amd64 v2 recipe, pinned to the latest Sage commit.
+# Sage 0.3.0 amd64 v2 recipe, pinned to the released Sage commit.
 #
-# This recipe intentionally contains no compiler, linker, or flag settings.
-# Sage selects and audits those from the build environment configuration; the
-# recipe only declares the source, requirements, and expected payload.
+# Compiler, linker and flags are intentionally absent: Sage selects and
+# audits them from the target's build.toml. This recipe only declares package
+# requirements, the verified source archive and the payload boundary.
 
 schema_version = 2
 
 [package]
 name = "sage"
-version = "0.2.4"
-release = "3"
+version = "0.3.0"
+release = "1"
 description = "Universal Multi-Layer Linux Package Manager"
 license = "BSD-2-Clause"
 channel = "system"
@@ -42,12 +42,12 @@ provides = ["sage"]
 conffiles = ["/etc/sage/build.toml"]
 
 [upstream]
-url = "https://github.com/sclinuxdev/sage"
-version_regex = 'v(\d+\.\d+\.\d+)'
+url = "https://github.com/sclinuxdev/sage/releases"
+version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)'
 
 [source]
-url = "https://codeload.github.com/sclinuxdev/sage/legacy.tar.gz/2c510a51c16880b45f57d26fc044a3b42c536061"
-sha256 = "a0c6d2504df9b7420012a281c18c64da1be710626538e6d60ba8fbc61c362006"
+url = "https://codeload.github.com/sclinuxdev/sage/legacy.tar.gz/a7402fffba6c967a315147c52c20f1a725d5953b"
+sha256 = "d71f6c9ae68e6237cf15335b7b4592cc51bcb0cfcbfa49ae676f16819a88397d"
 
 [build]
 system = "xmake"

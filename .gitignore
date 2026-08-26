@@ -1,0 +1,5 @@
+# Per-package build workspaces and downloaded source trees
+src/
+pkg/
+distfiles/
+*.pkg.tar.zst
