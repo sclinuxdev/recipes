@@ -34,22 +34,76 @@ sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
 
 [build]
 system = "autotools"
-payload = "allowlist"
-install_files = ["**"]
+payload = "outputs"
 install_targets = ["install"]
-install_excludes = [
-    "usr/include/**",
-    "usr/lib/*.a",
-    "usr/lib/*.so",
-    "usr/lib/*.so.*",
-    "usr/lib/pkgconfig/**",
-    "usr/lib/cmake/**",
-    "usr/share/aclocal/**",
-    "usr/share/pkgconfig/**",
-]
 configure_options = [
     "--enable-pcre2-16",
     "--enable-pcre2-32",
     "--enable-jit",
-    "--disable-static"
+    "--disable-static",
+]
+
+[[build.outputs]]
+name = "pcre2"
+description = "pcre2grep, pcre2test and pcre2-config tools"
+license = "BSD-3-Clause"
+dependencies = [
+    "pcre2-libs >= 10.47",
+    "bzip2-libs >= 1.0.8",
+    "zlib >= 1.3.2"
+]
+provides = [
+    "pcre2"
+]
+install_files = [
+    "usr/bin/**",
+    "usr/share/doc/**",
+    "usr/share/man/man1/**",
+]
+optional_excludes = [
+    "usr/share/doc/**",
+]
+
+[[build.outputs]]
+name = "pcre2-libs"
+description = "libpcre2-8/16/32 and libpcre2-posix runtime libraries"
+license = "BSD-3-Clause"
+dependencies = []
+provides = [
+    "pcre2-libs",
+    "so:libpcre2-8.so.0",
+    "so:libpcre2-16.so.0",
+    "so:libpcre2-32.so.0",
+    "so:libpcre2-posix.so.3"
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "pcre2-dev"
+description = "PCRE2 headers, pkg-config and linker symlink"
+license = "BSD-3-Clause"
+dependencies = [
+    "pcre2-libs >= 10.47"
+]
+provides = [
+    "pcre2-dev"
+]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
+]
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
 ]

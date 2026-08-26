@@ -17,7 +17,8 @@ dependencies = [
 
 build_dependencies = [
     "pkgconf >= 3.0.5",
-    "ncurses-dev >= 6.6"
+    "ncurses-dev >= 6.6",
+    "systemd-dev >= 261.2"
 ]
 
 provides = [
@@ -34,22 +35,85 @@ sha256 = "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d"
 
 [build]
 system = "autotools"
-payload = "allowlist"
-install_files = ["**"]
+payload = "outputs"
 install_targets = ["install"]
-install_excludes = [
-    "usr/include/**",
-    "usr/lib/*.a",
-    "usr/lib/*.so",
-    "usr/lib/*.so.*",
-    "usr/lib/pkgconfig/**",
-    "usr/lib/cmake/**",
-    "usr/share/aclocal/**",
-    "usr/share/pkgconfig/**",
-]
 configure_options = [
     "--docdir=/usr/share/doc/procps-ng-4.0.7",
     "--disable-static",
     "--disable-kill",
-    "--enable-watch8bit"
+    "--enable-watch8bit",
+]
+
+[[build.outputs]]
+name = "procps-ng"
+description = "Process and system monitoring utilities (ps, top, free)"
+license = "GPL-2.0-or-later"
+dependencies = [
+    "procps-ng-libs >= 4.0.7",
+    "ncurses-libs >= 6.6",
+    "systemd-libs >= 261.2"
+]
+provides = [
+    "procps-ng"
+]
+install_files = [
+    "etc/**",
+    "usr/bin/**",
+    "usr/sbin/**",
+    "usr/share/doc/**",
+    "usr/share/locale/**",
+    "usr/share/man/man1/**",
+    "usr/share/man/man5/**",
+    "usr/share/man/man8/**",
+]
+optional_excludes = [
+    "etc/**",
+    "usr/sbin/**",
+    "usr/share/doc/**",
+    "usr/share/locale/**",
+    "usr/share/man/man5/**",
+]
+
+[[build.outputs]]
+name = "procps-ng-libs"
+description = "libproc2 shared runtime library"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "ncurses-libs >= 6.6",
+    "systemd-libs >= 261.2"
+]
+provides = [
+    "procps-ng-libs",
+    "so:libproc2.so.0"
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "procps-ng-dev"
+description = "libproc2 headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "procps-ng-libs >= 4.0.7"
+]
+provides = [
+    "procps-ng-dev"
+]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
+]
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
 ]

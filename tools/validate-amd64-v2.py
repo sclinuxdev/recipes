@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed static and staged-payload audit for amd64 recipe-v2 trees.
+"""Fail-closed static and staged-payload audit for recipe-v2 trees.
 
 This intentionally does not pretend that TOML parsing proves a build.  The
 normal CI job runs the static checks; a builder can pass --build to invoke Sage
@@ -24,8 +24,9 @@ from pathlib import Path
 INSTALL_KEYS = ("install_files", "install_excludes")
 TRANSFORM_KEYS = ("install_copies", "install_moves", "install_removes", "install_generates", "install_symlinks")
 BUILD_SYSTEMS = {"autotools", "cmake", "meson", "xmake", "cargo", "make", "script"}
-STEP_PHASES = {"prepare", "pre-build", "post-build", "pre-install", "install", "post-install"}
+STEP_PHASES = {"prepare", "pre-build", "post-build", "check", "pre-install", "install", "post-install"}
 STEP_CWDS = {"source", "build", "package"}
+SUPPORTED_ARCHES = {"amd64", "aarch64", "riscv64", "armv7", "any"}
 HASH_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 # Keep the repository-side checker in lockstep with Sage's v2 parser.  A
@@ -38,7 +39,7 @@ ROOT_KEYS = {
 }
 PACKAGE_KEYS = {
     "name", "version", "release", "description", "license", "channel",
-    "arch", "dependencies", "build_dependencies", "provides", "conflicts",
+    "arch", "dependencies", "build_dependencies", "check_dependencies", "provides", "conflicts",
     "conffiles", "upstream", "upstream_regex",
 }
 UPSTREAM_KEYS = {"url", "version_regex"}
@@ -73,6 +74,15 @@ def reject_unknown(mapping: object, allowed: set[str], path: Path,
         if key not in allowed:
             errors.append(f"{path}: unknown key {scope}.{key}")
 
+
+def canonical_arch(arch: str) -> str:
+    return {
+        "x86_64": "amd64",
+        "arm64": "aarch64",
+        "arm": "armv7",
+        "armhf": "armv7",
+        "armv7l": "armv7",
+    }.get(arch.strip(), arch.strip())
 
 def rel_safe(value: str) -> bool:
     path = Path(value)
@@ -141,7 +151,7 @@ def check_backend_options(path: Path, system: str, build: dict, errors: list[str
             "--sysconfdir": ("/etc",), "--sharedstatedir": ("/var/lib",),
             "--localstatedir": ("/var",), "--runstatedir": ("/run",),
         }
-        for original, lower in zip(options, lowered):
+        for original in options:
             key, separator, value = original.partition("=")
             if key not in roots:
                 continue
@@ -161,41 +171,60 @@ def check_backend_options(path: Path, system: str, build: dict, errors: list[str
             errors.append(f"{path}: {system} option is Sage-managed and cannot be overridden: {original}")
 
 
-def check_steps(path: Path, system: str, build: dict, errors: list[str]) -> None:
+def check_steps(path: Path, system: str, build: dict, errors: list[str]) -> bool:
     raw = build.get("steps", [])
     if not isinstance(raw, list):
         errors.append(f"{path}: build.steps must be an array")
-        return
+        return False
     names: set[str] = set()
+    has_check_phase = False
     for entry in raw:
         if not isinstance(entry, dict):
             errors.append(f"{path}: build.steps entries must be inline tables: {entry!r}")
             continue
-        reject_unknown(entry, {"name", "phase", "cwd", "command"}, path,
+        reject_unknown(entry, {"name", "phase", "cwd", "command", "unsafe_shell"}, path,
                        "build.steps[]", errors)
-        name, phase, cwd, command = (entry.get(key) for key in ("name", "phase", "cwd", "command"))
+        name, phase, cwd, command = (
+            entry.get(key) for key in ("name", "phase", "cwd", "command")
+        )
         if not all(isinstance(value, str) and value for value in (name, phase, command)):
-            errors.append(f"{path}: build.steps entries require non-empty name/phase/command: {entry!r}")
+            errors.append(
+                f"{path}: build.steps entries require non-empty name/phase/command: {entry!r}"
+            )
             continue
         if cwd is None:
             cwd = "source"
         if phase not in STEP_PHASES:
             errors.append(f"{path}: unsupported build.steps phase: {phase}")
+        if phase == "check":
+            has_check_phase = True
         if cwd not in STEP_CWDS:
             errors.append(f"{path}: unsupported build.steps cwd: {cwd}")
         if name in names:
             errors.append(f"{path}: duplicate build.steps name: {name}")
         names.add(name)
+        if "unsafe_shell" in entry and not isinstance(entry["unsafe_shell"], bool):
+            errors.append(f"{path}: build.steps unsafe_shell must be boolean")
     if system == "script" and not raw:
         errors.append(f"{path}: script build requires at least one build.steps entry")
+    return has_check_phase
 
 
-def check_sources(path: Path, recipe: dict, build: dict, errors: list[str], warnings: list[str], *, strict: bool = False) -> set[str]:
+def check_sources(
+    path: Path,
+    recipe: dict,
+    build: dict,
+    errors: list[str],
+    warnings: list[str],
+    *,
+    strict: bool = False,
+) -> set[str]:
     raw = recipe.get("source")
     entries = source_entries(recipe)
     if raw not in (None, [], {}) and not entries:
         errors.append(f"{path}: source must be a table or array of tables")
     names: set[str] = set()
+    source_hashes: dict[str, str] = {}
     for index, source in enumerate(entries):
         if not isinstance(source, dict):
             errors.append(f"{path}: source entry {index} must be a table")
@@ -215,41 +244,121 @@ def check_sources(path: Path, recipe: dict, build: dict, errors: list[str], warn
                 errors.append(f"{path}: source URLs must have unique filenames: {name}")
             else:
                 names.add(name)
+                if isinstance(sha256, str) and HASH_RE.fullmatch(sha256):
+                    source_hashes[name] = sha256.lower()
             if url.startswith("file:"):
                 warnings.append(f"{path}: file source is intentionally builder-local: {url}")
-    patches = build.get("patches", []) if isinstance(build.get("patches", []), list) else []
+
+    raw_patches = build.get("patches", [])
+    if strict and not isinstance(raw_patches, list):
+        errors.append(f"{path}: build.patches must be an array")
+        raw_patches = []
+    patches = raw_patches if isinstance(raw_patches, list) else []
     checksums = build.get("patch_checksums", {})
     if strict and not isinstance(checksums, dict):
         errors.append(f"{path}: build.patch_checksums must be a table")
         checksums = {}
+    if not isinstance(checksums, dict):
+        checksums = {}
     if strict:
         for patch_name, checksum in checksums.items():
             if not isinstance(patch_name, str) or Path(patch_name).name != patch_name:
-                errors.append(f"{path}: patch checksum key must be a basename: {patch_name!r}")
+                errors.append(
+                    f"{path}: patch checksum key must be a basename: {patch_name!r}"
+                )
             if not isinstance(checksum, str) or not HASH_RE.fullmatch(checksum):
-                errors.append(f"{path}: patch checksum must be a 64-hex SHA-256: {patch_name!r}")
-    for patch in patches:
-        if not isinstance(patch, str) or Path(patch).name != patch:
-            errors.append(f"{path}: patch must be a distfiles basename: {patch!r}")
-        else:
-            local = (path.parent / patch)
-            if not local.is_file():
-                local = path.parent / "distfiles" / patch
-            if local.is_file() and patch not in checksums:
-                errors.append(f"{path}: local patch needs build.patch_checksums entry: {patch}")
-            elif (local.is_file() and patch in checksums
-                  and isinstance(checksums[patch], str)
-                  and HASH_RE.fullmatch(checksums[patch])):
-                actual = hashlib.sha256(local.read_bytes()).hexdigest()
-                if actual != checksums[patch].lower():
+                errors.append(
+                    f"{path}: patch checksum must be a 64-hex SHA-256: {patch_name!r}"
+                )
+
+    declared_names: set[str] = set()
+    for index, entry in enumerate(patches):
+        declared_checksum: str | None = None
+        if isinstance(entry, str):
+            patch = entry
+        elif isinstance(entry, dict):
+            if strict:
+                reject_unknown(
+                    entry, {"file", "strip", "sha256"}, path,
+                    f"build.patches[{index}]", errors
+                )
+            patch = entry.get("file")
+            strip = entry.get("strip", build.get("patch_strip", 1))
+            if (
+                not isinstance(strip, int)
+                or isinstance(strip, bool)
+                or not 0 <= strip <= 9
+            ):
+                errors.append(
+                    f"{path}: patch strip must be an integer from 0 to 9: {entry!r}"
+                )
+            if "sha256" in entry:
+                declared_checksum = entry["sha256"]
+                if (
+                    not isinstance(declared_checksum, str)
+                    or not HASH_RE.fullmatch(declared_checksum)
+                ):
                     errors.append(
-                        f"{path}: local patch SHA-256 mismatch for {patch}: "
-                        f"declared {checksums[patch]}, actual {actual}")
-            elif not local.is_file() and patch not in names:
-                errors.append(f"{path}: local patch attachment is absent: {patch}")
+                        f"{path}: patch table sha256 must be a 64-hex SHA-256: {entry!r}"
+                    )
+                    declared_checksum = None
+            elif strict:
+                errors.append(f"{path}: structured patch entries require sha256")
+        else:
+            errors.append(
+                f"{path}: patch must be a basename string or table: {entry!r}"
+            )
+            continue
+        if not isinstance(patch, str) or not patch or Path(patch).name != patch:
+            errors.append(f"{path}: patch must be a distfiles basename: {patch!r}")
+            continue
+        if patch in declared_names:
+            errors.append(f"{path}: build.patches cannot declare the same file twice: {patch}")
+            continue
+        declared_names.add(patch)
+        source_checksum = source_hashes.get(patch)
+        legacy_checksum = checksums.get(patch)
+        if isinstance(legacy_checksum, str) and HASH_RE.fullmatch(legacy_checksum):
+            legacy_checksum = legacy_checksum.lower()
+        else:
+            legacy_checksum = None
+        explicit_checksum = (
+            declared_checksum.lower()
+            if isinstance(declared_checksum, str)
+            and HASH_RE.fullmatch(declared_checksum)
+            else None
+        )
+        candidates = [
+            checksum
+            for checksum in (explicit_checksum, legacy_checksum, source_checksum)
+            if checksum is not None
+        ]
+        if candidates and any(checksum != candidates[0] for checksum in candidates[1:]):
+            errors.append(f"{path}: patch {patch} has conflicting SHA-256 declarations")
+        checksum = candidates[0] if candidates else None
+        local = path.parent / patch
+        if not local.is_file():
+            local = path.parent / "distfiles" / patch
+        if strict and not checksum:
+            errors.append(f"{path}: every patch needs a SHA-256 declaration: {patch}")
+        if local.is_file() and not checksum:
+            errors.append(f"{path}: local patch needs a SHA-256 declaration: {patch}")
+        elif local.is_file() and checksum:
+            actual = hashlib.sha256(local.read_bytes()).hexdigest()
+            if actual != checksum:
+                errors.append(
+                    f"{path}: local patch SHA-256 mismatch for {patch}: "
+                    f"declared {checksum}, actual {actual}"
+                )
+        elif strict and not local.is_file() and patch not in names:
+            errors.append(f"{path}: patch attachment/source is absent: {patch}")
+    if strict:
+        for patch_name in checksums:
+            if patch_name not in declared_names:
+                errors.append(
+                    f"{path}: patch checksum names an undeclared patch: {patch_name}"
+                )
     return names
-
-
 def check_staging(recipe: dict, staging: Path, label: str, errors: list[str]) -> None:
     build = recipe.get("build", {})
     files = build.get("install_files", [])
@@ -276,12 +385,16 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
     for key in ("name", "version", "license", "channel", "arch"):
         if not isinstance(package.get(key), str) or not package[key]:
             errors.append(f"{path}: package.{key} must be a non-empty string")
+    declared_arch = canonical_arch(package.get("arch", ""))
+    if declared_arch not in SUPPORTED_ARCHES:
+        errors.append(f"{path}: unsupported package.arch: {package.get('arch')!r}")
     if any(ch in package.get("name", "") for ch in ("/", "\\")):
         errors.append(f"{path}: package.name must be a simple package name")
     for key in ("description", "upstream", "upstream_regex"):
         if key in package and not isinstance(package[key], str):
             errors.append(f"{path}: package.{key} must be a string")
-    for key in ("dependencies", "conflicts", "build_dependencies", "provides", "conffiles"):
+    for key in ("dependencies", "conflicts", "build_dependencies", "check_dependencies",
+                "provides", "conffiles"):
         if key in package and (not isinstance(package[key], list)
                                or not all(isinstance(item, str) and item for item in package[key])):
             errors.append(f"{path}: package.{key} must be an array of non-empty strings")
@@ -305,7 +418,7 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
     if payload not in {"all", "allowlist", "outputs"}:
         errors.append(f"{path}: build.payload must be all, allowlist, or outputs")
     for key in ("configure_options", "build_targets", "install_targets", "install_files",
-                "install_excludes", "patches", "allowed_compilers", "allowed_linkers"):
+                "install_excludes", "allowed_compilers", "allowed_linkers"):
         if key in build and (not isinstance(build[key], list)
                              or not all(isinstance(item, str) for item in build[key])):
             errors.append(f"{path}: build.{key} must be an array of strings")
@@ -395,9 +508,13 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
         if not isinstance(output, dict):
             errors.append(f"{path}: build.outputs entries must be inline tables")
             continue
-        reject_unknown(output, {"name", "description", "license", "dependencies",
+        reject_unknown(output, {"name", "description", "license", "version", "release",
+                                "channel", "arch", "inherit", "dependencies",
                                 "provides", "conflicts", "conffiles", "install_files",
-                                "install_excludes"}, path, "build.outputs[]", errors)
+                                "install_excludes", "optional_excludes", "install_copies",
+                                "install_symlinks", "install_moves", "install_removes",
+                                "install_generates", "file_permissions"},
+                       path, "build.outputs[]", errors)
         name = output.get("name")
         if not isinstance(name, str) or not name or "/" in name or name in {".", ".."}:
             errors.append(f"{path}: invalid output name: {name!r}")
@@ -435,20 +552,36 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("root", nargs="?", default=Path(__file__).resolve().parents[1], type=Path)
+    parser.add_argument("--arch", action="append", dest="architectures",
+                        help="validate only this architecture (repeatable; default: all)")
     parser.add_argument("--build", action="store_true", help="invoke Sage for every recipe (slow, networked)")
     parser.add_argument("--sage", default="sage", help="Sage executable used with --build")
     parser.add_argument("--staging", type=Path, help="audit one existing recipe pkg/ staging directory")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
 
-    recipes = sorted(args.root.glob("**/amd64/*/recipe.toml"))
+    requested_arches = {
+        canonical_arch(arch) for arch in args.architectures
+    } if args.architectures else SUPPORTED_ARCHES
+    unknown_arches = requested_arches - SUPPORTED_ARCHES
+    if unknown_arches:
+        parser.error(f"unsupported architecture(s): {', '.join(sorted(unknown_arches))}")
+    recipes = sorted(
+        path for path in args.root.glob("**/*/*/*/recipe.toml")
+        if len(path.relative_to(args.root).parts) >= 5
+        and canonical_arch(path.relative_to(args.root).parts[-3]) in requested_arches
+    )
     errors: list[str] = []
     warnings: list[str] = []
     counts = {"recipes": 0, "v1": 0, "v2": 0, "v2_split": 0}
+    arch_counts = {arch: 0 for arch in sorted(requested_arches)}
     parsed: list[tuple[Path, dict]] = []
-    amd64_v2_by_name: dict[str, tuple[Path, dict]] = {}
+    v2_by_arch_name: dict[tuple[str, str], tuple[Path, dict]] = {}
 
     for path in recipes:
+        relative_parts = path.relative_to(args.root).parts
+        path_arch = canonical_arch(relative_parts[-3])
+        arch_counts[path_arch] = arch_counts.get(path_arch, 0) + 1
         counts["recipes"] += 1
         try:
             with path.open("rb") as stream:
@@ -473,14 +606,18 @@ def main() -> int:
             continue
         counts["v2"] += 1
         package = recipe.get("package", {})
-        if not isinstance(package, dict):
-            errors.append(f"{path}: package must be a table")
-            package = {}
         name = package.get("name", path.parent.name)
         if not isinstance(name, str) or not name:
             errors.append(f"{path}: package.name must be a non-empty string")
             name = path.parent.name
-        amd64_v2_by_name[name] = (path, recipe)
+        declared_arch = canonical_arch(package.get("arch", ""))
+        if declared_arch not in SUPPORTED_ARCHES:
+            errors.append(f"{path}: unsupported package.arch: {package.get('arch')!r}")
+        elif declared_arch != path_arch:
+            errors.append(
+                f"{path}: package.arch {package.get('arch')!r} does not match path architecture {path_arch!r}"
+            )
+        v2_by_arch_name[(path_arch, name)] = (path, recipe)
         build = recipe.get("build")
         if not isinstance(build, dict):
             errors.append(f"{path}: v2 recipe has no [build] table")
@@ -491,7 +628,12 @@ def main() -> int:
             continue
         check_v2_shape(path, recipe, package, build, system, errors)
         check_backend_options(path, system, build, errors)
-        check_steps(path, system, build, errors)
+        has_check_phase = check_steps(path, system, build, errors)
+        check_deps = package.get("check_dependencies", [])
+        if check_deps and not has_check_phase:
+            errors.append(
+                f"{path}: package.check_dependencies require a build.steps phase='check'"
+            )
         outputs = build.get("outputs", [])
         if not isinstance(outputs, list):
             errors.append(f"{path}: build.outputs must be an array")
@@ -569,15 +711,15 @@ def main() -> int:
     # sibling boundary. Otherwise the backend's complete install tree would
     # silently duplicate foo-libs/foo-dev payloads and ownership would depend
     # on installation order.
-    for name, (path, recipe) in amd64_v2_by_name.items():
+    for (arch, name), (path, recipe) in v2_by_arch_name.items():
         if name.endswith(("-libs", "-dev")):
             continue
         build = recipe.get("build", {})
-        if not isinstance(build, dict):
+        if not isinstance(build, dict) or build.get("payload") == "outputs":
             continue
         siblings = []
         for suffix in ("-libs", "-dev"):
-            sibling = amd64_v2_by_name.get(name + suffix)
+            sibling = v2_by_arch_name.get((arch, name + suffix))
             if sibling:
                 sibling_build = sibling[1].get("build", {})
                 if isinstance(sibling_build, dict):
@@ -596,11 +738,15 @@ def main() -> int:
             if result.returncode:
                 errors.append(f"{path}: Sage build failed with exit {result.returncode}")
 
-    report = {"counts": counts, "errors": errors, "warnings": warnings}
+    report = {"counts": counts, "architectures": arch_counts,
+              "errors": errors, "warnings": warnings}
     if args.as_json:
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
-        print(f"amd64 recipes={counts['recipes']} v1={counts['v1']} v2={counts['v2']} v2_split={counts['v2_split']}")
+        by_arch = " ".join(f"{arch}={arch_counts[arch]}"
+                           for arch in sorted(arch_counts))
+        print(f"recipes={counts['recipes']} v1={counts['v1']} "
+              f"v2={counts['v2']} v2_split={counts['v2_split']} {by_arch}")
         for warning in warnings:
             print(f"warning: {warning}", file=sys.stderr)
         for error in errors:

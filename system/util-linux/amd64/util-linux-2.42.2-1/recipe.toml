@@ -13,7 +13,9 @@ dependencies = [
     "libxcrypt >= 4.5.2"
 ]
 build_dependencies = [
-    "libxcrypt-dev >= 4.5.2"
+    "libxcrypt-dev >= 4.5.2",
+    "sqlite-dev >= 3.53.4",
+    "ncurses-dev >= 6.6"
 ]
 provides = [
     "util-linux"
@@ -29,19 +31,8 @@ sha256 = "03a05d3adf9602ef128f2da05b84b3205ce60c351e5737c0370f74000679ce8a"
 
 [build]
 system = "autotools"
-payload = "allowlist"
-install_files = ["**"]
+payload = "outputs"
 install_targets = ["install"]
-install_excludes = [
-    "usr/include/**",
-    "usr/lib/*.a",
-    "usr/lib/*.so",
-    "usr/lib/*.so.*",
-    "usr/lib/pkgconfig/**",
-    "usr/lib/cmake/**",
-    "usr/share/aclocal/**",
-    "usr/share/pkgconfig/**",
-]
 configure_options = [
     "--bindir=/usr/bin",
     "--sbindir=/usr/bin",
@@ -57,4 +48,81 @@ configure_options = [
     "--disable-su",
     "--disable-nologin",
     "--docdir=/usr/share/doc/util-linux-2.42.2",
+]
+
+[[build.outputs]]
+name = "util-linux"
+description = "Essential system utilities (mount, fdisk, sulogin, ...)"
+license = "GPL-2.0-or-later"
+dependencies = [
+    "util-linux-libs >= 2.42.2",
+    "libxcrypt >= 4.5.2"
+]
+provides = [
+    "util-linux"
+]
+install_files = [
+    "etc/**",
+    "usr/bin/**",
+    "usr/sbin/**",
+    "usr/share/bash-completion/**",
+    "usr/share/doc/**",
+    "usr/share/locale/**",
+    "usr/share/man/man1/**",
+    "usr/share/man/man5/**",
+    "usr/share/man/man8/**",
+    "var/**",
+]
+optional_excludes = [
+    "usr/sbin/**",
+    "usr/share/bash-completion/**",
+    "usr/share/doc/**",
+    "usr/share/locale/**",
+    "usr/share/man/man5/**",
+    "var/**",
+]
+
+[[build.outputs]]
+name = "util-linux-libs"
+description = "libuuid/libblkid/libmount/libsmartcols/libfdisk runtime libraries"
+license = "LGPL-2.1-or-later"
+dependencies = []
+provides = [
+    "util-linux-libs",
+    "so:libuuid.so.1",
+    "so:libblkid.so.1",
+    "so:libmount.so.1",
+    "so:libsmartcols.so.1",
+    "so:libfdisk.so.1",
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "util-linux-dev"
+description = "util-linux library headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "util-linux-libs >= 2.42.2"
+]
+provides = [
+    "util-linux-dev"
+]
+install_files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
+]
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
 ]

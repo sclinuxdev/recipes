@@ -1,4 +1,4 @@
-name: validate-amd64-recipes
+name: validate-recipes
 
 on:
   push:
@@ -10,5 +10,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate every amd64 recipe
+      - name: Validate every recipe architecture
         run: python3 tools/validate-amd64-v2.py --json

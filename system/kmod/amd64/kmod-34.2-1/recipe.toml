@@ -34,18 +34,78 @@ sha256 = "5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54"
 
 [build]
 system = "meson"
-payload = "allowlist"
-install_files = ["**"]
-install_excludes = [
+payload = "outputs"
+install_targets = ["install"]
+configure_options = [
+    "-Dmanpages=false",
+]
+
+[[build.outputs]]
+name = "kmod"
+description = "Kernel module tools (modprobe, lsmod, depmod)"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "kmod-libs >= 34.2"
+]
+provides = [
+    "kmod"
+]
+install_files = [
+    "etc/**",
+    "usr/bin/**",
+    "usr/share/bash-completion/**",
+    "usr/share/doc/**",
+    "usr/share/man/man5/**",
+    "usr/share/man/man8/**",
+]
+optional_excludes = [
+    "etc/**",
+    "usr/share/bash-completion/**",
+    "usr/share/doc/**",
+    "usr/share/man/man5/**",
+    "usr/share/man/man8/**",
+]
+
+[[build.outputs]]
+name = "kmod-libs"
+description = "libkmod shared runtime library"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "xz-libs >= 5.8.3",
+    "zlib >= 1.3.2",
+    "zstd-libs >= 1.5.7",
+    "openssl-libs >= 4.0.1"
+]
+provides = [
+    "kmod-libs",
+    "so:libkmod.so.2"
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "kmod-dev"
+description = "libkmod headers, pkg-config and linker symlink"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "kmod-libs >= 34.2"
+]
+provides = [
+    "kmod-dev"
+]
+install_files = [
     "usr/include/**",
     "usr/lib/*.a",
     "usr/lib/*.so",
-    "usr/lib/*.so.*",
     "usr/lib/pkgconfig/**",
     "usr/lib/cmake/**",
     "usr/share/aclocal/**",
     "usr/share/pkgconfig/**",
 ]
-configure_options = [
-    "-Dmanpages=false",
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
 ]

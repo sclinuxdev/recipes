@@ -12,14 +12,12 @@ dependencies = [
     "dbus-libs >= 1.16.2",
     "expat-libs >= 2.8.3"
 ]
-
 build_dependencies = [
     "meson >= 1.12.0",
     "ninja >= 1.13.2",
     "pkgconf >= 3.0.5",
     "expat-dev >= 2.8.3"
 ]
-
 provides = [
     "dbus"
 ]
@@ -34,19 +32,81 @@ sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
 
 [build]
 system = "meson"
-payload = "allowlist"
-install_files = ["**"]
-install_excludes = [
+payload = "outputs"
+install_targets = ["install"]
+configure_options = [
+    "--wrap-mode=nofallback",
+    "-Dsystemd_system_unitdir=/usr/lib/systemd/system",
+]
+
+[[build.outputs]]
+name = "dbus"
+description = "D-Bus message bus system"
+license = "GPL-2.0-or-later OR AFL-2.1"
+dependencies = [
+    "dbus-libs >= 1.16.2",
+    "expat-libs >= 2.8.3"
+]
+provides = [
+    "dbus"
+]
+install_files = [
+    "etc/**",
+    "usr/bin/**",
+    "usr/lib/systemd/**",
+    "usr/lib/sysusers.d/**",
+    "usr/lib/tmpfiles.d/**",
+    "usr/share/dbus-1/**",
+    "usr/share/doc/**",
+    "usr/share/man/man1/**",
+    "var/**",
+]
+optional_excludes = [
+    "usr/lib/systemd/**",
+    "usr/lib/sysusers.d/**",
+    "usr/lib/tmpfiles.d/**",
+    "usr/share/doc/**",
+    "var/**",
+]
+
+[[build.outputs]]
+name = "dbus-libs"
+description = "libdbus-1 shared runtime library"
+license = "GPL-2.0-or-later OR AFL-2.1"
+dependencies = [
+    "expat-libs >= 2.8.3",
+    "systemd-libs >= 261.2"
+]
+provides = [
+    "dbus-libs",
+    "so:libdbus-1.so.3"
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "dbus-dev"
+description = "libdbus headers, pkg-config and linker symlink"
+license = "GPL-2.0-or-later OR AFL-2.1"
+dependencies = [
+    "dbus-libs >= 1.16.2"
+]
+provides = [
+    "dbus-dev"
+]
+install_files = [
     "usr/include/**",
     "usr/lib/*.a",
     "usr/lib/*.so",
-    "usr/lib/*.so.*",
     "usr/lib/pkgconfig/**",
     "usr/lib/cmake/**",
     "usr/share/aclocal/**",
     "usr/share/pkgconfig/**",
 ]
-configure_options = [
-    "--wrap-mode=nofallback",
-    "-Dsystemd_system_unitdir=/usr/lib/systemd/system"
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
 ]

@@ -12,6 +12,10 @@ dependencies = [
     "sqlite-libs >= 3.53.4",
     "readline >= 8.3",
 ]
+build_dependencies = [
+    "zlib-dev >= 1.3.2",
+    "readline-dev >= 8.3",
+]
 provides = [
     "sqlite"
 ]
@@ -26,20 +30,72 @@ sha256 = "0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c"
 
 [build]
 system = "autotools"
-payload = "allowlist"
-install_files = ["**"]
+payload = "outputs"
 install_targets = ["install"]
-install_excludes = [
+configure_options = [
+    "--disable-static",
+    "--enable-fts5",
+]
+
+[[build.outputs]]
+name = "sqlite"
+description = "SQLite command-line shell"
+license = "blessing"
+dependencies = [
+    "sqlite-libs >= 3.53.4",
+    "readline >= 8.3",
+]
+provides = [
+    "sqlite"
+]
+install_files = [
+    "usr/bin/**",
+    "usr/share/man/man1/**",
+    "usr/share/doc/**",
+]
+optional_excludes = [
+    "usr/share/doc/**",
+]
+
+[[build.outputs]]
+name = "sqlite-libs"
+description = "libsqlite3 shared runtime library"
+license = "blessing"
+dependencies = [
+    "zlib >= 1.3.2",
+]
+provides = [
+    "sqlite-libs",
+    "so:libsqlite3.so.0",
+]
+install_files = [
+    "usr/lib/*.so.*",
+]
+
+[[build.outputs]]
+name = "sqlite-dev"
+description = "SQLite headers, pkg-config and linker symlink"
+license = "blessing"
+dependencies = [
+    "sqlite-libs >= 3.53.4",
+]
+provides = [
+    "sqlite-dev",
+]
+install_files = [
     "usr/include/**",
     "usr/lib/*.a",
     "usr/lib/*.so",
-    "usr/lib/*.so.*",
     "usr/lib/pkgconfig/**",
     "usr/lib/cmake/**",
     "usr/share/aclocal/**",
     "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
 ]
-configure_options = [
-    "--disable-static",
-    "--enable-fts5",
+optional_excludes = [
+    "usr/lib/*.a",
+    "usr/lib/cmake/**",
+    "usr/share/aclocal/**",
+    "usr/share/pkgconfig/**",
+    "usr/share/man/man3/**",
 ]

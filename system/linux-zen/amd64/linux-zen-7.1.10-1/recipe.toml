@@ -1,33 +1,13 @@
-# Linux ZEN kernel with CJK VT console support.
+# Linux ZEN kernel with CJK VT console support and unified module build headers.
 #
-# Supersedes Stage2/recipes/linux-zen (release 2). Depends on
-# virtual/initramfs-generator: installing a kernel pulls in a builder for the
-# initramfs it cannot boot without, and sage's capability trigger regenerates
-# the image once the kernel lands. WHICH generator stays a system choice, so
-# dracut can satisfy this without touching the recipe.
+# Builds the kernel, modules, and the kernel headers build scaffolding for DKMS
+# in a single pass, outputting both `linux-zen` and `linux-zen-headers`.
 #
-# Four sources, each downloaded and sha256-verified by sage ([[source]]
-# multi-source support; the first entry is the primary archive):
-#
+# Four sources, each downloaded and sha256-verified by sage:
 #   1. The vanilla 7.1.10 tarball.
 #   2. The ZEN patchset for v7.1.10-zen1.
 #   3. bigshans' cjktty UTF-8 VT console patch, 7.2 series.
-#   4. Arch Linux's pinned default config for this exact kernel version
-#      (config.x86_64), fetched at build time from the packaging repo commit.
-#
-# Why the 7.2 cjktty patch on a 7.1.10 kernel: the v7.x patch applies to this
-# tree cleanly and keeps the UTF-8 virtual console support used by sclinux.
-# The FONT_CJK_* options default to y, so olddefconfig enables them.
-#
-# Both patches are applied with fatal failure semantics: a silently skipped
-# patch yields a kernel that builds fine but lacks the feature. The zen patch
-# is decompressed to a file first because a plain `zstd | patch` pipeline
-# reports only patch's exit status -- an empty stream from a failed zstd
-# would "succeed" while applying nothing.
-#
-# Layout note: every key below the [[source]] blocks belongs to its nearest
-# such block, so all root-scoped declarations come first and the two extra
-# sources close the file.
+#   4. Arch Linux's pinned default config (config.x86_64).
 
 schema_version = 2
 
@@ -40,9 +20,6 @@ description = "Linux ZEN kernel with performance optimizations and CJK console s
 license = "GPL-2.0-only"
 channel = "system"
 
-# virtual/initramfs-generator, not "mkinitcpio": a kernel is unbootable
-# without an initramfs, so the generator is a hard runtime dependency -- but
-# WHICH generator is a system choice.
 dependencies = [
     "kmod >= 34.2",
     "virtual/initramfs-generator",
@@ -76,17 +53,10 @@ version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)-zen'
 
 [build]
 system = "make"
-payload = "allowlist"
+payload = "outputs"
 kernel = true
 build_targets = ["all"]
 install_targets = ["modules_install"]
-install_files = [
-    "boot/vmlinuz-*",
-    "boot/System.map-*",
-    "boot/config-*",
-    "usr/lib/modules/**",
-    "etc/mkinitcpio.d/**",
-]
 
 [build.variables]
 INSTALL_MOD_PATH = "{destdir}"
@@ -119,31 +89,91 @@ CONFIG_STAMP=$(sha256sum "$RECIPE_DIR/recipe.toml" | cut -d' ' -f1)
 '''
 
 [[build.steps]]
-name = "install-kernel"
+name = "install-kernel-and-headers"
 phase = "install"
 cwd = "source"
 command = '''set -e
 KVER=$(make -s kernelrelease)
 echo "Installing kernel release: ${KVER}"
-mkdir -p "$DESTDIR/boot" "$DESTDIR/usr/lib/modules"
+mkdir -p "$DESTDIR/boot" "$DESTDIR/usr/lib/modules/$KVER"
+
 if [ -d "$DESTDIR/lib/modules" ] && [ ! -L "$DESTDIR/lib" ]; then
     cp -a "$DESTDIR/lib/modules" "$DESTDIR/usr/lib/"
     rm -rf "$DESTDIR/lib"
 fi
-rm -f "$DESTDIR/usr/lib/modules/$KVER/build" "$DESTDIR/usr/lib/modules/$KVER/source"
+
+# 1. Install kernel binary and boot configurations
 install -Dm644 arch/x86/boot/bzImage "$DESTDIR/boot/vmlinuz-${KVER}"
 install -Dm644 System.map "$DESTDIR/boot/System.map-${KVER}"
 install -Dm644 .config "$DESTDIR/boot/config-${KVER}"
 install -Dm644 arch/x86/boot/bzImage "$DESTDIR/usr/lib/modules/$KVER/vmlinuz"
+
 install -d "$DESTDIR/etc/mkinitcpio.d"
 PRESET="$DESTDIR/etc/mkinitcpio.d/linux-zen-$KVER.preset"
 printf '%s\n' '# mkinitcpio preset for linux-zen' 'ALL_config="/etc/mkinitcpio.conf"' "ALL_kver=/boot/vmlinuz-$KVER" "PRESETS=('default' 'fallback')" "default_image=/boot/initramfs-$KVER.img" "fallback_image=/boot/initramfs-$KVER-fallback.img" 'fallback_options="-S autodetect"' > "$PRESET"
 grep -q ALL_kver "$PRESET"
+
+# 2. Build and stage DKMS / kernel module build tree at /usr/lib/modules/$KVER/build
+BUILD_DIR="$DESTDIR/usr/lib/modules/$KVER/build"
+mkdir -p "$BUILD_DIR"
+
+install -Dm644 Makefile "$BUILD_DIR/Makefile"
+install -Dm644 .config "$BUILD_DIR/.config"
+install -Dm644 System.map "$BUILD_DIR/System.map"
+[ -e Module.symvers ] && install -Dm644 Module.symvers "$BUILD_DIR/Module.symvers"
+
+mkdir -p "$BUILD_DIR/arch/x86"
+cp -a arch/x86/include "$BUILD_DIR/arch/x86/"
+install -Dm644 arch/x86/Makefile "$BUILD_DIR/arch/x86/Makefile"
+[ -d arch/x86/entry ] && cp -a arch/x86/entry "$BUILD_DIR/arch/x86/"
+
+cp -a include "$BUILD_DIR/"
+cp -a scripts "$BUILD_DIR/"
+[ -d tools/objtool ] && { mkdir -p "$BUILD_DIR/tools/objtool"; [ -f tools/objtool/objtool ] && install -Dm755 tools/objtool/objtool "$BUILD_DIR/tools/objtool/objtool"; }
+[ -f Kconfig ] && install -Dm644 Kconfig "$BUILD_DIR/Kconfig"
+[ -f Kbuild ] && install -Dm644 Kbuild "$BUILD_DIR/Kbuild"
 '''
 
-# The primary archive unpacks to src/; the extra downloads land verbatim at
-# src/distfiles/, which the prepare commands above consume relative to that
-# work directory.
+[[build.outputs]]
+name = "linux-zen"
+description = "Linux ZEN kernel with performance optimizations and CJK console support"
+license = "GPL-2.0-only"
+dependencies = [
+    "kmod >= 34.2",
+    "virtual/initramfs-generator",
+]
+provides = [
+    "linux-zen",
+    "linux",
+    "virtual/linux",
+    "virtual/kernel"
+]
+install_files = [
+    "boot/**",
+    "etc/**",
+    "usr/lib/modules/*/vmlinuz",
+    "usr/lib/modules/*/modules.*",
+    "usr/lib/modules/*/kernel/**",
+    "usr/lib/modules/*/misc/**",
+]
+optional_excludes = [
+    "usr/lib/modules/*/misc/**",
+]
+
+[[build.outputs]]
+name = "linux-zen-headers"
+description = "Header files and build tools for Linux ZEN kernel modules (DKMS)"
+license = "GPL-2.0-only"
+dependencies = [
+    "linux-zen = 7.1.10-1"
+]
+provides = [
+    "linux-zen-headers"
+]
+install_files = [
+    "usr/lib/modules/*/build/**"
+]
+
 [[source]]
 url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
 sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
