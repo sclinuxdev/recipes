@@ -33,7 +33,6 @@ sha256 = "0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2"
 [build]
 system = "meson"
 payload = "outputs"
-install_targets = ["install"]
 configure_options = [
     "--wrap-mode=nofallback",
     "-Dsystemd_system_unitdir=/usr/lib/systemd/system",

@@ -1,14 +1,14 @@
-# Sage 0.3.0 amd64 v2 recipe, pinned to the released Sage commit.
+# Sage 0.3.1 amd64 v2 recipe, pinned to the published GitHub tag.
 #
-# Compiler, linker and flags are intentionally absent: Sage selects and
-# audits them from the target's build.toml. This recipe only declares package
-# requirements, the verified source archive and the payload boundary.
+# Sage owns compiler selection, flags, sandboxing, and provenance.  This
+# recipe declares only package metadata, verified source inputs, and the
+# explicit payload boundary.
 
 schema_version = 2
 
 [package]
 name = "sage"
-version = "0.3.0"
+version = "0.3.1"
 release = "1"
 description = "Universal Multi-Layer Linux Package Manager"
 license = "BSD-2-Clause"
@@ -18,8 +18,9 @@ arch = "amd64"
 dependencies = [
     "lmdb >= 0.9.35",
     "zstd-libs >= 1.5.7",
+    "tomlplusplus >= 3.4.0",
     "curl-libs >= 8.21.0",
-    "gcc-libs >= 15.3.0",
+    "gcc-libs >= 16.2.0",
     "openssl-libs >= 4.0.1",
     "libarchive-libs >= 3.8.9",
     "zlib >= 1.3.2",
@@ -29,6 +30,7 @@ build_dependencies = [
     "fakeroot >= 2.1.4",
     "bubblewrap >= 0.11.0",
     "xmake >= 3.1.0",
+    "binutils >= 2.47",
     "lmdb-dev >= 0.9.35",
     "zstd-dev >= 1.5.7",
     "tomlplusplus >= 3.4.0",
@@ -43,11 +45,11 @@ conffiles = ["/etc/sage/build.toml"]
 
 [upstream]
 url = "https://github.com/sclinuxdev/sage/releases"
-version_regex = 'v([0-9]+\.[0-9]+\.[0-9]+)'
+version_regex = 'v([0-9]+\\.[0-9]+\\.[0-9]+)'
 
 [source]
-url = "https://codeload.github.com/sclinuxdev/sage/legacy.tar.gz/a7402fffba6c967a315147c52c20f1a725d5953b"
-sha256 = "d71f6c9ae68e6237cf15335b7b4592cc51bcb0cfcbfa49ae676f16819a88397d"
+url = "https://github.com/sclinuxdev/sage/archive/refs/tags/v0.3.1.tar.gz"
+sha256 = "3c5d7980a30022612cac8cba056df0ff4a0f8f5f973bdfad30c3bb65afea3984"
 
 [build]
 system = "xmake"
@@ -56,3 +58,6 @@ install_files = [
     "usr/bin/sage",
     "etc/sage/build.toml",
 ]
+
+[build.content]
+strip = "unneeded"

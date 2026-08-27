@@ -37,6 +37,4 @@ build_targets = ["all"]
 install_targets = ["install"]
 
 [build.variables]
-libdir = "/usr/lib"
-sbindir = "/usr/bin"
 EFIDIR = "sclinux"

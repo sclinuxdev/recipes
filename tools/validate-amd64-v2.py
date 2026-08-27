@@ -35,7 +35,7 @@ HASH_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 # claims in the old tree).
 ROOT_KEYS = {
     "schema_version", "package", "upstream", "source", "build",
-    "capability_hooks", "triggers", "sysusers", "alternatives",
+    "capability_hooks", "triggers", "sysusers", "alternatives", "vendor",
 }
 PACKAGE_KEYS = {
     "name", "version", "release", "description", "license", "channel",
@@ -45,13 +45,14 @@ PACKAGE_KEYS = {
 UPSTREAM_KEYS = {"url", "version_regex"}
 SOURCE_KEYS = {"url", "sha256"}
 BUILD_KEYS = {
-    "system", "payload", "kernel", "source_subdir", "build_dir",
+    "system", "payload", "kernel", "header_only", "source_subdir", "build_dir",
     "configure_options", "build_targets", "install_targets", "install_files",
     "install_excludes", "install_copies", "install_symlinks", "install_moves",
     "install_removes", "install_generates", "outputs", "steps", "patches",
     "patch_checksums", "patch_strip", "allowed_compilers", "allowed_linkers",
     "variables", "flag_env", "tool_env", "toolchain", "tools",
     "flag_policy", "content", "network",
+    "cmake", "meson", "cargo", "autotools", "make", "xmake",
 }
 TOOLCHAIN_KEYS = {"compiler", "linker", "rust", "go"}
 TOOL_KEYS = {"family", "package", "minimum_version"}
@@ -67,6 +68,49 @@ TRANSFORM_ENTRY_KEYS = {
     "install_removes": {"path"},
     "install_symlinks": {"path", "target"},
     "install_generates": {"path", "content", "mode"},
+}
+BACKEND_FIELDS = {
+    "cmake": {
+        "definitions": "map", "features": "array",
+        "build_type": "string", "raw_options": "array",
+    },
+    "meson": {
+        "options": "map", "build_type": "string", "raw_options": "array",
+    },
+    "cargo": {
+        "features": "array", "default_features": "bool",
+        "locked": "bool", "raw_options": "array",
+    },
+    "autotools": {
+        "enable": "array", "disable": "array", "with": "array",
+        "without": "array", "raw_options": "array",
+    },
+    "make": {
+        "targets": "array", "install_targets": "array",
+        "variables": "map", "raw_options": "array",
+    },
+    "xmake": {
+        "configs": "map", "mode": "string", "raw_options": "array",
+    },
+}
+INSTALL_VARIABLES = {
+    "prefix", "exec_prefix", "bindir", "sbindir", "libexecdir", "libdir",
+    "includedir", "oldincludedir", "datarootdir", "datadir", "infodir",
+    "localedir", "mandir", "docdir", "htmldir", "dvidir", "pdfdir", "psdir",
+    "sysconfdir", "sharedstatedir", "localstatedir", "runstatedir", "DESTDIR",
+}
+MANAGED_VARIABLES = {
+    "CC", "CXX", "LD", "CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS",
+    "RUSTFLAGS", "DESTDIR", "PREFIX", "MAKEFLAGS", "CARGO_BUILD_JOBS",
+    "LC_ALL", "LANG", "TZ", "SOURCE_DATE_EPOCH", "FORCE_SOURCE_DATE",
+    "PYTHONHASHSEED", "ARFLAGS", "ZERO_AR_DATE", "CARGO_INCREMENTAL",
+    "CARGO_TERM_COLOR", "DEBUGINFOD_URLS", "GIT_CONFIG_NOSYSTEM",
+    "GIT_CONFIG_GLOBAL", "HOME", "TMPDIR", "CARGO_HOME", "RUSTUP_HOME",
+    "XDG_CONFIG_HOME", "CHOST", "PKG_CONFIG_LIBDIR", "CCACHE_DIR",
+    "CCACHE_COMPILERCHECK", "CCACHE_BASEDIR", "CCACHE_SLOPPINESS",
+    "SCCACHE_DIR", "RUSTC", "GOFLAGS", "GOPROXY", "GOTOOLCHAIN", "GOBIN",
+    "GOPATH", "GOCACHE", "GOMODCACHE", "LLVM", "KCFLAGS", "KCPPFLAGS",
+    "KBUILD_LDFLAGS", "KRUSTFLAGS", "PATH",
 }
 
 
@@ -174,6 +218,61 @@ def check_backend_options(path: Path, system: str, build: dict, errors: list[str
     for original, lower in zip(options, lowered):
         if any(lower == item or lower.startswith(item + "=") for item in forbidden):
             errors.append(f"{path}: {system} option is Sage-managed and cannot be overridden: {original}")
+    if system in {"meson", "xmake"} and build.get("install_targets"):
+        errors.append(f"{path}: {system} does not accept build.install_targets")
+    if system in {"cargo", "go", "make"} and build.get("configure_options"):
+        errors.append(f"{path}: {system} does not accept build.configure_options")
+    if system == "script" and any(build.get(key) for key in
+                                  ("configure_options", "build_targets", "install_targets")):
+        errors.append(f"{path}: script recipes use build.steps instead of backend targets")
+
+
+def check_backend_specs(path: Path, build: dict, errors: list[str]) -> None:
+    for backend, fields in BACKEND_FIELDS.items():
+        if backend not in build:
+            continue
+        spec = build[backend]
+        if not isinstance(spec, dict):
+            errors.append(f"{path}: build.{backend} must be a table")
+            continue
+        reject_unknown(spec, set(fields), path, f"build.{backend}", errors)
+        for key, kind in fields.items():
+            if key not in spec:
+                continue
+            value = spec[key]
+            if kind == "array":
+                if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+                    errors.append(f"{path}: build.{backend}.{key} must be an array of strings")
+            elif kind == "map":
+                if not isinstance(value, dict) or any(
+                    not isinstance(item, (str, bool, int)) for item in value.values()
+                ):
+                    errors.append(
+                        f"{path}: build.{backend}.{key} must be a table of string, boolean, or integer values"
+                    )
+            elif kind == "string":
+                if not isinstance(value, str) or not value:
+                    errors.append(f"{path}: build.{backend}.{key} must be a non-empty string")
+            elif kind == "bool" and not isinstance(value, bool):
+                errors.append(f"{path}: build.{backend}.{key} must be boolean")
+
+
+def check_managed_variables(path: Path, build: dict, errors: list[str]) -> None:
+    mappings = [("build.variables", build.get("variables"))]
+    make = build.get("make")
+    if isinstance(make, dict):
+        mappings.append(("build.make.variables", make.get("variables")))
+    valid_name = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+    for scope, mapping in mappings:
+        if mapping is None:
+            continue
+        if not isinstance(mapping, dict):
+            continue
+        for name in mapping:
+            if not isinstance(name, str) or not valid_name.fullmatch(name):
+                errors.append(f"{path}: {scope} contains an invalid variable name: {name!r}")
+            elif name in MANAGED_VARIABLES or name in INSTALL_VARIABLES:
+                errors.append(f"{path}: {scope} cannot override Sage-managed variable: {name}")
 
 
 def check_steps(path: Path, system: str, build: dict, errors: list[str]) -> bool:
@@ -364,6 +463,31 @@ def check_sources(
                     f"{path}: patch checksum names an undeclared patch: {patch_name}"
                 )
     return names
+def check_vendors(path: Path, recipe: dict, errors: list[str]) -> None:
+    raw = recipe.get("vendor")
+    if raw is None:
+        return
+    entries = [raw] if isinstance(raw, dict) else raw if isinstance(raw, list) else None
+    if entries is None:
+        errors.append(f"{path}: vendor must be a table or array of tables")
+        return
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            errors.append(f"{path}: vendor entry {index} must be a table")
+            continue
+        reject_unknown(entry, {"url", "sha256", "target"}, path,
+                       f"vendor[{index}]", errors)
+        url = entry.get("url")
+        sha256 = entry.get("sha256")
+        target = entry.get("target", "vendor")
+        if not isinstance(url, str) or not url:
+            errors.append(f"{path}: vendor[{index}] requires a non-empty URL")
+        if not isinstance(sha256, str) or not HASH_RE.fullmatch(sha256):
+            errors.append(f"{path}: vendor[{index}] requires a 64-hex SHA-256")
+        if (not isinstance(target, str) or not target
+                or Path(target).is_absolute() or ".." in Path(target).parts):
+            errors.append(f"{path}: vendor[{index}] target must be a relative path without '..'")
+
 def check_staging(recipe: dict, staging: Path, label: str, errors: list[str]) -> None:
     build = recipe.get("build", {})
     files = build.get("install_files", [])
@@ -428,9 +552,16 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
             except re.error as exc:
                 errors.append(f"{path}: invalid upstream.version_regex: {exc}")
     reject_unknown(build, BUILD_KEYS, path, "build", errors)
+    check_backend_specs(path, build, errors)
     payload = build.get("payload")
     if payload not in {"all", "allowlist", "outputs"}:
         errors.append(f"{path}: build.payload must be all, allowlist, or outputs")
+    if "kernel" in build and not isinstance(build["kernel"], bool):
+        errors.append(f"{path}: build.kernel must be boolean")
+    elif build.get("kernel") and system != "make":
+        errors.append(f"{path}: build.kernel=true requires system=make")
+    if "header_only" in build and not isinstance(build["header_only"], bool):
+        errors.append(f"{path}: build.header_only must be boolean")
     for key in ("configure_options", "build_targets", "install_targets", "install_files",
                 "install_excludes", "allowed_compilers", "allowed_linkers"):
         if key in build and (not isinstance(build[key], list)
@@ -498,6 +629,7 @@ def check_v2_shape(path: Path, recipe: dict, package: dict, build: dict,
                         errors.append(f"{path}: build.toolchain.rust is valid only for Cargo recipes")
                     if role == "go" and system != "go":
                         errors.append(f"{path}: build.toolchain.go is valid only for Go recipes")
+    check_managed_variables(path, build, errors)
     for key, allowed in TRANSFORM_ENTRY_KEYS.items():
         values = build.get(key, [])
         if not isinstance(values, list):
@@ -708,6 +840,7 @@ def main() -> int:
             errors.append(f"{path}: unsupported v2 build.system: {system!r}")
             continue
         check_v2_shape(path, recipe, package, build, system, errors)
+        check_vendors(path, recipe, errors)
         check_backend_options(path, system, build, errors)
         has_check_phase = check_steps(path, system, build, errors)
         check_deps = package.get("check_dependencies", [])
