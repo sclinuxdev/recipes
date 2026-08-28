@@ -10,4 +10,3 @@ working_dir = "/"
 restart = "always"
 type = "simple"
 after = ["local-fs"]
-before = ["network"]

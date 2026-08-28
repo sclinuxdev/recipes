@@ -18,7 +18,7 @@ provides = ["which"]
 
 [source]
 url = "https://ftp.gnu.org/gnu/which/which-2.25.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "1cb83e4f702e60b8211ab5ec4c2afbab1b1dec80209456a7d2faf7584ed225ea"
 
 [build]
 inherit = ["autotools"]

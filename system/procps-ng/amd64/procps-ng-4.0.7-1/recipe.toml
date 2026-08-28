@@ -20,7 +20,7 @@ provides = ["procps-ng", "virtual/procps"]
 
 [source]
 url = "https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-4.0.7.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "9d2021f47a4501c667862c9942a92d1953694b21d11bcd1702e83eb594e3d67d"
 
 [build]
 inherit = ["autotools"]

@@ -17,8 +17,8 @@ dependencies = [
 provides = ["fakeroot"]
 
 [source]
-url = "https://salsa.debian.org/clint/fakeroot/-/archive/upstream/2.1.4/fakeroot-upstream-2.1.4.tar.gz"
-sha256 = "b71f645037e5a44a474efd641b353b506db3803eb60ed90a4ac6322a8d96d340"
+url = "https://deb.debian.org/debian/pool/main/f/fakeroot/fakeroot_2.1.4.orig.tar.xz"
+sha256 = "0822bd5a9f0cf19d2ba0546b88b0432d4d3d9917db62c57b74044ccadba06e49"
 
 [build]
 inherit = ["autotools"]

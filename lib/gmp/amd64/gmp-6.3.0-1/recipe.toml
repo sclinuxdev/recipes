@@ -23,7 +23,7 @@ provides = [
 
 [source]
 url = "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
-sha256 = "a3c2b80201b89e68616f4ad303b37a9042671f7c24a4700b8f7be88573295b29"
+sha256 = "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
 
 [build]
 inherit = ["autotools"]

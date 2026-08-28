@@ -26,7 +26,7 @@ provides = ["mkinitcpio", "virtual/initramfs-generator"]
 
 [source]
 url = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio/-/archive/v41.1/mkinitcpio-v41.1.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "202ffca349ceb6b62513cc65a67d6fc0c0c15cacc72710ce5228b444cf1317e6"
 
 [build]
 inherit = ["custom"]

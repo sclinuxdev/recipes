@@ -19,7 +19,7 @@ provides = ["nano", "virtual/editor"]
 
 [source]
 url = "https://ftp.gnu.org/gnu/nano/nano-9.2.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "05ecb99247b782e8a5b3a25ed4101dd034b0236902f7449bc9795b717642f7e9"
 
 [build]
 inherit = ["autotools"]

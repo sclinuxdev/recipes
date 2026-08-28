@@ -21,7 +21,7 @@ provides = ["sqlite"]
 
 [source]
 url = "https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "0e9483900e92cd5de8fd48d16bf9200145a61f7fd5be542a5ac81d8a9516eb9c"
 
 [build]
 inherit = ["autotools"]

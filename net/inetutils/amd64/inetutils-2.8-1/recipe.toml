@@ -19,8 +19,8 @@ dependencies = [
 provides = ["inetutils"]
 
 [source]
-url = "https://ftp.gnu.org/gnu/inetutils/inetutils-2.8.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+url = "https://ftpmirror.gnu.org/inetutils/inetutils-2.8.tar.gz"
+sha256 = "57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5"
 
 [build]
 inherit = ["autotools"]

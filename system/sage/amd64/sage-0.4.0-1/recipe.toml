@@ -22,11 +22,22 @@ dependencies = [
 provides = ["sage", "virtual/package-manager"]
 
 [source]
-url = "https://github.com/sclinuxdev/sage/archive/refs/tags/v0.4.0.tar.gz"
-sha256 = "8f3b208ef12c1d9b3a0b1273849501ba1234567890abcdef1234567890abcdef"
+kind = "git"
+url = "https://github.com/sclinuxdev/sage.git"
+commit = "386c3c8aceef29d2efc20d15b73f2f3fbfabc397"
 
 [build]
 inherit = ["cargo"]
 
 [build.payload]
 default = "remaining"
+
+[[install.copies]]
+source = "rclass"
+path = "usr/share/sage/rclass"
+recursive = true
+
+[[install.copies]]
+source = "triggers"
+path = "usr/share/sage/triggers"
+recursive = true
