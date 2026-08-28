@@ -45,3 +45,5 @@ recipes/
 - **Strict Per-Architecture Independence**: Each architecture directory (`amd64`, `aarch64`, `any`) is self-contained with independent `release` revisions, compilation flags, and patches.
 - **Single-Recipe Multi-Subpackages**: Use `[[subpackages]]` with declarative Glob patterns to split `-libs`, `-dev`, and `-doc` from a single build without repeated compilation.
 - **Pure Declarative Lifecycle**: Interactive lifecycle scripts (`preinst`, `postinst`, `prerm`, `postrm`) are forbidden. Use `[[sysusers]]`, `service.toml`, and `triggers.toml` instead.
+- **Init-Agnostic Services**: Daemons declare their behavior in `service.toml`; `rclass/init-*.toml` files are system-side renderers used by `sage rebuild`, including the optional systemd renderer.
+- **SPDX Metadata**: Every `license` field uses a strict SPDX expression accepted by Sage 0.4.0 and is validated before repository indexing or package publication.

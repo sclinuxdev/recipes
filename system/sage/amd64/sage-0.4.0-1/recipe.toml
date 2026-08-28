@@ -6,7 +6,7 @@ version = "0.4.0"
 release = 1
 epoch = 0
 description = "Next-generation ultra-fast declarative package manager and system reconciliation suite"
-license = "GPL-3.0-or-later"
+license = "BSD-2-Clause"
 channel = "system"
 arch = "amd64"
 
@@ -16,7 +16,6 @@ dependencies = [
     "fakeroot >= 2.1.4-1",
     "zstd-libs >= 1.5.7-1",
     "lmdb-libs >= 0.9.35-1",
-    "openssl-libs >= 4.0.1-1",
 ]
 
 provides = ["sage", "virtual/package-manager"]
@@ -24,7 +23,7 @@ provides = ["sage", "virtual/package-manager"]
 [source]
 kind = "git"
 url = "https://github.com/sclinuxdev/sage.git"
-commit = "386c3c8aceef29d2efc20d15b73f2f3fbfabc397"
+commit = "eee2b7b478cbf6b93ea93823a0a1d2a9d64c56e0"
 
 [build]
 inherit = ["cargo"]
