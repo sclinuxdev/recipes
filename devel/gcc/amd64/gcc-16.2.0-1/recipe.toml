@@ -44,8 +44,9 @@ sha256 = "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e"
 system = "autotools"
 payload = "allowlist"
 install_files = ["**"]
-install_targets = ["install"]
-install_excludes = [
+build_targets = ["all-gcc"]
+install_targets = ["install-gcc"]
+optional_excludes = [
     "usr/include/**",
     "usr/lib/*.a",
     "usr/lib/*.so",
@@ -63,6 +64,9 @@ configure_options = [
     "--disable-bootstrap",
     "--disable-fixincludes",
     "--disable-nls",
+    "--disable-libgomp",
+    "--disable-libssp",
+    "--disable-libquadmath",
     "--with-system-zlib",
     "--with-isl=/usr"
 ]

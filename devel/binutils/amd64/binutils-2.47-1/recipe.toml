@@ -32,6 +32,7 @@ sha256 = "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff"
 
 [build]
 system = "autotools"
+allowed_compilers = ["gcc"]
 payload = "all"
 install_targets = ["install"]
 configure_options = [
@@ -43,5 +44,6 @@ configure_options = [
     "--with-system-zlib",
     "--enable-default-hash-style=gnu",
     "--without-debuginfod",
-    "--disable-gprofng"
+    "--disable-gprofng",
+    "acx_cv_cc_gcc_supports_ada=no"
 ]

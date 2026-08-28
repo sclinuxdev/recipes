@@ -4,3 +4,4 @@ pkg/
 distfiles/
 *.pkg.tar.zst
 __pycache__/
+tools/
