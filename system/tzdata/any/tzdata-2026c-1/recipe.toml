@@ -1,0 +1,36 @@
+schema_version = 1
+
+[package]
+name = "tzdata"
+version = "2026c"
+release = 1
+epoch = 0
+description = "Time Zone and Daylight Saving Time Data"
+license = "LicenseRef-Public-Domain"
+channel = "system"
+arch = "any"
+
+dependencies = []
+
+provides = ["tzdata"]
+
+[source]
+url = "https://data.iana.org/time-zones/releases/tzdata2026c.tar.gz"
+sha256 = "e4a178a4477f3d0ea77cc31828ff72aa38feff8d61aa13e7e99e142e9d902be4"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+ZONEINFO="${DESTDIR}/usr/share/zoneinfo"
+mkdir -p "${ZONEINFO}"
+for zone in africa antarctica asia australasia europe northamerica southamerica etcetera backward factory; do
+    if [ -f "${SRC_DIR}/${zone}" ]; then
+        zic -d "${ZONEINFO}" "${SRC_DIR}/${zone}" 2>/dev/null || true
+    fi
+done
+"""
+
+[build.payload]
+default = "remaining"

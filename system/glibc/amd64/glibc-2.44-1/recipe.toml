@@ -1,0 +1,87 @@
+schema_version = 1
+
+[package]
+name = "glibc"
+version = "2.44"
+release = 1
+epoch = 0
+description = "GNU C Library core shared objects, dynamic linker, and runtime tools"
+license = "LGPL-2.1-or-later AND GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "linux-api-headers >= 7.1.10-1",
+    "iana-etc >= 20260811-1",
+    "tzdata >= 2026c-1",
+]
+
+provides = [
+    "virtual/libc",
+    "glibc",
+    "so:libc.so.6",
+    "so:libm.so.6",
+    "so:ld-linux-x86-64.so.2",
+    "so:libpthread.so.0",
+    "so:libdl.so.2",
+    "so:librt.so.1",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-kernel=5.4 --enable-stack-protector=strong --enable-bind-now --disable-werror"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "glibc-dev"
+description = "GNU C Library development headers, static objects, and linker scripts"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "glibc >= 2.44-1",
+    "linux-api-headers >= 7.1.10-1",
+]
+provides = ["virtual/libc-dev", "glibc-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.o",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]
+
+[[subpackages]]
+name = "glibc-locales"
+description = "GNU C Library compiled internationalization and locale data"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "glibc >= 2.44-1",
+]
+provides = ["glibc-locales", "virtual/locales"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/locale/**",
+    "usr/share/locale/**",
+    "usr/share/i18n/**",
+]
+
+[features.crypt]
+default = false
+dependencies = ["libxcrypt-libs >= 4.5.2-1"]
+build_dependencies = ["libxcrypt-dev >= 4.5.2-1"]
+
+[features.nscd]
+default = false
+
+[features.nscd.args]
+configure_args = "--enable-nscd"

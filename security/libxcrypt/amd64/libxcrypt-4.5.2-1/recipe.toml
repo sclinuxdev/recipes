@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "libxcrypt"
+version = "4.5.2"
+release = 1
+epoch = 0
+description = "Modern crypt library for one-way hashing of passwords"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "libxcrypt",
+    "libxcrypt-libs",
+    "so:libcrypt.so.2",
+]
+
+[source]
+url = "https://github.com/besser82/libxcrypt/releases/download/v4.5.2/libxcrypt-4.5.2.tar.xz"
+sha256 = "71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-hashes=strong,glibc --enable-obsolete-api=glibc --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libxcrypt-dev"
+description = "libxcrypt development headers and pkgconfig"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "libxcrypt >= 4.5.2-1",
+]
+provides = ["libxcrypt-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

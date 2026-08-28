@@ -1,0 +1,62 @@
+schema_version = 1
+
+[package]
+name = "procps-ng"
+version = "4.0.7"
+release = 1
+epoch = 0
+description = "Standard information and process management tools for /proc (ps, top, sysctl, kill, free)"
+license = "GPL-2.0-or-later AND LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "procps-ng-libs >= 4.0.7-1",
+    "ncurses-libs >= 6.6-1",
+]
+
+provides = ["procps-ng", "virtual/procps"]
+
+[source]
+url = "https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-4.0.7.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--exec-prefix=/usr --sysconfdir=/etc --libdir=/usr/lib --bindir=/usr/bin --sbindir=/usr/bin --enable-watch8bit --disable-kill --disable-modern-top --disable-static --disable-nls"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "procps-ng-libs"
+description = "procps process information library (libproc2.so.*)"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["procps-ng-libs", "so:libproc2.so.0"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "procps-ng-dev"
+description = "procps-ng development headers and pkgconfig"
+license = "LGPL-2.1-or-later"
+dependencies = [
+    "procps-ng-libs >= 4.0.7-1",
+]
+provides = ["procps-ng-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

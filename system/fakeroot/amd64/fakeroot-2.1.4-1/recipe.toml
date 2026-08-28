@@ -1,0 +1,27 @@
+schema_version = 1
+
+[package]
+name = "fakeroot"
+version = "2.1.4"
+release = 1
+epoch = 0
+description = "Gives a fake root environment by wrapping file manipulation syscalls"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = ["fakeroot"]
+
+[source]
+url = "https://salsa.debian.org/clint/fakeroot/-/archive/upstream/2.1.4/fakeroot-upstream-2.1.4.tar.gz"
+sha256 = "b71f645037e5a44a474efd641b353b506db3803eb60ed90a4ac6322a8d96d340"
+
+[build]
+inherit = ["autotools"]
+
+[build.payload]
+default = "remaining"

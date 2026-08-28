@@ -1,0 +1,68 @@
+schema_version = 1
+
+[package]
+name = "e2fsprogs"
+version = "1.47.4"
+release = 1
+epoch = 0
+description = "Ext2/3/4 filesystem creation, check, and maintenance utilities"
+license = "GPL-2.0-only AND LGPL-2.0-only AND MIT"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "e2fsprogs-libs >= 1.47.4-1",
+    "util-linux-libs >= 2.42.2-1",
+]
+
+provides = ["e2fsprogs"]
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.4/e2fsprogs-1.47.4.tar.xz"
+sha256 = "fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-elf-shlibs --disable-libblkid --disable-libuuid --disable-fsck --disable-uuidd --disable-nls"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "e2fsprogs-libs"
+description = "Ext2/3/4 filesystem runtime shared libraries (libext2fs, libcom_err, libe2p)"
+license = "LGPL-2.0-only AND MIT"
+dependencies = [
+    "virtual/libc",
+]
+provides = [
+    "e2fsprogs-libs",
+    "so:libext2fs.so.2",
+    "so:libcom_err.so.2",
+    "so:libe2p.so.2",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "e2fsprogs-dev"
+description = "e2fsprogs development headers and pkgconfig metadata"
+license = "LGPL-2.0-only AND MIT"
+dependencies = [
+    "e2fsprogs-libs >= 1.47.4-1",
+]
+provides = ["e2fsprogs-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

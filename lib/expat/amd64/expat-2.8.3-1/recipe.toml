@@ -1,0 +1,62 @@
+schema_version = 1
+
+[package]
+name = "expat"
+version = "2.8.3"
+release = 1
+epoch = 0
+description = "XML parser library tools (xmlwf)"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "expat-libs >= 2.8.3-1",
+]
+
+provides = ["expat"]
+
+[source]
+url = "https://github.com/libexpat/libexpat/releases/download/R_2_8_3/expat-2.8.3.tar.xz"
+sha256 = "f6256df90c906773d344da084402b7d3e4f22ed41b1a59c989098a83d3ea0c85"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--without-docbook --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "expat-libs"
+description = "Expat XML stream parser runtime library (libexpat.so.*)"
+license = "MIT"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["expat-libs", "so:libexpat.so.1"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "expat-dev"
+description = "Expat XML parser development headers and pkgconfig"
+license = "MIT"
+dependencies = [
+    "expat-libs >= 2.8.3-1",
+]
+provides = ["expat-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+]

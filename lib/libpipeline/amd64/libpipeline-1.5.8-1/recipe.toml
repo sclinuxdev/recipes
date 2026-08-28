@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "libpipeline"
+version = "1.5.8"
+release = 1
+epoch = 0
+description = "C library for manipulating pipelines of sub-processes"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "libpipeline",
+    "libpipeline-libs",
+    "so:libpipeline.so.1",
+]
+
+[source]
+url = "https://download.savannah.gnu.org/releases/libpipeline/libpipeline-1.5.8.tar.gz"
+sha256 = "1b1203ca152ccd63983c3f2112f7fe6fa5afd453218ede5153d1b31e11bb8405"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libpipeline-dev"
+description = "libpipeline development headers and pkgconfig"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "libpipeline >= 1.5.8-1",
+]
+provides = ["libpipeline-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

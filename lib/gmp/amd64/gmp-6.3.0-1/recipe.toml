@@ -1,0 +1,51 @@
+schema_version = 1
+
+[package]
+name = "gmp"
+version = "6.3.0"
+release = 1
+epoch = 0
+description = "GNU Multiple Precision Arithmetic Library"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "gmp",
+    "gmp-libs",
+    "so:libgmp.so.10",
+    "so:libgmpxx.so.4",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
+sha256 = "a3c2b80201b89e68616f4ad303b37a9042671f7c24a4700b8f7be88573295b29"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-cxx --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "gmp-dev"
+description = "GNU Multiple Precision library development headers and pkgconfig"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+dependencies = [
+    "gmp >= 6.3.0-1",
+]
+provides = ["gmp-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

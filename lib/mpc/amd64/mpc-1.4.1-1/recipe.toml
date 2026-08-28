@@ -1,0 +1,52 @@
+schema_version = 1
+
+[package]
+name = "mpc"
+version = "1.4.1"
+release = 1
+epoch = 0
+description = "Multiple Precision Complex Numbers library"
+license = "LGPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "gmp >= 6.3.0-1",
+    "mpfr >= 4.2.2-1",
+]
+
+provides = [
+    "mpc",
+    "mpc-libs",
+    "so:libmpc.so.3",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/mpc/mpc-1.4.1.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "mpc-dev"
+description = "GNU MPC development headers and linker scripts"
+license = "LGPL-3.0-or-later"
+dependencies = [
+    "mpc >= 1.4.1-1",
+    "mpfr-dev >= 4.2.2-1",
+]
+provides = ["mpc-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+]

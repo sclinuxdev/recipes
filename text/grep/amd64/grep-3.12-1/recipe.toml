@@ -1,0 +1,31 @@
+schema_version = 1
+
+[package]
+name = "grep"
+version = "3.12"
+release = 1
+epoch = 0
+description = "GNU regular expression pattern matcher (grep, egrep, fgrep)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "pcre2-libs >= 10.47-1",
+]
+
+provides = ["grep"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/grep/grep-3.12.tar.xz"
+sha256 = "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-perl-regexp --disable-nls"
+
+[build.payload]
+default = "remaining"

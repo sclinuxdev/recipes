@@ -1,0 +1,57 @@
+schema_version = 1
+
+[package]
+name = "zlib"
+version = "1.3.2"
+release = 1
+epoch = 0
+description = "Massively spiffy yet delicately unobtrusive compression library"
+license = "Zlib"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "zlib",
+    "zlib-libs",
+    "so:libz.so.1",
+]
+
+[source]
+url = "https://zlib.net/zlib-1.3.2.tar.gz"
+sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+cd "${SRC_DIR}"
+./configure --prefix=/usr --libdir=/usr/lib --shared
+make -j"${JOBS}"
+make DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "zlib-dev"
+description = "zlib compression library development headers and pkgconfig"
+license = "Zlib"
+dependencies = [
+    "zlib >= 1.3.2-1",
+]
+provides = ["zlib-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/share/man/man3/**",
+]

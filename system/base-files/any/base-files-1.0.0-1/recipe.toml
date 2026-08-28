@@ -1,0 +1,209 @@
+schema_version = 1
+
+[package]
+name = "base-files"
+version = "1.0.0"
+release = 1
+epoch = 0
+description = "FHS filesystem hierarchy, strict usr-merge links, and neutral base configuration"
+license = "MIT"
+channel = "system"
+arch = "any"
+dependencies = ["os-release >= 1.0.0-1"]
+provides = ["base-files"]
+
+[[install.directories]]
+path = "usr/bin"
+
+[[install.directories]]
+path = "usr/lib"
+
+[[install.directories]]
+path = "usr/include"
+
+[[install.directories]]
+path = "usr/share/man"
+
+[[install.directories]]
+path = "usr/share/doc"
+
+[[install.directories]]
+path = "usr/local/bin"
+
+[[install.directories]]
+path = "usr/local/lib"
+
+[[install.directories]]
+path = "usr/local/share"
+
+[[install.directories]]
+path = "usr/local/include"
+
+[[install.directories]]
+path = "etc/profile.d"
+
+[[install.directories]]
+path = "etc/ld.so.conf.d"
+
+[[install.directories]]
+path = "etc/sage"
+
+[[install.directories]]
+path = "var/lib/sage"
+
+[[install.directories]]
+path = "var/cache/sage"
+
+[[install.directories]]
+path = "var/log"
+
+[[install.directories]]
+path = "var/tmp"
+mode = 1023 # 01777
+
+[[install.directories]]
+path = "var/spool"
+
+[[install.directories]]
+path = "opt/channels"
+
+[[install.directories]]
+path = "root"
+mode = 448 # 0700
+
+[[install.directories]]
+path = "home"
+
+[[install.directories]]
+path = "mnt"
+
+[[install.directories]]
+path = "srv"
+
+[[install.directories]]
+path = "boot/efi"
+
+[[install.directories]]
+path = "proc"
+
+[[install.directories]]
+path = "sys"
+
+[[install.directories]]
+path = "dev"
+
+[[install.directories]]
+path = "run/lock"
+
+[[install.directories]]
+path = "tmp"
+mode = 1023 # 01777
+
+[[install.symlinks]]
+path = "bin"
+target = "usr/bin"
+
+[[install.symlinks]]
+path = "sbin"
+target = "usr/bin"
+
+[[install.symlinks]]
+path = "usr/sbin"
+target = "bin"
+
+[[install.symlinks]]
+path = "lib"
+target = "usr/lib"
+
+[[install.symlinks]]
+path = "lib64"
+target = "usr/lib"
+
+[[install.symlinks]]
+path = "usr/lib64"
+target = "lib"
+
+[[install.symlinks]]
+path = "var/run"
+target = "../run"
+
+[[install.symlinks]]
+path = "var/lock"
+target = "../run/lock"
+
+[[install.files]]
+path = "etc/passwd"
+content = '''
+root:x:0:0:root:/root:/usr/bin/bash
+nobody:x:65534:65534:Nobody:/:/usr/bin/nologin
+'''
+
+[[install.files]]
+path = "etc/group"
+content = '''
+root:x:0:
+sys:x:3:
+adm:x:4:
+tty:x:5:
+disk:x:6:
+wheel:x:10:root
+users:x:100:
+nogroup:x:65534:
+'''
+
+[[install.files]]
+path = "etc/shadow"
+mode = 384 # 0600
+content = '''
+root:!*:::::::
+nobody:!*:::::::
+'''
+
+[[install.files]]
+path = "etc/shells"
+content = '''
+/usr/bin/sh
+/usr/bin/bash
+'''
+
+[[install.files]]
+path = "etc/fstab"
+content = '''
+# <file system> <mount point> <type> <options> <dump> <pass>
+'''
+
+[[install.files]]
+path = "etc/hostname"
+content = "sclinux\n"
+
+[[install.files]]
+path = "etc/hosts"
+content = '''
+127.0.0.1 localhost sclinux
+::1 localhost ip6-localhost ip6-loopback
+'''
+
+[[install.files]]
+path = "etc/nsswitch.conf"
+content = '''
+passwd: files
+group: files
+shadow: files
+hosts: files dns
+networks: files
+'''
+
+[[install.files]]
+path = "etc/profile"
+content = '''
+export PATH="/usr/local/bin:/usr/bin"
+export PS1="[\u@\h \W]\$ "
+for file in /etc/profile.d/*.sh; do
+    [ -r "$file" ] && . "$file"
+done
+unset file
+'''
+
+[[install.files]]
+path = "etc/ld.so.conf"
+content = "include /etc/ld.so.conf.d/*.conf\n"

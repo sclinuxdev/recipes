@@ -1,0 +1,65 @@
+schema_version = 1
+
+[package]
+name = "libcap"
+version = "2.78"
+release = 1
+epoch = 0
+description = "POSIX.1e capability library and utilities (setcap, getcap)"
+license = "GPL-2.0-only OR BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "libcap-libs >= 2.78-1",
+]
+
+provides = ["libcap"]
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.78.tar.xz"
+sha256 = "0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+make -C "${SRC_DIR}" PAM_CAP=no prefix=/usr lib=lib SBINDIR=/usr/bin -j"${JOBS}"
+make -C "${SRC_DIR}" PAM_CAP=no prefix=/usr lib=lib SBINDIR=/usr/bin RAISE_SETFCAP=no DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libcap-libs"
+description = "libcap runtime shared library (libcap.so.*, libpsx.so.*)"
+license = "GPL-2.0-only OR BSD-3-Clause"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["libcap-libs", "so:libcap.so.2", "so:libpsx.so.2"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "libcap-dev"
+description = "libcap headers and pkgconfig metadata"
+license = "GPL-2.0-only OR BSD-3-Clause"
+dependencies = [
+    "libcap-libs >= 2.78-1",
+]
+provides = ["libcap-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "tar"
+version = "1.35"
+release = 1
+epoch = 0
+description = "GNU Tape Archive utility for storing multiple files in a single archive"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = ["tar"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/tar/tar-1.35.tar.xz"
+sha256 = "4d62ff37342ec7aed748535323930c7cf94acf71c3591882b26a7ea50f3edc16"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-nls"
+
+[build.payload]
+default = "remaining"

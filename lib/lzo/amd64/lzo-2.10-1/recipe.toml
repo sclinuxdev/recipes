@@ -1,0 +1,65 @@
+schema_version = 1
+
+[package]
+name = "lzo"
+version = "2.10"
+release = 1
+epoch = 0
+description = "Extremely fast data compression and decompression library"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "lzo-libs >= 2.10-1",
+]
+
+provides = ["lzo"]
+
+[source]
+url = "https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz"
+sha256 = "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-shared --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "lzo-libs"
+description = "LZO runtime shared library (liblzo2.so.*)"
+license = "GPL-2.0-or-later"
+dependencies = [
+    "virtual/libc",
+]
+provides = [
+    "lzo-libs",
+    "so:liblzo2.so.2",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "lzo-dev"
+description = "LZO development headers and static/linker libraries"
+license = "GPL-2.0-or-later"
+dependencies = [
+    "lzo-libs >= 2.10-1",
+]
+provides = ["lzo-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

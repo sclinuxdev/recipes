@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "libffi"
+version = "3.8.0"
+release = 1
+epoch = 0
+description = "Foreign Function Interface library"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "libffi",
+    "libffi-libs",
+    "so:libffi.so.8",
+]
+
+[source]
+url = "https://github.com/libffi/libffi/releases/download/v3.8.0/libffi-3.8.0.tar.gz"
+sha256 = "7da3e2d9a171eb0a038f592ecad3ff2bb2550f3496d87b3b29ad0cf4430c0db4"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static --disable-exec-static-tramp"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libffi-dev"
+description = "libffi development header files and pkgconfig"
+license = "MIT"
+dependencies = [
+    "libffi >= 3.8.0-1",
+]
+provides = ["libffi-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

@@ -1,0 +1,57 @@
+schema_version = 1
+name = "maven"
+description = "Reproducible Maven JVM build class"
+
+implicit_build_dependencies = ["jdk", "maven"]
+allowed_compilers = ["clang", "gcc", "java", "javac"]
+allowed_linkers = ["lld", "mold", "ld"]
+
+[defaults]
+"args.command" = "mvn"
+"args.goals" = "package"
+"args.maven_args" = ""
+"args.test" = "0"
+"args.artifact" = "/source/target/*.jar"
+"args.output" = "app.jar"
+
+[env]
+MAVEN_OPTS = "-Dmaven.repo.local=${BUILD_DIR}/m2 -Duser.home=${BUILD_DIR}"
+
+[phases]
+src_unpack = """
+tab=$(printf '\t')
+while IFS="$tab" read -r source kind strip destination; do
+    input="${SRC_DIR}/.distfiles/$source"
+    target="${SRC_DIR}/$destination"
+    case "$kind" in
+        archive)
+            mkdir -p "$target"
+            tar -xf "$input" --strip-components="$strip" -C "$target"
+            ;;
+        tree)
+            mkdir -p "$target"
+            cp -a "$input"/. "$target"/
+            ;;
+        file)
+            mkdir -p "$(dirname "$target")"
+            cp -a "$input" "$target"
+            ;;
+        *)
+            echo "unsupported source manifest kind: $kind" >&2
+            exit 1
+            ;;
+    esac
+done < "${SRC_DIR}/.distfiles/manifest"
+"""
+src_prepare = """
+if [ -d "${SRC_DIR}/.patches" ]; then
+    for patch_file in "${SRC_DIR}"/.patches/*; do patch -d "${SRC_DIR}" -p1 < "$patch_file"; done
+fi
+"""
+src_compile = "cd \"${SRC_DIR}\" && ${args.command} --batch-mode -T \"${JOBS}\" ${args.maven_args} -DskipTests ${args.goals}"
+src_test = "if [ \"${args.test}\" = 1 ]; then cd \"${SRC_DIR}\" && ${args.command} --batch-mode -T \"${JOBS}\" ${args.maven_args} test; fi"
+src_install = """
+set -- ${args.artifact}
+[ "$#" -eq 1 ]
+install -Dm644 "$1" "${DESTDIR}/usr/share/java/${args.output}"
+"""

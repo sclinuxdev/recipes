@@ -1,0 +1,65 @@
+schema_version = 1
+
+[package]
+name = "lmdb"
+version = "0.9.35"
+release = 1
+epoch = 0
+description = "Symas Lightning Memory-Mapped Database command line utilities (mdb_stat, mdb_dump)"
+license = "OLDAP-2.8"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "lmdb-libs >= 0.9.35-1",
+]
+
+provides = ["lmdb"]
+
+[source]
+url = "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_0.9.35.tar.gz"
+sha256 = "18b021fd589d30cc08860a9550a30ae51637117451385e9581616da751326632"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+make -C "${SRC_DIR}/libraries/liblmdb" CC="${CC:-gcc}" AR="${AR:-ar}"
+make -C "${SRC_DIR}/libraries/liblmdb" prefix=/usr DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "lmdb-libs"
+description = "Symas LMDB runtime shared library (liblmdb.so)"
+license = "OLDAP-2.8"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["lmdb-libs", "so:liblmdb.so.0"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "lmdb-dev"
+description = "Symas LMDB development headers and pkgconfig files"
+license = "OLDAP-2.8"
+dependencies = [
+    "lmdb-libs >= 0.9.35-1",
+]
+provides = ["lmdb-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

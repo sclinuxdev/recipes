@@ -1,0 +1,52 @@
+schema_version = 1
+
+[package]
+name = "mpfr"
+version = "4.2.2"
+release = 1
+epoch = 0
+description = "Multiple Precision Floating-Point Reliable Library"
+license = "LGPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "gmp >= 6.3.0-1",
+]
+
+provides = [
+    "mpfr",
+    "mpfr-libs",
+    "so:libmpfr.so.6",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "mpfr-dev"
+description = "MPFR development headers and pkgconfig"
+license = "LGPL-3.0-or-later"
+dependencies = [
+    "mpfr >= 4.2.2-1",
+    "gmp-dev >= 6.3.0-1",
+]
+provides = ["mpfr-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

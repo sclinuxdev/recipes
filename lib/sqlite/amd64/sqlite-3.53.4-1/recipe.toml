@@ -1,0 +1,63 @@
+schema_version = 1
+
+[package]
+name = "sqlite"
+version = "3.53.4"
+release = 1
+epoch = 0
+description = "Self-contained, serverless, transactional SQL database engine CLI"
+license = "blessing"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "sqlite-libs >= 3.53.4-1",
+    "readline-libs >= 8.3-1",
+    "zlib-libs >= 1.3.2-1",
+]
+
+provides = ["sqlite"]
+
+[source]
+url = "https://www.sqlite.org/2026/sqlite-autoconf-3530400.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-readline --enable-threadsafe --enable-dynamic-extensions --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "sqlite-libs"
+description = "SQLite runtime shared library (libsqlite3.so.*)"
+license = "blessing"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["sqlite-libs", "so:libsqlite3.so.0"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "sqlite-dev"
+description = "SQLite development headers and pkgconfig files"
+license = "blessing"
+dependencies = [
+    "sqlite-libs >= 3.53.4-1",
+]
+provides = ["sqlite-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

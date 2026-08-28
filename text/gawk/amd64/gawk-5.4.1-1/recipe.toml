@@ -1,0 +1,43 @@
+schema_version = 1
+
+[package]
+name = "gawk"
+version = "5.4.1"
+release = 1
+epoch = 0
+description = "GNU pattern scanning and processing language utility (gawk)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "mpfr-libs >= 4.2.2-1",
+    "gmp >= 6.3.0-1",
+    "readline-libs >= 8.3-1",
+]
+
+provides = ["gawk", "virtual/awk", "awk"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+dependencies = [
+    "gmp-dev >= 6.3.0-1",
+    "mpfr-dev >= 4.2.2-1",
+    "readline-dev >= 8.3-1",
+]
+
+[build.args]
+configure_args = "--with-mpfr --with-readline --disable-nls"
+
+[build.payload]
+default = "remaining"
+
+[[alternatives]]
+link = "usr/bin/awk"
+target = "gawk"
+priority = 50
