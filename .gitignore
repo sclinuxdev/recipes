@@ -1,0 +1,31 @@
+# Sage Recipe Repository .gitignore
+
+# Downloaded source distfiles and caches
+distfiles/
+**/distfiles/
+cache/
+**/cache/
+
+# Binary package archives
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+index.mdb
+index.mdb.sig
+index.mdb.zst
+index.mdb.zst.sig
+
+# Sage build and solver artifacts
+.sage-build/
+.sage-packages/
+.sage-bootstrap/
+.sage-layer-*/
+
+# Python bytecode and tooling cache
+__pycache__/
+*.pyc
+
+# Editor and temporary files
+*~
+*.swp
+*.bak
+.DS_Store
