@@ -1,0 +1,67 @@
+schema_version = 1
+
+[package]
+name = "pcre2"
+version = "10.47"
+release = 1
+epoch = 0
+description = "Perl Compatible Regular Expressions version 2 utilities"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "pcre2-libs >= 10.47-1",
+]
+
+provides = ["pcre2"]
+
+[source]
+url = "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.47/pcre2-10.47.tar.bz2"
+sha256 = "47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-pcre2-16 --enable-pcre2-32 --enable-jit --enable-pcre2grep-libz --enable-pcre2grep-libbz2 --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "pcre2-libs"
+description = "PCRE2 runtime shared libraries (libpcre2-8, libpcre2-16, libpcre2-32, libpcre2-posix)"
+license = "BSD-3-Clause"
+dependencies = [
+    "virtual/libc",
+]
+provides = [
+    "pcre2-libs",
+    "so:libpcre2-8.so.0",
+    "so:libpcre2-16.so.0",
+    "so:libpcre2-32.so.0",
+    "so:libpcre2-posix.so.3",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "pcre2-dev"
+description = "PCRE2 headers, pkgconfig and linker symbols"
+license = "BSD-3-Clause"
+dependencies = [
+    "pcre2-libs >= 10.47-1",
+]
+provides = ["pcre2-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

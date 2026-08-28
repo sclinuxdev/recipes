@@ -1,0 +1,53 @@
+schema_version = 1
+
+[package]
+name = "readline"
+version = "8.3"
+release = 1
+epoch = 0
+description = "GNU Readline library for command-line editing and history"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "ncurses-libs >= 6.6-1",
+]
+
+provides = [
+    "readline",
+    "readline-libs",
+    "so:libreadline.so.8",
+    "so:libhistory.so.8",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/readline/readline-8.3.tar.gz"
+sha256 = "fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--with-curses --disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "readline-dev"
+description = "GNU Readline development headers and pkgconfig files"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "readline >= 8.3-1",
+    "ncurses-dev >= 6.6-1",
+]
+provides = ["readline-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/readline/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

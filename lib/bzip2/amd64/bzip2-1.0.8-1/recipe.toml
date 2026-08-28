@@ -1,0 +1,70 @@
+schema_version = 1
+
+[package]
+name = "bzip2"
+version = "1.0.8"
+release = 1
+epoch = 0
+description = "High-quality data compressor and utilities (bzip2, bunzip2, bzcat)"
+license = "bzip2-1.0.6"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "bzip2-libs >= 1.0.8-1",
+]
+
+provides = ["bzip2"]
+
+[source]
+url = "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz"
+sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+make -C "${SRC_DIR}" -f Makefile-libbz2_so
+make -C "${SRC_DIR}" libbz2.a bzip2 bzip2recover
+make -C "${SRC_DIR}" PREFIX="${DESTDIR}/usr" install
+install -Dm755 "${SRC_DIR}"/libbz2.so.1.0.* "${DESTDIR}/usr/lib/"
+ln -sf libbz2.so.1.0.8 "${DESTDIR}/usr/lib/libbz2.so.1.0"
+ln -sf libbz2.so.1.0.8 "${DESTDIR}/usr/lib/libbz2.so.1"
+ln -sf libbz2.so.1.0.8 "${DESTDIR}/usr/lib/libbz2.so"
+"""
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "bzip2-libs"
+description = "bzip2 runtime shared library (libbz2.so.*)"
+license = "bzip2-1.0.6"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["bzip2-libs", "so:libbz2.so.1.0"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "bzip2-dev"
+description = "bzip2 development header files and linker symbols"
+license = "bzip2-1.0.6"
+dependencies = [
+    "bzip2-libs >= 1.0.8-1",
+]
+provides = ["bzip2-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

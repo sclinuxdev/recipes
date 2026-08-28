@@ -1,0 +1,50 @@
+schema_version = 1
+
+[package]
+name = "libseccomp"
+version = "2.6.0"
+release = 1
+epoch = 0
+description = "Enhanced seccomp library and tool (syscall filtering)"
+license = "LGPL-2.1-only"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "libseccomp",
+    "libseccomp-libs",
+    "so:libseccomp.so.2",
+]
+
+[source]
+url = "https://github.com/seccomp/libseccomp/releases/download/v2.6.0/libseccomp-2.6.0.tar.gz"
+sha256 = "83b6085232d1588c379dc9b9cae47bb37407cf262e6e74993c61ba72d2a784dc"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libseccomp-dev"
+description = "libseccomp development headers and pkgconfig"
+license = "LGPL-2.1-only"
+dependencies = [
+    "libseccomp >= 2.6.0-1",
+]
+provides = ["libseccomp-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

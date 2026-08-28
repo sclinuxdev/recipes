@@ -18,10 +18,6 @@ recipes/
 │       │   └── <pkgname>-<version>-<release>/
 │       │       ├── recipe.toml
 │       │       └── patches/
-│       ├── riscv64/                          # RISC-V 64 architecture tree
-│       │   └── <pkgname>-<version>-<release>/
-│       │       ├── recipe.toml
-│       │       └── patches/
 │       └── any/                              # Architecture-independent packages (noarch/pure Python/docs)
 │           └── <pkgname>-<version>-<release>/
 │               └── recipe.toml
@@ -46,6 +42,6 @@ recipes/
 
 ## 3. Core Guidelines
 
-- **Strict Per-Architecture Independence**: Each architecture directory (`amd64`, `aarch64`, `riscv64`, `any`) is self-contained with independent `release` revisions, compilation flags, and patches.
+- **Strict Per-Architecture Independence**: Each architecture directory (`amd64`, `aarch64`, `any`) is self-contained with independent `release` revisions, compilation flags, and patches.
 - **Single-Recipe Multi-Subpackages**: Use `[[subpackages]]` with declarative Glob patterns to split `-libs`, `-dev`, and `-doc` from a single build without repeated compilation.
 - **Pure Declarative Lifecycle**: Interactive lifecycle scripts (`preinst`, `postinst`, `prerm`, `postrm`) are forbidden. Use `[[sysusers]]`, `service.toml`, and `triggers.toml` instead.

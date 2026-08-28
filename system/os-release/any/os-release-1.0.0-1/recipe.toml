@@ -1,0 +1,41 @@
+schema_version = 1
+
+[package]
+name = "os-release"
+version = "1.0.0"
+release = 1
+epoch = 0
+description = "sclinux operating-system identification metadata"
+license = "MIT"
+channel = "system"
+arch = "any"
+dependencies = []
+provides = ["os-release", "system-info"]
+
+[[install.directories]]
+path = "etc/sage"
+
+[[install.files]]
+path = "usr/lib/os-release"
+content = '''
+NAME="sclinux"
+PRETTY_NAME="sclinux"
+ID=sclinux
+BUILD_ID=rolling
+ANSI_COLOR="32;1"
+HOME_URL="https://github.com/sclinuxdev/sclinux"
+DOCUMENTATION_URL="https://github.com/sclinuxdev/sclinux"
+SUPPORT_URL="https://github.com/sclinuxdev/sclinux/issues"
+BUG_REPORT_URL="https://github.com/sclinuxdev/sclinux/issues"
+'''
+
+[[install.symlinks]]
+path = "etc/os-release"
+target = "../usr/lib/os-release"
+
+[[install.files]]
+path = "etc/issue"
+content = '''
+sclinux 1.0 (\l)
+
+'''

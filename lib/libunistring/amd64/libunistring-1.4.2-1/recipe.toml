@@ -1,0 +1,49 @@
+schema_version = 1
+
+[package]
+name = "libunistring"
+version = "1.4.2"
+release = 1
+epoch = 0
+description = "Unicode string manipulation library for C"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = [
+    "libunistring",
+    "libunistring-libs",
+    "so:libunistring.so.5",
+]
+
+[source]
+url = "https://ftp.gnu.org/gnu/libunistring/libunistring-1.4.2.tar.xz"
+sha256 = "b7a69c0be50974e84451ec96a79857d42533088aa98a72382cf4f14120ec2c32"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libunistring-dev"
+description = "libunistring development headers and info docs"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+dependencies = [
+    "libunistring >= 1.4.2-1",
+]
+provides = ["libunistring-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+]

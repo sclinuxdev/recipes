@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "mkinitcpio"
+version = "41.1"
+release = 1
+epoch = 0
+description = "Modular initramfs image creation utility"
+license = "GPL-2.0-only"
+channel = "system"
+arch = "any"
+
+dependencies = [
+    "bash >= 5.3.15-1",
+    "coreutils >= 9.11-1",
+    "util-linux >= 2.42.2-1",
+    "kmod >= 34.2-1",
+    "zstd >= 1.5.7-1",
+    "findutils >= 4.11.0-1",
+    "grep >= 3.12-1",
+    "sed >= 4.10-1",
+    "gawk >= 5.4.1-1",
+]
+
+provides = ["mkinitcpio", "virtual/initramfs-generator"]
+
+[source]
+url = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio/-/archive/v41.1/mkinitcpio-v41.1.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+make -C "${SRC_DIR}" PREFIX=/usr DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"

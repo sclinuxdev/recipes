@@ -1,0 +1,32 @@
+schema_version = 1
+
+[package]
+name = "inetutils"
+version = "2.8"
+release = 1
+epoch = 0
+description = "Collection of common network programs (ping, traceroute, hostname, ifconfig)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "libcap-libs >= 2.78-1",
+    "ncurses-libs >= 6.6-1",
+]
+
+provides = ["inetutils"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/inetutils/inetutils-2.8.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-servers --disable-rsh --disable-rlogin --disable-rcp --disable-rexec --disable-nls"
+
+[build.payload]
+default = "remaining"

@@ -1,0 +1,62 @@
+schema_version = 1
+
+[package]
+name = "device-mapper"
+version = "2.03.42"
+release = 1
+epoch = 0
+description = "Linux Device Mapper userland tools (dmsetup, blkdeactivate)"
+license = "GPL-2.0-only AND LGPL-2.1-only"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "device-mapper-libs >= 2.03.42-1",
+]
+
+provides = ["device-mapper"]
+
+[source]
+url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-pkgconfig --enable-cmdlib --enable-dmeventd --with-udev-prefix=/usr/lib --disable-selinux"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "device-mapper-libs"
+description = "Device Mapper runtime shared libraries (libdevmapper.so.*)"
+license = "LGPL-2.1-only"
+dependencies = [
+    "virtual/libc",
+    "util-linux-libs >= 2.42.2-1",
+]
+provides = ["device-mapper-libs", "so:libdevmapper.so.1.02"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "device-mapper-dev"
+description = "Device Mapper development headers and pkgconfig metadata"
+license = "LGPL-2.1-only"
+dependencies = [
+    "device-mapper-libs >= 2.03.42-1",
+]
+provides = ["device-mapper-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

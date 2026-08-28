@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "linux-api-headers"
+version = "7.1.10"
+release = 1
+epoch = 0
+description = "Kernel headers sanitized for use in userspace"
+license = "GPL-2.0-only WITH Linux-syscall-note"
+channel = "system"
+arch = "any"
+
+dependencies = []
+
+provides = [
+    "linux-api-headers",
+    "virtual/kernel-headers",
+]
+
+[source]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
+sha256 = "a5db7e945c71dbbb450117d3d2c1619aa0ae513f5fb4764b8fb1737bb52932ff"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+make -C "${SRC_DIR}" headers_install INSTALL_HDR_PATH="${DESTDIR}/usr"
+"""
+
+[build.payload]
+default = "remaining"

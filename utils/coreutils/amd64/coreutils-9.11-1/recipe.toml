@@ -1,0 +1,33 @@
+schema_version = 1
+
+[package]
+name = "coreutils"
+version = "9.11"
+release = 1
+epoch = 0
+description = "Core GNU utilities for file, shell and text manipulation"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "libcap-libs >= 2.78-1",
+    "gmp >= 6.3.0-1",
+    "openssl-libs >= 4.0.1-1",
+]
+
+provides = ["coreutils", "virtual/coreutils"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/coreutils/coreutils-9.11.tar.xz"
+sha256 = "394024eda0a5955217ceda9cd1201e65dc8fa3aa29c2951135a49521d57c3cc3"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-install-program=arch,hostname --enable-no-install-program=kill,uptime --with-openssl=yes --disable-nls"
+
+[build.payload]
+default = "remaining"

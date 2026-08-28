@@ -1,0 +1,62 @@
+schema_version = 1
+name = "kmod"
+description = "Reproducible out-of-tree Linux kernel module build class"
+
+implicit_build_dependencies = ["linux-headers", "kmod"]
+allowed_compilers = ["clang", "gcc"]
+allowed_linkers = ["lld", "mold", "ld"]
+
+[env]
+KERNELRELEASE = "${PACKAGE_SLOT}"
+
+[phases]
+src_unpack = """
+tab=$(printf '\t')
+while IFS="$tab" read -r source kind strip destination; do
+    input="${SRC_DIR}/.distfiles/$source"
+    target="${SRC_DIR}/$destination"
+    case "$kind" in
+        archive)
+            mkdir -p "$target"
+            tar -xf "$input" --strip-components="$strip" -C "$target"
+            ;;
+        tree)
+            mkdir -p "$target"
+            cp -a "$input"/. "$target"/
+            ;;
+        file)
+            mkdir -p "$(dirname "$target")"
+            cp -a "$input" "$target"
+            ;;
+        *)
+            echo "unsupported source manifest kind: $kind" >&2
+            exit 1
+            ;;
+    esac
+done < "${SRC_DIR}/.distfiles/manifest"
+"""
+
+src_prepare = """
+if [ -d "${SRC_DIR}/.patches" ]; then
+    for patch_file in "${SRC_DIR}"/.patches/*; do
+        patch -d "${SRC_DIR}" -p1 < "$patch_file"
+    done
+fi
+"""
+
+src_compile = """
+make -C "/usr/lib/modules/${PACKAGE_SLOT}/build" \
+    M="${SRC_DIR}" \
+    -j "${JOBS}" \
+    ${args.make_args} \
+    modules
+"""
+
+src_install = """
+make -C "/usr/lib/modules/${PACKAGE_SLOT}/build" \
+    M="${SRC_DIR}" \
+    INSTALL_MOD_PATH="${DESTDIR}" \
+    INSTALL_MOD_DIR=updates \
+    ${args.make_args} \
+    modules_install
+"""

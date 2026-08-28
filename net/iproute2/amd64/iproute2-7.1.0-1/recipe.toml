@@ -1,0 +1,37 @@
+schema_version = 1
+
+[package]
+name = "iproute2"
+version = "7.1.0"
+release = 1
+epoch = 0
+description = "Core IP routing, link, address, and network device configuration utilities (ip, ss, bridge)"
+license = "GPL-2.0-only"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "libcap-libs >= 2.78-1",
+    "libelf-libs >= 0.196-1",
+]
+
+provides = ["iproute2"]
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-7.1.0.tar.xz"
+sha256 = "fd9fa1b95809417157ca83dd72957e3261bdbce896353cb936f80af0b33a4b5c"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+cd "${SRC_DIR}"
+./configure --color=auto --libbpf_force=off
+make PREFIX=/usr SBINDIR=/usr/bin LIBDIR=/usr/lib -j"${JOBS}"
+make PREFIX=/usr SBINDIR=/usr/bin LIBDIR=/usr/lib DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"

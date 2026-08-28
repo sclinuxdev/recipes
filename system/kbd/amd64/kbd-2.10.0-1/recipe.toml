@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "kbd"
+version = "2.10.0"
+release = 1
+epoch = 0
+description = "Linux console fonts and keyboard keymap configuration utilities (setfont, loadkeys)"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = ["kbd"]
+
+[source]
+url = "https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-2.10.0.tar.xz"
+sha256 = "6e5ca4f8d76ee9e3a8db700b667f13e12aac9933828a64e1aaad93d26be9b479"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-vlock --disable-nls"
+
+[build.payload]
+default = "remaining"

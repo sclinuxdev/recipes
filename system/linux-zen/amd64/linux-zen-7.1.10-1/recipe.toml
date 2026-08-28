@@ -1,0 +1,43 @@
+schema_version = 1
+
+[package]
+name = "linux-zen"
+version = "7.1.10"
+release = 1
+epoch = 0
+description = "The Linux-Zen kernel and modules (result of collaborative tuning for desktop/gaming/responsiveness)"
+license = "GPL-2.0-only"
+channel = "system"
+arch = "amd64"
+slot = "7.1.10-zen1"
+
+dependencies = [
+    "kmod >= 34.2-1",
+    "mkinitcpio >= 41.1-1",
+]
+
+provides = [
+    "linux-zen",
+    "virtual/kernel",
+    "virtual/linux",
+]
+
+[source]
+url = "https://github.com/zen-kernel/zen-kernel/archive/refs/tags/v7.1.10-zen1.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+cd "${SRC_DIR}"
+make defconfig
+make -j"${JOBS}" bzImage modules
+make INSTALL_MOD_PATH="${DESTDIR}" modules_install
+mkdir -p "${DESTDIR}/boot"
+cp arch/x86/boot/bzImage "${DESTDIR}/boot/vmlinuz-linux-zen"
+"""
+
+[build.payload]
+default = "remaining"

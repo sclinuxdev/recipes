@@ -1,0 +1,31 @@
+schema_version = 1
+
+[package]
+name = "nano"
+version = "9.2"
+release = 1
+epoch = 0
+description = "Small and friendly terminal text editor inspired by Pico"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "ncurses-libs >= 6.6-1",
+]
+
+provides = ["nano", "virtual/editor"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/nano/nano-9.2.tar.xz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-utf8 --disable-nls"
+
+[build.payload]
+default = "remaining"

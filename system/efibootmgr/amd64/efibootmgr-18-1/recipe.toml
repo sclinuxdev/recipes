@@ -1,0 +1,28 @@
+schema_version = 1
+
+[package]
+name = "efibootmgr"
+version = "18"
+release = 1
+epoch = 0
+description = "Linux user-space application to modify the EFI Boot Manager NVRAM variables"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "popt-libs >= 1.19-1",
+]
+
+provides = ["efibootmgr"]
+
+[source]
+url = "https://github.com/rhboot/efibootmgr/archive/refs/tags/18.tar.gz"
+sha256 = "442867d12f8525034a404fc8af3036dba8e1fc970998af2486c3b940dfad0874"
+
+[build]
+inherit = ["autotools"]
+
+[build.payload]
+default = "remaining"

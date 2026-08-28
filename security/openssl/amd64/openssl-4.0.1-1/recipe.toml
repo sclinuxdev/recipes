@@ -1,0 +1,75 @@
+schema_version = 1
+
+[package]
+name = "openssl"
+version = "4.0.1"
+release = 1
+epoch = 0
+description = "Robust, commercial-grade, full-featured OpenSSL CLI and cryptography toolkit"
+license = "Apache-2.0"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "openssl-libs >= 4.0.1-1",
+]
+
+provides = ["openssl"]
+
+[source]
+url = "https://www.openssl.org/source/openssl-4.0.1.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+cd "${SRC_DIR}"
+./Configure --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared linux-x86_64 enable-ktls
+make -j"${JOBS}"
+make DESTDIR="${DESTDIR}" install
+"""
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "openssl-libs"
+description = "OpenSSL runtime shared cryptographic libraries (libssl, libcrypto)"
+license = "Apache-2.0"
+dependencies = [
+    "virtual/libc",
+    "ca-certificates",
+]
+provides = [
+    "openssl-libs",
+    "so:libssl.so.3",
+    "so:libcrypto.so.3",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/libssl.so.*",
+    "usr/lib/libcrypto.so.*",
+    "usr/lib/engines-*/**",
+    "usr/lib/ossl-modules/**",
+]
+
+[[subpackages]]
+name = "openssl-dev"
+description = "OpenSSL development headers and pkgconfig files"
+license = "Apache-2.0"
+dependencies = [
+    "openssl-libs >= 4.0.1-1",
+]
+provides = ["openssl-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/openssl/**",
+    "usr/lib/libssl.so",
+    "usr/lib/libcrypto.so",
+    "usr/lib/pkgconfig/**",
+]

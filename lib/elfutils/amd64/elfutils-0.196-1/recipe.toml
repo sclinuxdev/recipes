@@ -1,0 +1,71 @@
+schema_version = 1
+
+[package]
+name = "elfutils"
+version = "0.196"
+release = 1
+epoch = 0
+description = "Utilities and libraries for handling ELF files and DWARF debugging information"
+license = "GPL-3.0-or-later AND (GPL-2.0-or-later OR LGPL-3.0-or-later)"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "libelf-libs >= 0.196-1",
+    "zlib-libs >= 1.3.2-1",
+    "zstd-libs >= 1.5.7-1",
+    "bzip2-libs >= 1.0.8-1",
+    "xz-libs >= 5.8.3-1",
+]
+
+provides = ["elfutils", "libelf"]
+
+[source]
+url = "https://sourceware.org/elfutils/ftp/0.196/elfutils-0.196.tar.bz2"
+sha256 = "a91a92e44d5c4146743c72cc335a90d4ee29eb7ec9426fbc19c01ba16d997ccb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-debuginfod --disable-libdebuginfod --enable-deterministic-archives"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libelf-libs"
+description = "ELF object file access library (libelf.so.*)"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+dependencies = [
+    "virtual/libc",
+    "zlib-libs >= 1.3.2-1",
+    "zstd-libs >= 1.5.7-1",
+]
+provides = [
+    "libelf-libs",
+    "so:libelf.so.1",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/libelf*.so.*",
+]
+
+[[subpackages]]
+name = "libelf-dev"
+description = "ELF access library development headers and pkgconfig files"
+license = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+dependencies = [
+    "libelf-libs >= 0.196-1",
+]
+provides = ["libelf-dev", "elfutils-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

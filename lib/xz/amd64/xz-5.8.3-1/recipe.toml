@@ -1,0 +1,61 @@
+schema_version = 1
+
+[package]
+name = "xz"
+version = "5.8.3"
+release = 1
+epoch = 0
+description = "Library and command line tools for XZ and LZMA compressed files"
+license = "GPL-2.0-or-later AND LGPL-2.1-or-later AND LicenseRef-Public-Domain"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "xz-libs >= 5.8.3-1",
+]
+
+provides = ["xz"]
+
+[source]
+url = "https://tukaani.org/xz/xz-5.8.3.tar.xz"
+sha256 = "fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static --disable-nls"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "xz-libs"
+description = "LZMA compression and decompression runtime shared library (liblzma)"
+license = "LicenseRef-Public-Domain"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["xz-libs", "so:liblzma.so.5"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "xz-dev"
+description = "LZMA compression library headers and pkgconfig files"
+license = "LicenseRef-Public-Domain"
+dependencies = [
+    "xz-libs >= 5.8.3-1",
+]
+provides = ["xz-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

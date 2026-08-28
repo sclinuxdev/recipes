@@ -1,0 +1,32 @@
+schema_version = 1
+
+[package]
+name = "less"
+version = "704"
+release = 1
+epoch = 0
+description = "Fast, full-featured terminal pager similar to more but allowing backward movement"
+license = "GPL-3.0-or-later OR BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "ncurses-libs >= 6.6-1",
+    "pcre2-libs >= 10.47-1",
+]
+
+provides = ["less"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/less/less-704.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--with-regex=pcre2"
+
+[build.payload]
+default = "remaining"

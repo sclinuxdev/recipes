@@ -1,0 +1,32 @@
+schema_version = 1
+
+[package]
+name = "hwdata"
+version = "0.401"
+release = 1
+epoch = 0
+description = "Hardware identification databases (pci.ids, usb.ids, oui.txt, pnp.ids)"
+license = "GPL-2.0-or-later"
+channel = "system"
+arch = "any"
+
+dependencies = []
+
+provides = ["hwdata"]
+
+[source]
+url = "https://github.com/vcrhonek/hwdata/archive/refs/tags/v0.401.tar.gz"
+sha256 = "e9ff93b9807cc014ed8f7f5cb5dc2c31e714058c82ddc59b7355f5c57c9b759e"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = """
+mkdir -p "${DESTDIR}/usr/share/hwdata" "${DESTDIR}/usr/lib/pkgconfig"
+cp -a "${SRC_DIR}"/*.ids "${SRC_DIR}"/pnp.ids "${SRC_DIR}"/oui.txt "${DESTDIR}/usr/share/hwdata/"
+sed "s|@datadir@|/usr/share|g; s|@VERSION@|0.401|g" "${SRC_DIR}/hwdata.pc.in" > "${DESTDIR}/usr/lib/pkgconfig/hwdata.pc" 2>/dev/null || true
+"""
+
+[build.payload]
+default = "remaining"

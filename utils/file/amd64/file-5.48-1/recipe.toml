@@ -1,0 +1,62 @@
+schema_version = 1
+
+[package]
+name = "file"
+version = "5.48"
+release = 1
+epoch = 0
+description = "Utility to determine file type based on magic numbers"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "file-libs >= 5.48-1",
+]
+
+provides = ["file"]
+
+[source]
+url = "https://astron.com/pub/file/file-5.48.tar.gz"
+sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--enable-fsect-man5 --disable-static --disable-bzlib --disable-xzlib --disable-zlib"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "file-libs"
+description = "Magic number file type recognition runtime shared library (libmagic.so.*)"
+license = "BSD-2-Clause"
+dependencies = [
+    "virtual/libc",
+]
+provides = ["file-libs", "so:libmagic.so.1"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+    "usr/share/misc/magic.mgc",
+]
+
+[[subpackages]]
+name = "file-dev"
+description = "libmagic development headers and pkgconfig metadata"
+license = "BSD-2-Clause"
+dependencies = [
+    "file-libs >= 5.48-1",
+]
+provides = ["file-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

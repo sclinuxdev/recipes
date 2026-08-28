@@ -1,0 +1,82 @@
+schema_version = 1
+
+[package]
+name = "curl"
+version = "8.21.0"
+release = 1
+epoch = 0
+description = "Command line tool and library for transferring data with URLs"
+license = "curl"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "curl-libs >= 8.21.0-1",
+]
+
+provides = ["curl"]
+
+[source]
+url = "https://curl.se/download/curl-8.21.0.tar.xz"
+sha256 = "aa1b66a70eace83dc624508745646c08ae561de512ab403adffb93ac87fc72e6"
+
+[build]
+inherit = ["meson"]
+
+[build.args]
+meson_args = "-Dssl=openssl -Dzlib=enabled -Dzstd=enabled -Dhttp2=disabled -Dldap=disabled -Dtelnet=disabled"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "curl-libs"
+description = "Multi-protocol file transfer shared library (libcurl.so.*)"
+license = "curl"
+dependencies = [
+    "virtual/libc",
+    "openssl-libs >= 4.0.1-1",
+    "zlib-libs >= 1.3.2-1",
+    "zstd-libs >= 1.5.7-1",
+    "ca-certificates",
+]
+provides = ["curl-libs", "so:libcurl.so.4"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/*.so.*",
+]
+
+[[subpackages]]
+name = "curl-dev"
+description = "libcurl development headers, pkgconfig and documentation"
+license = "curl"
+dependencies = [
+    "curl-libs >= 8.21.0-1",
+    "openssl-dev >= 4.0.1-1",
+    "zlib-dev >= 1.3.2-1",
+]
+provides = ["curl-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/curl/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/share/man/man3/**",
+]
+
+[features.ssl]
+default = true
+dependencies = ["openssl-libs >= 4.0.1-1"]
+build_dependencies = ["openssl-dev >= 4.0.1-1"]
+[features.ssl.args]
+meson_args = "-Dssl=openssl"
+
+[features.zstd]
+default = true
+dependencies = ["zstd-libs >= 1.5.7-1"]
+build_dependencies = ["zstd-dev >= 1.5.7-1"]
+[features.zstd.args]
+meson_args = "-Dzstd=enabled"

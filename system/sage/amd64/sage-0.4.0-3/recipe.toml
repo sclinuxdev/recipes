@@ -1,0 +1,43 @@
+schema_version = 1
+
+[package]
+name = "sage"
+version = "0.4.0"
+release = 3
+epoch = 0
+description = "Next-generation ultra-fast declarative package manager and system reconciliation suite"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "bubblewrap >= 0.11.2-1",
+    "fakeroot >= 2.1.4-1",
+    "zstd-libs >= 1.5.7-1",
+    "lmdb-libs >= 0.9.35-1",
+    "openssl-libs >= 4.0.1-1",
+]
+
+provides = ["sage", "virtual/package-manager"]
+
+[source]
+kind = "git"
+url = "https://github.com/sclinuxdev/sage.git"
+commit = "386c3c8aceef29d2efc20d15b73f2f3fbfabc397"
+
+[build]
+inherit = ["cargo"]
+
+[build.payload]
+default = "remaining"
+
+[[install.copies]]
+source = "rclass"
+path = "usr/share/sage/rclass"
+recursive = true
+
+[[install.copies]]
+source = "triggers"
+path = "usr/share/sage/triggers"
+recursive = true

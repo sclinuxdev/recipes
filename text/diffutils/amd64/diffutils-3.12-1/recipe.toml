@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "diffutils"
+version = "3.12"
+release = 1
+epoch = 0
+description = "GNU differential file comparison utilities (diff, cmp, diff3, sdiff)"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = ["diffutils"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/diffutils/diffutils-3.12.tar.xz"
+sha256 = "7c8b7f9fc8609141fdea9cece85249d308624391ff61dedaf528fcb337727dfd"
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-nls"
+
+[build.payload]
+default = "remaining"

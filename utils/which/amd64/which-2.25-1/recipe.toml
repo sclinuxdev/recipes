@@ -1,0 +1,27 @@
+schema_version = 1
+
+[package]
+name = "which"
+version = "2.25"
+release = 1
+epoch = 0
+description = "Utility that prints the full path of executables found in PATH"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+]
+
+provides = ["which"]
+
+[source]
+url = "https://ftp.gnu.org/gnu/which/which-2.25.tar.gz"
+sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+
+[build]
+inherit = ["autotools"]
+
+[build.payload]
+default = "remaining"
