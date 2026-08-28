@@ -2,13 +2,13 @@ schema_version = 1
 
 [package]
 name = "linux-api-headers"
-version = "7.1.10"
+version = "7.1.11"
 release = 1
 epoch = 0
 description = "Kernel headers sanitized for use in userspace"
 license = "GPL-2.0-only WITH Linux-syscall-note"
 channel = "system"
-arch = "any"
+arch = "amd64"
 
 dependencies = []
 
@@ -18,8 +18,8 @@ provides = [
 ]
 
 [source]
-url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
-sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.11.tar.xz"
+sha256 = "3029540d8f2ec75bee5cbdb7c2a0daa60bffa1d105c82ecb99b53432f6351afc"
 
 [build]
 inherit = ["custom"]

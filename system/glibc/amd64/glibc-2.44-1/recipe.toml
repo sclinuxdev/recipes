@@ -11,7 +11,7 @@ channel = "system"
 arch = "amd64"
 
 dependencies = [
-    "linux-api-headers >= 7.1.10-1",
+    "linux-api-headers >= 7.1.11-1",
     "iana-etc >= 20260811-1",
     "tzdata >= 2026c-1",
 ]
@@ -46,7 +46,7 @@ description = "GNU C Library development headers, static objects, and linker scr
 license = "LGPL-2.1-or-later"
 dependencies = [
     "glibc >= 2.44-1",
-    "linux-api-headers >= 7.1.10-1",
+    "linux-api-headers >= 7.1.11-1",
 ]
 provides = ["virtual/libc-dev", "glibc-dev"]
 

@@ -15,6 +15,7 @@ dependencies = [
     "coreutils >= 9.11-1",
     "util-linux >= 2.42.2-1",
     "kmod >= 34.2-1",
+    "virtual/udev",
     "zstd >= 1.5.7-1",
     "findutils >= 4.11.0-1",
     "grep >= 3.12-1",
@@ -24,17 +25,21 @@ dependencies = [
 
 provides = ["mkinitcpio", "virtual/initramfs-generator"]
 
+[[alternatives]]
+link = "usr/bin/initramfs-generator"
+target = "mkinitcpio"
+priority = 50
+
 [source]
 url = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio/-/archive/v41.1/mkinitcpio-v41.1.tar.gz"
 sha256 = "202ffca349ceb6b62513cc65a67d6fc0c0c15cacc72710ce5228b444cf1317e6"
 
 [build]
-inherit = ["custom"]
+inherit = ["meson"]
+dependencies = ["virtual/udev"]
 
 [build.args]
-install_cmd = """
-make -C "${SRC_DIR}" PREFIX=/usr DESTDIR="${DESTDIR}" install
-"""
+meson_args = "-Dsystemd=disabled -Dsystemd_hooks=false -Dkernel_install=false -Dalpm=false -Ddocs=false -Dpresets=false"
 
 [build.payload]
 default = "remaining"

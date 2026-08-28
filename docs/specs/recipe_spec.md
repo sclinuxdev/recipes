@@ -223,15 +223,26 @@ version = "1.8.0"
 
 [build]
 inherit = ["kmod"]
+dependencies = ["linux-zen-headers:6.12.4"]
 
 [build.args]
 make_args = ""
 ```
 
 The package step rejects any `usr/lib/modules/<version>` tree that differs from
-the declared Slot. This gives DKMS-style out-of-tree sources reproducible Kmod
-artifacts whose installed versions are tracked independently by the solver and
-database instead of being rebuilt as untracked host mutations.
+the declared Slot. The `kmod` class installs with `INSTALL_MOD_PATH=/usr`, so
+the result remains usr-merged. Header packages are explicit build dependencies
+with the matching Slot; the class does not assume a global or ambiguous
+`linux-headers` package. This gives DKMS-style out-of-tree sources reproducible
+Kmod artifacts whose installed versions are tracked independently by the solver
+and database instead of being rebuilt as untracked host mutations.
+
+Kernel packages that need an initramfs declare `virtual/initramfs-generator` as
+a runtime dependency. The selected provider is configured by
+`[providers].initramfs-generator` in `/etc/sage/system.toml` and must expose the
+common `usr/bin/initramfs-generator` alternative. A package `triggers.toml` can
+then invoke that interface after module changes; no init-system-specific command
+or service unit is required.
 
 ### 3.6 Declarative installation lifecycle
 

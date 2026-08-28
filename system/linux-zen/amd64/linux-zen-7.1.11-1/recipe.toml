@@ -1,0 +1,109 @@
+schema_version = 1
+
+[package]
+name = "linux-zen"
+version = "7.1.11"
+release = 1
+epoch = 0
+description = "The Linux-Zen kernel and modules tuned for desktop responsiveness"
+license = "GPL-2.0-only"
+channel = "system"
+arch = "amd64"
+slot = "7.1.11-zen1"
+
+dependencies = [
+    "linux-zen-modules:7.1.11-zen1 >= 7.1.11-1",
+    "virtual/initramfs-generator",
+]
+
+provides = [
+    "linux-zen",
+    "virtual/kernel",
+    "virtual/linux",
+]
+
+[[sources]]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.11.tar.xz"
+sha256 = "3029540d8f2ec75bee5cbdb7c2a0daa60bffa1d105c82ecb99b53432f6351afc"
+
+[[sources]]
+kind = "file"
+url = "https://github.com/zen-kernel/zen-kernel/releases/download/v7.1.11-zen1/linux-v7.1.11-zen1.patch.zst"
+sha256 = "3defde29b8404c083df5469f149c04f9fb59b5648370c828d9b7870e442e7e99"
+destination = ".source-patches/001-zen.patch.zst"
+
+[[sources]]
+kind = "file"
+url = "https://raw.githubusercontent.com/bigshans/cjktty-patches/2f31b915f59d9a7b81d927a17c35015ad5cb4f77/v7.x/cjktty-7.2.patch"
+sha256 = "252c69ec48019660dce565c45e287626793f84939cec249d62644a11ea9842a8"
+destination = ".source-patches/002-cjktty.patch"
+
+[[sources]]
+kind = "file"
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/linux-zen/-/raw/0b606060fdb229c4bfbc0e1b36a148524146834f/config.x86_64?inline=false"
+sha256 = "936939ed31f1b45922ff2755187961cc32b37722f8924ea560e213582289fc4e"
+destination = ".kernel-config/config.x86_64"
+
+[build]
+inherit = ["kernel"]
+
+[build.args]
+config = ".kernel-config/config.x86_64"
+hostname = "sclinux"
+kernel_arch = "x86"
+make_args = ""
+package_name = "linux-zen"
+patch_strip = "1"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "linux-zen-headers"
+description = "Headers and build scripts for external modules for Linux-Zen"
+license = "GPL-2.0-only"
+dependencies = [
+    "virtual/libc-dev",
+    "binutils",
+    "libelf-libs",
+    "libgcc",
+    "openssl-libs",
+    "pahole",
+    "xxhash",
+    "zlib",
+    "zstd",
+]
+provides = ["linux-zen-headers"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/modules/7.1.11-zen1/build",
+    "usr/lib/modules/7.1.11-zen1/build/**",
+    "usr/src/linux-zen",
+]
+
+[[subpackages]]
+name = "linux-zen-modules"
+description = "Loadable modules and versioned kernel image for Linux-Zen"
+license = "GPL-2.0-only"
+dependencies = [
+    "kmod >= 34.2-1",
+    "virtual/initramfs-generator",
+]
+provides = ["linux-zen-modules"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/modules/7.1.11-zen1/**",
+]
+
+[[install.files]]
+path = "etc/mkinitcpio.d/linux-zen.preset"
+content = """ALL_kver=\"/usr/lib/modules/7.1.11-zen1/vmlinuz\"
+
+PRESETS=('default' 'fallback')
+
+default_image=\"/boot/initramfs-linux-zen.img\"
+fallback_options=\"-S autodetect\"
+fallback_image=\"/boot/initramfs-linux-zen-fallback.img\"
+"""
