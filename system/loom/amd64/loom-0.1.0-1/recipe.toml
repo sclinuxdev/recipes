@@ -1,0 +1,54 @@
+schema_version = 1
+
+[package]
+name = "loom"
+version = "0.1.0"
+release = 1
+epoch = 0
+description = "Small init and supervised service manager for Linux"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["loom", "init", "virtual/init"]
+
+[source]
+url = "https://github.com/antinomie1/loom.git"
+kind = "git"
+commit = "126b3bd80360dfaf5c4ff7757901d36a22659037"
+
+[build]
+inherit = ["cargo"]
+
+[build.args]
+target_arg = "--bins"
+
+[build.payload]
+default = "remaining"
+
+[[install.directories]]
+path = "usr/lib/loom/services"
+mode = 493
+
+[[install.directories]]
+path = "etc/loom/services"
+mode = 493
+
+[[install.files]]
+path = "etc/loom/loom.toml"
+content = '''schema_version = 1
+default_group = "boot"
+
+[groups.boot]
+wants = []
+'''
+mode = 420
+
+[[install.symlinks]]
+path = "usr/lib/loom/loom"
+target = "../../bin/loom"
+
+[[install.symlinks]]
+path = "usr/bin/init"
+target = "../lib/loom/loom"

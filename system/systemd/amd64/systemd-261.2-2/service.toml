@@ -1,0 +1,49 @@
+schema_version = 1
+
+[[services]]
+package = "systemd-udev"
+name = "systemd-udevd"
+description = "Device event and node manager"
+command = ["/usr/lib/systemd/systemd-udevd"]
+user = "root"
+group = "root"
+working_dir = "/"
+restart = "on-failure"
+type = "notify"
+after = ["local-fs"]
+
+[[services]]
+package = "systemd-networkd"
+name = "systemd-networkd"
+description = "Network configuration manager"
+command = ["/usr/lib/systemd/systemd-networkd"]
+user = "systemd-network"
+group = "systemd-network"
+working_dir = "/"
+restart = "on-failure"
+type = "notify"
+after = ["dbus", "systemd-udevd"]
+
+[[services]]
+package = "systemd-resolved"
+name = "systemd-resolved"
+description = "Network name resolution manager"
+command = ["/usr/lib/systemd/systemd-resolved"]
+user = "systemd-resolve"
+group = "systemd-resolve"
+working_dir = "/"
+restart = "on-failure"
+type = "notify"
+after = ["dbus", "systemd-networkd"]
+
+[[services]]
+package = "systemd-timesyncd"
+name = "systemd-timesyncd"
+description = "Network time synchronization client"
+command = ["/usr/lib/systemd/systemd-timesyncd"]
+user = "systemd-timesync"
+group = "systemd-timesync"
+working_dir = "/"
+restart = "on-failure"
+type = "notify"
+after = ["network-online"]

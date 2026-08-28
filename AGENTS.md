@@ -68,7 +68,7 @@ recipes/<category>/<pkgname>/<arch>/<pkgname>-<version>-<release>/
    - See [recipe_spec.md](file:///home/ir/newworld/recipes/docs/specs/recipe_spec.md) for full syntax and examples.
 2. **Deterministic & Pure Declarative Lifecycle**:
    - **Strictly Forbidden**: Interactive shell lifecycle scripts (`preinst`, `postinst`, `prerm`, `postrm`) are prohibited and will be rejected by `sage-build`.
-   - **System Accounts**: Declare with `[[sysusers]]` (emitted to `usr/lib/sysusers.d/<pkg>.conf`).
+   - **System Accounts**: Declare with `[[sysusers]]`; Sage reconciles account databases directly without an init-system helper.
    - **Services**: Define using declarative `service.toml` beside `recipe.toml` (see [service_spec.md](file:///home/ir/newworld/recipes/docs/specs/service_spec.md)).
    - **Triggers**: Define post-transaction hooks using `triggers.toml` beside `recipe.toml` (see [triggers_spec.md](file:///home/ir/newworld/recipes/docs/specs/triggers_spec.md)).
 3. **Sources & Checksums**:
