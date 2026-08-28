@@ -208,6 +208,12 @@ that needs an out-of-tree module build must declare the matching header package
 with its Slot in `[build].dependencies`, for example
 `linux-zen-headers:7.1.11-zen1`.
 
+Toolchains selected by kernel configuration are recipe dependencies rather than
+unconditional class dependencies. For example, the Arch linux-zen configuration
+sets `CONFIG_RUST=y`, so its recipe declares `rustc`, `rust-src`, and
+`rust-bindgen` explicitly. The kernel build does not invoke Cargo; recipes should
+not add `cargo` unless their selected kernel configuration or an extra build step
+actually uses it.
 ### 5.2 Node.js classes
 
 `npm` requires `npm ci`; `pnpm` requires a frozen lockfile. Both isolate their

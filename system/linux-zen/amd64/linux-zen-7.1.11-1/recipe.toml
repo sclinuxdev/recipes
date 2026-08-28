@@ -46,6 +46,7 @@ destination = ".kernel-config/config.x86_64"
 
 [build]
 inherit = ["kernel"]
+dependencies = ["rustc", "rust-src", "rust-bindgen"]
 
 [build.args]
 config = ".kernel-config/config.x86_64"
