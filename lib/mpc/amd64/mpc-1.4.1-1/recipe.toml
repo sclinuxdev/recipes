@@ -23,8 +23,8 @@ provides = [
 ]
 
 [source]
-url = "https://ftp.gnu.org/gnu/mpc/mpc-1.4.1.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+url = "https://mirrors.kernel.org/gnu/mpc/mpc-1.4.1.tar.xz"
+sha256 = "91204cd32f164bd3b7c992d4a6a8ce6519511aadab30f78b6982d0bf8d73e931"
 
 [build]
 inherit = ["autotools"]

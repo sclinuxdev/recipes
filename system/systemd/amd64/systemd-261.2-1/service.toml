@@ -11,7 +11,6 @@ working_dir = "/"
 restart = "on-failure"
 type = "notify"
 after = ["local-fs"]
-before = ["dbus", "network"]
 
 [[services]]
 package = "systemd-networkd"
@@ -24,7 +23,6 @@ working_dir = "/"
 restart = "on-failure"
 type = "notify"
 after = ["dbus", "systemd-udevd"]
-before = ["network-online"]
 
 [[services]]
 package = "systemd-resolved"

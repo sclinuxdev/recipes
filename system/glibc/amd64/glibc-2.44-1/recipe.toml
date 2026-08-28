@@ -29,7 +29,7 @@ provides = [
 
 [source]
 url = "https://ftp.gnu.org/gnu/glibc/glibc-2.44.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
 
 [build]
 inherit = ["autotools"]

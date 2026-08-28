@@ -18,7 +18,7 @@ provides = ["gzip"]
 
 [source]
 url = "https://ftp.gnu.org/gnu/gzip/gzip-1.14.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6"
 
 [build]
 inherit = ["autotools"]

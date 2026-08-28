@@ -19,7 +19,7 @@ provides = [
 
 [source]
 url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
-sha256 = "a5db7e945c71dbbb450117d3d2c1619aa0ae513f5fb4764b8fb1737bb52932ff"
+sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
 
 [build]
 inherit = ["custom"]

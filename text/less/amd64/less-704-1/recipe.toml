@@ -20,7 +20,7 @@ provides = ["less"]
 
 [source]
 url = "https://ftp.gnu.org/gnu/less/less-704.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "20a0b0a2bb2525fa53c7eee9beb854b4c9cf172eabb209af7020743547bfe9fb"
 
 [build]
 inherit = ["autotools"]

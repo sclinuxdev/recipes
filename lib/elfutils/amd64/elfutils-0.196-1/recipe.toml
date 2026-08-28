@@ -23,7 +23,7 @@ provides = ["elfutils", "libelf"]
 
 [source]
 url = "https://sourceware.org/elfutils/ftp/0.196/elfutils-0.196.tar.bz2"
-sha256 = "a91a92e44d5c4146743c72cc335a90d4ee29eb7ec9426fbc19c01ba16d997ccb"
+sha256 = "fd5cc6b77ad6773cac93cb3f415f9318ac3b3455eecf801f6b4a742c4f6c7209"
 
 [build]
 inherit = ["autotools"]

@@ -19,7 +19,7 @@ provides = ["device-mapper"]
 
 [source]
 url = "https://sourceware.org/ftp/lvm2/LVM2.2.03.42.tgz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "352703ef5b72ebb22d4f250284a29b89fe64d4049c6bf64c693f9af486c8081e"
 
 [build]
 inherit = ["autotools"]

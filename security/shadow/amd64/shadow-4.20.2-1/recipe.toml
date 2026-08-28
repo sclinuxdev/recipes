@@ -19,8 +19,8 @@ dependencies = [
 provides = ["shadow", "virtual/login"]
 
 [source]
-url = "https://github.com/shadow-maint/shadow/releases/download/v4.20.2/shadow-4.20.2.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+url = "https://github.com/shadow-maint/shadow/releases/download/4.20.2/shadow-4.20.2.tar.gz"
+sha256 = "e5016b40541ee6fa02ea3d409547cef6e7eea9b31f0e3482e4874f87c1d0c7c5"
 
 [build]
 inherit = ["autotools"]

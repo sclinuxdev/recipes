@@ -22,9 +22,24 @@ provides = [
     "virtual/linux",
 ]
 
-[source]
-url = "https://github.com/zen-kernel/zen-kernel/archive/refs/tags/v7.1.10-zen1.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+[[sources]]
+url = "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.10.tar.xz"
+sha256 = "67d2f4697a02f3bec98e744b1bdc307e920c24bb4e88b5ee97dc9a34e9aa9999"
+
+[[sources]]
+kind = "file"
+url = "https://github.com/zen-kernel/zen-kernel/releases/download/v7.1.10-zen1/linux-v7.1.10-zen1.patch.zst"
+sha256 = "37c44d77c8b3dd56665188157366257089458aaa89c0e99a31128c86d2c7297b"
+
+[[sources]]
+kind = "file"
+url = "https://raw.githubusercontent.com/bigshans/cjktty-patches/master/v7.x/cjktty-7.2.patch"
+sha256 = "252c69ec48019660dce565c45e287626793f84939cec249d62644a11ea9842a8"
+
+[[sources]]
+kind = "file"
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/linux-zen/-/raw/39cac79101020d87973b9cbbd6405c009a28c197/config.x86_64?inline=false"
+sha256 = "1cb633af33ae2bd1352ca806b35a0873d61dd2aaa349c05c7abf571a2edd10cd"
 
 [build]
 inherit = ["custom"]

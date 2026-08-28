@@ -13,7 +13,6 @@ arch = "amd64"
 dependencies = [
     "virtual/libc",
     "systemd-libs >= 261.2-1",
-    "systemd-udev >= 261.2-1",
     "util-linux-libs >= 2.42.2-1",
     "kmod-libs >= 34.2-1",
     "libcap-libs >= 2.78-1",
@@ -129,7 +128,6 @@ description = "Declarative network management daemon (systemd-networkd, networkc
 license = "LGPL-2.1-or-later"
 dependencies = [
     "virtual/libc",
-    "systemd >= 261.2-1",
     "systemd-libs >= 261.2-1",
     "iproute2",
 ]
@@ -148,7 +146,6 @@ description = "Network name resolution and caching DNS client (systemd-resolved,
 license = "LGPL-2.1-or-later"
 dependencies = [
     "virtual/libc",
-    "systemd >= 261.2-1",
     "systemd-libs >= 261.2-1",
     "openssl-libs >= 4.0.1-1",
 ]
@@ -166,7 +163,6 @@ description = "Lightweight NTP network time synchronization client (systemd-time
 license = "LGPL-2.1-or-later"
 dependencies = [
     "virtual/libc",
-    "systemd >= 261.2-1",
     "systemd-libs >= 261.2-1",
 ]
 provides = ["systemd-timesyncd", "virtual/ntp-client"]

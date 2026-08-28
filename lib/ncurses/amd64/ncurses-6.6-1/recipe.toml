@@ -19,7 +19,7 @@ provides = ["ncurses"]
 
 [source]
 url = "https://invisible-island.net/archives/ncurses/ncurses-6.6.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11"
 
 [build]
 inherit = ["autotools"]

@@ -21,7 +21,7 @@ provides = ["gawk", "virtual/awk", "awk"]
 
 [source]
 url = "https://ftp.gnu.org/gnu/gawk/gawk-5.4.1.tar.xz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37"
 
 [build]
 inherit = ["autotools"]

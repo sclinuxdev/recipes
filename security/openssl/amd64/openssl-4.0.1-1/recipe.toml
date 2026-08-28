@@ -19,7 +19,7 @@ provides = ["openssl"]
 
 [source]
 url = "https://www.openssl.org/source/openssl-4.0.1.tar.gz"
-sha256 = "66f7f32ce10df866412f122557bdfe6c810ebc2f42a17aa98fb7e9ffb55977fb"
+sha256 = "2db3f3a0d6ea4b59e1f094ace2c8cd536dffb87cdc39084c5afa1e6f7f37dd09"
 
 [build]
 inherit = ["custom"]
