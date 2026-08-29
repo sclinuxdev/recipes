@@ -156,6 +156,13 @@ GLib schemas, the shared MIME database, icon themes, fontconfig caches, desktop
 application handlers, and GIO modules. Each declaration is an independent TOML
 file, so distributions can override or replace commands without rebuilding Sage.
 
+Initramfs regeneration is deliberately not part of this base library. A kernel
+only declares `virtual/initramfs-generator`; the selected provider package must
+ship `.METADATA/triggers.toml` named `initramfs-generator` and use its own
+command-line contract. For example, a mkinitcpio package may use `mkinitcpio
+-P`, while a dracut package may use `dracut --regenerate-all`. Sage never assumes
+that all systems use either implementation.
+
 All cache refreshes run after change and removal, use `${sysroot}` rather than
 assuming `/`, and collapse identical expanded commands. Theme- and ABI-specific
 triggers derive their cache directory from validated path components.

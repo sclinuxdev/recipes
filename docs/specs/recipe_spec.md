@@ -239,11 +239,10 @@ and database instead of being rebuilt as untracked host mutations.
 
 Kernel packages that need an initramfs declare `virtual/initramfs-generator` as
 a runtime dependency. The selected provider is configured by
-`[providers].initramfs-generator` in `/etc/sage/system.toml` and must expose the
-common `usr/bin/initramfs-generator` alternative. Sage installs one system-level
-`initramfs-generator` trigger that watches every kernel module Slot and provider
-rebuild; kernel recipes do not carry a package-specific trigger, and no
-init-system-specific command or service unit is required.
+`[providers].initramfs-generator` in `/etc/sage/system.toml`. The provider
+package owns the package-specific trigger and its exact command-line arguments;
+kernel recipes do not carry a generator trigger, and Sage does not assume a
+common command or `-P` option.
 
 Compiler and interpreter packages use versioned channels. For example,
 `gcc16/gcc:16`, `llvm22/clang`, `rust1.98/rust-bin:1.98.0`, and

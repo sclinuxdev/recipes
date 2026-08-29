@@ -25,11 +25,6 @@ dependencies = [
 
 provides = ["mkinitcpio", "virtual/initramfs-generator"]
 
-[[alternatives]]
-link = "usr/bin/initramfs-generator"
-target = "mkinitcpio"
-priority = 50
-
 [source]
 url = "https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio/-/archive/v41.1/mkinitcpio-v41.1.tar.gz"
 sha256 = "202ffca349ceb6b62513cc65a67d6fc0c0c15cacc72710ce5228b444cf1317e6"

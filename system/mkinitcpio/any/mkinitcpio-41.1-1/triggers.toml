@@ -1,0 +1,12 @@
+schema_version = 1
+name = "initramfs-generator"
+description = "Regenerate initramfs images with mkinitcpio"
+on_paths = [
+    "usr/lib/modules/**",
+    "etc/sage/system.toml",
+    "usr/share/sage/triggers/initramfs-generator.toml",
+]
+exec = ["/usr/bin/mkinitcpio", "-P"]
+priority = 30
+events = ["post-change", "post-remove", "rebuild"]
+ignore_missing_binary = true

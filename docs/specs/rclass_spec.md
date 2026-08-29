@@ -210,7 +210,7 @@ with its Slot in `[build].dependencies`, for example
 
 Toolchains selected by kernel configuration are recipe dependencies rather than
 unconditional class dependencies. For example, the Arch linux-zen configuration
-sets `CONFIG_RUST=y`, so its recipe declares `rustc`, `rust-src`, and
+sets `CONFIG_RUST=y`, so its recipe declares `rust-bin`, `rust-src`, and
 `rust-bindgen` explicitly. The kernel build does not invoke Cargo; recipes should
 not add `cargo` unless their selected kernel configuration or an extra build step
 actually uses it.
