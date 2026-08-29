@@ -46,7 +46,11 @@ destination = ".kernel-config/config.x86_64"
 
 [build]
 inherit = ["kernel"]
-dependencies = ["rustc", "rust-src", "rust-bindgen"]
+dependencies = [
+    "rust1.98/rust-bin:1.98.0",
+    "rust1.98/rust-src:1.98.0",
+    "rust1.98/rust-bindgen:0.72.1",
+]
 
 [build.args]
 config = ".kernel-config/config.x86_64"
@@ -67,7 +71,7 @@ dependencies = [
     "virtual/libc-dev",
     "binutils",
     "libelf-libs",
-    "libgcc",
+    "gcc16/gcc-libs:16",
     "openssl-libs",
     "pahole",
     "xxhash",

@@ -1,0 +1,26 @@
+schema_version = 1
+
+[package]
+name = "autoconf"
+version = "2.73"
+release = 1
+epoch = 0
+description = "GNU configure script generator"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "m4", "perl"]
+provides = ["autoconf"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/autoconf/autoconf-2.73.tar.xz"
+sha256 = "9fd672b1c8425fac2fa67fa0477b990987268b90ff36d5f016dae57be0d6b52e"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.payload]
+default = "remaining"

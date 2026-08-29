@@ -1,0 +1,57 @@
+schema_version = 1
+
+[package]
+name = "libxml2"
+version = "2.15.3"
+release = 1
+epoch = 0
+description = "XML C parser and toolkit"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+slot = "2.15"
+
+dependencies = ["zlib-libs"]
+provides = ["libxml2"]
+
+[[sources]]
+url = "https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.3.tar.xz"
+sha256 = "78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["meson"]
+dependencies = ["zlib-dev"]
+
+[build.args]
+meson_args = "-Dtests=false -Ddocs=false -Dpython=disabled -Dreadline=disabled -Dicu=disabled -Dlegacy=false"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libxml2-libs"
+description = "XML parser runtime shared library"
+license = "MIT"
+dependencies = ["zlib-libs"]
+provides = ["libxml2-libs", "so:libxml2.so.16"]
+
+[subpackages.payload]
+files = ["usr/lib/libxml2.so*"]
+
+[[subpackages]]
+name = "libxml2-dev"
+description = "XML parser development headers and configuration data"
+license = "MIT"
+dependencies = ["libxml2-libs:2.15 >= 2.15.3-1"]
+provides = ["libxml2-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/bin/xml2-config",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+    "usr/lib/cmake/**",
+]

@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "perl"
+version = "5.44.0"
+release = 1
+epoch = 0
+description = "Perl programming language runtime"
+license = "Artistic-1.0-Perl OR GPL-1.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "libxcrypt-libs"]
+provides = ["perl"]
+
+[[sources]]
+url = "https://www.cpan.org/src/5.0/perl-5.44.0.tar.xz"
+sha256 = "505cf43912e9480495c344c70260452e32aa2a73c546a026b3f100053b23ce91"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = "./Configure -des -Dprefix=/usr -Dvendorprefix=/usr -Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 -Duseshrplib; make -j\"${JOBS}\"; make DESTDIR=\"${DESTDIR}\" install"
+
+[build.payload]
+default = "remaining"

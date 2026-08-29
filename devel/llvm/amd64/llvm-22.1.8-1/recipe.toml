@@ -1,0 +1,170 @@
+schema_version = 1
+
+[package]
+name = "llvm"
+version = "22.1.8"
+release = 1
+epoch = 0
+description = "LLVM compiler infrastructure and development tools"
+license = "Apache-2.0 WITH LLVM-exception"
+channel = "llvm22"
+arch = "amd64"
+slot = "22.1.8"
+
+dependencies = [
+    "llvm-libs:22.1.8 >= 22.1.8-1",
+    "system/curl-libs",
+    "system/glibc",
+    "gcc16/gcc-libs:16",
+    "gcc16/libstdc++:16",
+    "system/perl",
+]
+
+provides = ["llvm", "virtual/llvm"]
+
+[[sources]]
+url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/llvm-project-22.1.8.src.tar.xz"
+sha256 = "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888"
+strip_components = 1
+destination = "llvm-project-22.1.8.src"
+
+[[sources]]
+kind = "file"
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/llvm/-/raw/7f8e18524cb97cbf88dd9ba9781fa5569fb5d497/0001-SDAG-Freeze-condition-in-select-of-load-fold-208683.patch"
+sha256 = "91eaec904dcc7e02cd4f5007d844e0b7cb34a2cd8b9757d8a3f329383978bb20"
+destination = ".source-patches/001-SDAG-Freeze-condition-in-select-of-load-fold-208683.patch"
+
+[[sources]]
+kind = "file"
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/clang/-/raw/83f2d0c620f23adcc099794f071a3b2dbb7e1596/0001-Revert-clang-driver-When-fveclib-ArmPL-flag-is-in-us.patch"
+sha256 = "6f3cc7a4847e03d16ed90341bb71fec98427763ff2351f5344b2ca2ce62a604c"
+destination = ".source-patches/002-Revert-clang-driver-When-fveclib-ArmPL-flag-is-in-us.patch"
+
+[[sources]]
+kind = "file"
+url = "https://gitlab.archlinux.org/archlinux/packaging/packages/clang/-/raw/83f2d0c620f23adcc099794f071a3b2dbb7e1596/enable-fstack-protector-strong-by-default.patch"
+sha256 = "93713470709ad0fbcf04aad29adb269478027c25e5a45e0ef3ca807dff409c12"
+destination = ".source-patches/003-enable-fstack-protector-strong-by-default.patch"
+
+[build]
+inherit = ["cmake"]
+private_library_dirs = ["lib"]
+dependencies = [
+    "system/curl-dev",
+    "system/libedit-dev",
+    "system/libffi-dev",
+    "system/libxml2-dev",
+    "python3.14/python:3.14",
+    "system/zlib-dev",
+    "system/zstd-dev",
+    "gcc16/gcc:16",
+]
+
+[build.args]
+patch_root = "llvm-project-22.1.8.src"
+patch_strip = "1"
+source_dir = "llvm-project-22.1.8.src/llvm"
+cmake_args = "-DLLVM_ENABLE_PROJECTS='clang;clang-tools-extra;lld' -DLLVM_ENABLE_RUNTIMES=compiler-rt -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_BUILD_DOCS=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_BUILD_LLVM_DYLIB=ON -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_ENABLE_CURL=ON -DLLVM_ENABLE_FFI=ON -DLLVM_ENABLE_RTTI=ON -DLLVM_INSTALL_UTILS=ON -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_DEFAULT_LINKER=ld.lld -DCLANG_DEFAULT_RTLIB=compiler-rt -DCLANG_LINK_CLANG_DYLIB=ON -DCOMPILER_RT_BUILD_BUILTINS=ON -DCOMPILER_RT_BUILD_LIBFUZZER=OFF -DCOMPILER_RT_BUILD_MEMPROF=OFF -DCOMPILER_RT_BUILD_ORC=OFF -DCOMPILER_RT_BUILD_SANITIZERS=ON -DCOMPILER_RT_BUILD_XRAY=OFF"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "compiler-rt"
+description = "LLVM compiler runtime libraries"
+license = "Apache-2.0 WITH LLVM-exception"
+dependencies = [
+    "system/glibc",
+    "gcc16/gcc-libs:16",
+]
+provides = ["compiler-rt"]
+
+[subpackages.payload]
+files = ["usr/lib/clang/**/lib/**"]
+
+[[subpackages]]
+name = "llvm-libs"
+description = "LLVM runtime shared libraries"
+license = "Apache-2.0 WITH LLVM-exception"
+dependencies = [
+    "system/glibc",
+    "system/libedit",
+    "system/libffi",
+    "gcc16/gcc-libs:16",
+    "gcc16/libstdc++:16",
+    "system/libxml2-libs",
+    "system/zlib-libs",
+    "system/zstd-libs",
+]
+provides = ["llvm-libs", "libLLVM.so", "libLTO.so", "libRemarks.so"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/libLLVM*.so*",
+    "usr/lib/libLTO*.so*",
+    "usr/lib/libRemarks*.so*",
+    "usr/lib/LLVMgold.so",
+    "usr/lib/bfd-plugins/LLVMgold.so",
+]
+
+[[subpackages]]
+name = "clang"
+description = "C language family frontend for LLVM"
+license = "Apache-2.0 WITH LLVM-exception"
+dependencies = [
+    "compiler-rt:22.1.8 >= 22.1.8-1",
+    "gcc16/gcc-libs:16",
+    "system/libxml2-libs",
+    "llvm-libs:22.1.8 >= 22.1.8-1",
+]
+provides = ["clang", "clang-analyzer", "clang-tools-extra"]
+
+[subpackages.payload]
+files = [
+    "usr/bin/clang*",
+    "usr/bin/scan-build*",
+    "usr/bin/scan-view*",
+    "usr/include/clang/**",
+    "usr/lib/clang/**",
+    "usr/lib/libclang*.a",
+    "usr/lib/libclang*.so*",
+    "usr/lib/libear",
+    "usr/lib/libscanbuild",
+    "usr/lib/python/site-packages/clang/**",
+    "usr/share/clang/**",
+    "usr/share/bash-completion/completions/clang",
+    "usr/share/man/man1/clang*",
+]
+
+[[subpackages]]
+name = "lld"
+description = "LLVM linker"
+license = "Apache-2.0 WITH LLVM-exception"
+dependencies = ["llvm-libs:22.1.8 >= 22.1.8-1"]
+provides = ["lld", "virtual/ld"]
+
+[subpackages.payload]
+files = [
+    "usr/bin/ld.lld",
+    "usr/bin/lld*",
+    "usr/bin/wasm-ld",
+    "usr/share/man/man1/lld*",
+]
+
+[[subpackages]]
+name = "llvm-dev"
+description = "LLVM and Clang development headers and CMake metadata"
+license = "Apache-2.0 WITH LLVM-exception"
+dependencies = ["llvm-libs:22.1.8 >= 22.1.8-1"]
+provides = ["llvm-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/llvm/**",
+    "usr/include/llvm-c/**",
+    "usr/lib/cmake/clang/**",
+    "usr/lib/cmake/llvm/**",
+    "usr/lib/libLLVM*.a",
+    "usr/lib/libLTO*.a",
+    "usr/lib/libRemarks*.a",
+]

@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "bison"
+version = "3.8.2"
+release = 1
+epoch = 0
+description = "GNU parser generator"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "m4"]
+provides = ["bison"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/bison/bison-3.8.2.tar.xz"
+sha256 = "9bba0214ccf7f1079c5d59210045227bcf619519840ebfa80cd3849cff5a5bf2"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

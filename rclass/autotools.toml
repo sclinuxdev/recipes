@@ -2,7 +2,13 @@ schema_version = 1
 name = "autotools"
 description = "GNU Autoconf, Automake, Libtool and Make build class"
 
-implicit_build_dependencies = ["autoconf", "automake", "libtool", "make", "pkgconf"]
+implicit_build_dependencies = [
+    "system/autoconf",
+    "system/automake",
+    "system/libtool",
+    "system/make",
+    "system/pkgconf",
+]
 allowed_compilers = ["clang", "gcc"]
 allowed_linkers = ["lld", "mold", "ld"]
 

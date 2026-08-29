@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "m4"
+version = "1.4.19"
+release = 1
+epoch = 0
+description = "GNU macro processor"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["m4"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz"
+sha256 = "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

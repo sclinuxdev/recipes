@@ -20,6 +20,10 @@ commit = "126b3bd80360dfaf5c4ff7757901d36a22659037"
 
 [build]
 inherit = ["cargo"]
+dependencies = [
+    "rust1.98/rust-bin:1.98.0",
+    "rust1.98/cargo:1.98.0",
+]
 
 [build.args]
 target_arg = "--bins"

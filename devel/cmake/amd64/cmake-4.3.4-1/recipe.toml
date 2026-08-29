@@ -1,0 +1,34 @@
+schema_version = 1
+
+[package]
+name = "cmake"
+version = "4.3.4"
+release = 1
+epoch = 0
+description = "Cross-platform build system generator"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "zlib-libs", "openssl-libs"]
+provides = ["cmake"]
+
+[[sources]]
+url = "https://github.com/Kitware/CMake/releases/download/v4.3.4/cmake-4.3.4.tar.gz"
+sha256 = "fdeff897b9eb49d764539f2b1edc6eb7e1440df325678a97c1978499e931adda"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["custom"]
+dependencies = [
+    "system/make",
+    "system/openssl-dev",
+    "system/zlib-dev",
+]
+
+[build.args]
+install_cmd = "./bootstrap --prefix=/usr --parallel=\"${JOBS}\" -- -DCMAKE_BUILD_TYPE=Release; make -j\"${JOBS}\"; make DESTDIR=\"${DESTDIR}\" install"
+
+[build.payload]
+default = "remaining"

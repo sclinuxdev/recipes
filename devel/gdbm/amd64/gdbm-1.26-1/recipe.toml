@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "gdbm"
+version = "1.26"
+release = 1
+epoch = 0
+description = "GNU database manager"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+slot = "1.26"
+
+dependencies = ["virtual/libc"]
+provides = ["gdbm", "gdbm-libs", "so:libgdbm.so.6"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/gdbm/gdbm-1.26.tar.gz"
+sha256 = "6a24504a14de4a744103dcb936be976df6fbe88ccff26065e54c1c47946f4a5e"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "gdbm-dev"
+description = "GNU database manager development headers and linker metadata"
+license = "GPL-3.0-or-later"
+dependencies = ["gdbm:1.26 >= 1.26-1"]
+provides = ["gdbm-dev"]
+
+[subpackages.payload]
+files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

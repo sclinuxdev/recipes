@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "texinfo"
+version = "7.3"
+release = 1
+epoch = 0
+description = "GNU documentation system and info reader"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "ncurses-libs"]
+provides = ["texinfo"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/texinfo/texinfo-7.3.tar.xz"
+sha256 = "51f74eb0f51cfa9873b85264dfdd5d46e8957ec95b88f0fb762f63d9e164c72e"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

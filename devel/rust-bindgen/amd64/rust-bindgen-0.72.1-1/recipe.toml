@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "rust-bindgen"
+version = "0.72.1"
+release = 1
+epoch = 0
+description = "Rust FFI binding generator command line tool"
+license = "BSD-3-Clause"
+channel = "rust1.98"
+arch = "amd64"
+slot = "0.72.1"
+
+dependencies = [
+    "system/glibc",
+    "llvm22/clang",
+]
+
+provides = ["rust-bindgen", "bindgen"]
+
+[[sources]]
+url = "https://static.crates.io/crates/bindgen-cli/bindgen-cli-0.72.1.crate"
+sha256 = "8a408c0fcb20bf7bd4ceaf4bf990e223e3543a04b84d2394f3edeee29a0e87e2"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["cargo"]
+dependencies = [
+    "rust-bin:1.98.0",
+    "cargo:1.98.0",
+    "llvm22/clang",
+]
+
+[build.args]
+target_arg = ""
+
+[build.payload]
+default = "remaining"

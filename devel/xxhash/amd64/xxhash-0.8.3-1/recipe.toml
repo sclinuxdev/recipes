@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "xxhash"
+version = "0.8.3"
+release = 1
+epoch = 0
+description = "Extremely fast non-cryptographic hash algorithm"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+slot = "0"
+
+dependencies = ["virtual/libc"]
+provides = ["xxhash", "xxhash-libs", "so:libxxhash.so.0"]
+
+[[sources]]
+url = "https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.3.tar.gz"
+sha256 = "aae608dfe8213dfd05d909a57718ef82f30722c392344583d3f39050c7f29a80"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = "make -C \"${SRC_DIR}\" -j \"${JOBS}\" PREFIX=/usr BUILD_SHARED=1; make -C \"${SRC_DIR}\" DESTDIR=\"${DESTDIR}\" PREFIX=/usr BUILD_SHARED=1 install"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "xxhash-dev"
+description = "xxHash development headers and linker metadata"
+license = "BSD-2-Clause"
+dependencies = ["xxhash >= 0.8.3-1"]
+provides = ["xxhash-dev"]
+
+[subpackages.payload]
+files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

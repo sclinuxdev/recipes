@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "isl"
+version = "0.27"
+release = 1
+epoch = 0
+description = "Integer Set Library for polyhedral compilation"
+license = "MIT"
+channel = "system"
+arch = "amd64"
+slot = "0.27"
+
+dependencies = ["gmp"]
+provides = ["isl", "isl-libs", "so:libisl.so.23"]
+
+[[sources]]
+url = "https://libisl.sourceforge.io/isl-0.27.tar.xz"
+sha256 = "6d8babb59e7b672e8cb7870e874f3f7b813b6e00e6af3f8b04f7579965643d5c"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "isl-dev"
+description = "Integer Set Library development headers and pkgconfig"
+license = "MIT"
+dependencies = ["isl:0.27 >= 0.27-1", "gmp-dev"]
+provides = ["isl-dev"]
+
+[subpackages.payload]
+files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

@@ -1,0 +1,99 @@
+schema_version = 1
+
+# The source graph contains intentional self-hosting cycles. Each stage is a
+# declarative seed boundary; later stages consume the previous stage's local
+# artifacts before falling back to the configured repository.
+
+[[stages]]
+name = "seed-system-runtime"
+recipes = [
+    "system/linux-api-headers/amd64/linux-api-headers-7.1.11-1/recipe.toml",
+    "system/iana-etc/any/iana-etc-20260811-1/recipe.toml",
+    "system/tzdata/any/tzdata-2026c-1/recipe.toml",
+    "system/glibc/amd64/glibc-2.44-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-bootstrap-tools"
+recipes = [
+    "devel/m4/amd64/m4-1.4.19-1/recipe.toml",
+    "devel/make/amd64/make-4.4.1-1/recipe.toml",
+    "devel/perl/amd64/perl-5.44.0-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-autoconf"
+recipes = ["devel/autoconf/amd64/autoconf-2.73-1/recipe.toml"]
+
+[[stages]]
+name = "seed-automake"
+recipes = ["devel/automake/amd64/automake-1.18.1-1/recipe.toml"]
+
+[[stages]]
+name = "seed-libtool"
+recipes = ["devel/libtool/amd64/libtool-2.5.4-1/recipe.toml"]
+
+[[stages]]
+name = "seed-pkgconf"
+recipes = ["devel/pkgconf/amd64/pkgconf-3.0.5-1/recipe.toml"]
+
+[[stages]]
+name = "seed-build-systems"
+recipes = [
+    "devel/ninja/amd64/ninja-1.13.2-1/recipe.toml",
+    "devel/meson/any/meson-1.12.0-1/recipe.toml",
+    "devel/cmake/amd64/cmake-4.3.4-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-compression"
+recipes = ["lib/zstd/amd64/zstd-1.5.7-1/recipe.toml"]
+
+[[stages]]
+name = "seed-python"
+recipes = [
+    "devel/python/amd64/python-3.14.7-1/recipe.toml",
+    "devel/python-build/any/python-build-1.5.0-1/recipe.toml",
+    "devel/python-installer/any/python-installer-1.0.1-1/recipe.toml",
+    "devel/python-packaging/any/python-packaging-26.3-1/recipe.toml",
+    "devel/python-pyproject-hooks/any/python-pyproject-hooks-1.2.0-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-gcc-prerequisites"
+recipes = [
+    "lib/gmp/amd64/gmp-6.3.0-1/recipe.toml",
+    "lib/mpfr/amd64/mpfr-4.2.2-1/recipe.toml",
+    "lib/mpc/amd64/mpc-1.4.1-1/recipe.toml",
+    "devel/isl/amd64/isl-0.27-1/recipe.toml",
+    "devel/binutils/amd64/binutils-2.47-1/recipe.toml",
+    "lib/ncurses/amd64/ncurses-6.6-1/recipe.toml",
+    "lib/readline/amd64/readline-8.3-1/recipe.toml",
+    "text/gawk/amd64/gawk-5.4.1-1/recipe.toml",
+    "devel/bison/amd64/bison-3.8.2-1/recipe.toml",
+    "devel/flex/amd64/flex-2.6.4-1/recipe.toml",
+    "devel/texinfo/amd64/texinfo-7.3-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-gcc"
+recipes = ["devel/gcc/amd64/gcc-16.2.0-1/recipe.toml"]
+
+[[stages]]
+name = "seed-llvm"
+recipes = ["devel/llvm/amd64/llvm-22.1.8-1/recipe.toml"]
+
+[[stages]]
+name = "seed-rust"
+recipes = [
+    "devel/rust-bin/amd64/rust-bin-1.98.0-1/recipe.toml",
+    "devel/rust-bindgen/amd64/rust-bindgen-0.72.1-1/recipe.toml",
+]
+
+[[stages]]
+name = "seed-kernel-and-sage"
+recipes = [
+    "system/linux-zen/amd64/linux-zen-7.1.11-1/recipe.toml",
+    "system/sage/amd64/sage-0.4.0-1/recipe.toml",
+    "system/loom/amd64/loom-0.1.0-1/recipe.toml",
+]

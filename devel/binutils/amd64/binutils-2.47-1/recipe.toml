@@ -1,0 +1,45 @@
+schema_version = 1
+
+[package]
+name = "binutils"
+version = "2.47"
+release = 1
+epoch = 0
+description = "GNU assembler, linker, and binary utilities"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+slot = "2.47"
+
+dependencies = ["virtual/libc", "zlib-libs"]
+provides = ["binutils", "virtual/binutils"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/binutils/binutils-2.47.tar.xz"
+sha256 = "154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-multilib --enable-plugins --enable-lto --with-system-zlib --disable-werror"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "binutils-dev"
+description = "GNU binary utility development files and static libraries"
+license = "GPL-3.0-or-later"
+dependencies = ["binutils:2.47 >= 2.47-1"]
+provides = ["binutils-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.a",
+    "usr/lib/bfd-plugins/**",
+    "usr/lib/pkgconfig/**",
+]

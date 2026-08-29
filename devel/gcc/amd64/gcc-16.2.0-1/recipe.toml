@@ -1,0 +1,117 @@
+schema_version = 1
+
+[package]
+name = "gcc"
+version = "16.2.0"
+release = 1
+epoch = 0
+description = "GNU Compiler Collection C and C++ toolchain"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+channel = "gcc16"
+arch = "amd64"
+slot = "16"
+
+dependencies = [
+    "gcc-libs:16 >= 16.2.0-1",
+    "libstdc++:16 >= 16.2.0-1",
+    "system/binutils",
+]
+
+provides = [
+    "gcc",
+    "g++",
+    "cpp",
+    "virtual/cc",
+    "virtual/cxx",
+]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/gcc/gcc-16.2.0/gcc-16.2.0.tar.xz"
+sha256 = "e6738e29597f733270731aa90600f37ffdc045079dfc27ec7e8192cc81085c3e"
+strip_components = 1
+destination = "gcc-16.2.0"
+
+[build]
+inherit = ["gcc"]
+private_library_dirs = ["lib"]
+
+[build.args]
+source_dir = "gcc-16.2.0"
+configure_args = "--with-arch=x86-64 --with-tune=generic"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "gcc-libs"
+description = "GCC runtime libraries other than libstdc++"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+dependencies = [
+    "system/glibc",
+    "system/zlib-libs",
+]
+provides = [
+    "gcc-libs",
+    "libgcc",
+    "virtual/libgcc",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/libgcc_s.so*",
+    "usr/lib/libgomp.so*",
+    "usr/lib/libatomic.so*",
+    "usr/lib/libasan.so*",
+    "usr/lib/liblsan.so*",
+    "usr/lib/libtsan.so*",
+    "usr/lib/libubsan.so*",
+    "usr/lib/libquadmath.so*",
+    "usr/lib/gcc/**/libgcc*.so*",
+    "usr/lib/gcc/**/libgomp*.so*",
+    "usr/lib/gcc/**/libatomic*.so*",
+    "usr/lib/gcc/**/libasan*.so*",
+    "usr/lib/gcc/**/liblsan*.so*",
+    "usr/lib/gcc/**/libtsan*.so*",
+    "usr/lib/gcc/**/libubsan*.so*",
+    "usr/lib/gcc/**/libquadmath*.so*",
+]
+
+[[subpackages]]
+name = "libstdc++"
+description = "GNU C++ runtime library"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+dependencies = [
+    "gcc-libs:16 >= 16.2.0-1",
+    "system/glibc",
+]
+provides = [
+    "libstdc++",
+    "libstdc++-libs",
+    "so:libstdc++.so.6",
+]
+
+[subpackages.payload]
+files = [
+    "usr/lib/libstdc++.so*",
+    "usr/lib/gcc/**/libstdc++.so*",
+]
+
+[[subpackages]]
+name = "gcc-dev"
+description = "GCC headers, plugins, static runtimes, and development metadata"
+license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+dependencies = [
+    "gcc-libs:16 >= 16.2.0-1",
+    "libstdc++:16 >= 16.2.0-1",
+]
+provides = ["gcc-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/gcc/**/include/**",
+    "usr/lib/gcc/**/include-fixed/**",
+    "usr/lib/gcc/**/plugin/**",
+    "usr/lib/gcc/**/*.a",
+    "usr/lib/gcc/**/*.o",
+    "usr/lib/lib*.a",
+]

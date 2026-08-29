@@ -1,0 +1,107 @@
+schema_version = 1
+
+[package]
+name = "python"
+version = "3.14.7"
+release = 1
+epoch = 0
+description = "Python programming language runtime and standard library"
+license = "PSF-2.0"
+channel = "python3.14"
+arch = "amd64"
+slot = "3.14"
+
+dependencies = [
+    "python-libs:3.14 >= 3.14.7-1",
+    "system/bzip2-libs",
+    "system/expat-libs",
+    "system/gdbm-libs",
+    "system/libffi",
+    "system/libnsl-libs",
+    "system/libxcrypt-libs",
+    "system/mpdecimal-libs",
+    "system/openssl-libs",
+    "system/tzdata",
+    "system/zlib-libs",
+    "system/zstd-libs",
+]
+
+provides = ["python", "python3", "python3.14"]
+
+[[sources]]
+url = "https://www.python.org/ftp/python/3.14.7/Python-3.14.7.tar.xz"
+sha256 = "3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+private_library_dirs = ["lib"]
+dependencies = [
+    "gcc16/gcc:16",
+    "system/bzip2-dev",
+    "system/expat-dev",
+    "system/gdbm-dev",
+    "system/libffi-dev",
+    "system/libnsl-dev",
+    "system/libxcrypt-dev",
+    "system/mpdecimal-dev",
+    "system/openssl-dev",
+    "system/sqlite-dev",
+    "system/zlib-dev",
+    "system/zstd-dev",
+]
+
+[build.args]
+configure_args = "--enable-shared --with-computed-gotos --enable-ipv6 --with-system-expat --with-dbmliborder=gdbm:ndbm --with-system-libmpdec --enable-loadable-sqlite-extensions --without-ensurepip --with-tzpath=/usr/share/zoneinfo --with-system-zstd"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "python-libs"
+description = "Python shared runtime library"
+license = "PSF-2.0"
+dependencies = [
+    "system/glibc",
+]
+provides = ["python-libs", "so:libpython3.14.so.1.0"]
+
+[subpackages.payload]
+files = ["usr/lib/libpython3.14.so*"]
+
+[[subpackages]]
+name = "python-dev"
+description = "Python headers, development libraries, and configuration metadata"
+license = "PSF-2.0"
+dependencies = ["python-libs:3.14 >= 3.14.7-1"]
+provides = ["python-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/python3.14/**",
+    "usr/lib/libpython3.14.a",
+    "usr/lib/libpython3.14.so",
+    "usr/lib/python3.14/config-*/**",
+    "usr/lib/pkgconfig/python-3.14.pc",
+    "usr/bin/python3.14-config",
+    "usr/bin/python3-config",
+    "usr/bin/python-config",
+]
+
+[[subpackages]]
+name = "python-tests"
+description = "Python regression test modules"
+license = "PSF-2.0"
+dependencies = ["python:3.14 >= 3.14.7-1"]
+provides = ["python-tests"]
+
+[subpackages.payload]
+files = [
+    "usr/lib/python3.14/test/**",
+    "usr/lib/python3.14/ctypes/test/**",
+    "usr/lib/python3.14/idlelib/idle_test/**",
+    "usr/lib/python3.14/lib2to3/tests/**",
+    "usr/lib/python3.14/tkinter/test/**",
+    "usr/lib/python3.14/unittest/test/**",
+]

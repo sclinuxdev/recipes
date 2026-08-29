@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "python-pyproject-hooks"
+version = "1.2.0"
+release = 1
+epoch = 0
+description = "Wrappers for invoking PEP 517 build backends"
+license = "MIT"
+channel = "python3.14"
+arch = "any"
+
+dependencies = ["python:3.14 >= 3.14.7-1"]
+provides = ["python-pyproject-hooks"]
+
+[[sources]]
+kind = "file"
+url = "https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl"
+sha256 = "9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913"
+destination = "pyproject_hooks.whl"
+
+[build]
+inherit = ["custom"]
+dependencies = ["python:3.14 >= 3.14.7-1"]
+
+[build.args]
+install_cmd = "out=\"${BUILD_DIR}/wheel\"; python3 -m zipfile -e \"${SRC_DIR}/pyproject_hooks.whl\" \"$out\"; install -dm755 \"${DESTDIR}/usr/lib/python3.14/site-packages\"; cp -a \"$out/pyproject_hooks\" \"${DESTDIR}/usr/lib/python3.14/site-packages/\"; cp -a \"$out\"/*.dist-info \"${DESTDIR}/usr/lib/python3.14/site-packages/\""
+
+[build.payload]
+default = "remaining"

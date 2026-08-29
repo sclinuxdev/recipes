@@ -23,10 +23,14 @@ provides = ["sage", "virtual/package-manager"]
 [source]
 kind = "git"
 url = "https://github.com/sclinuxdev/sage.git"
-commit = "eee2b7b478cbf6b93ea93823a0a1d2a9d64c56e0"
+commit = "f33c6c06abb99fa36ed2164885d7025e5c1901bd"
 
 [build]
 inherit = ["cargo"]
+dependencies = [
+    "rust1.98/rust-bin:1.98.0",
+    "rust1.98/cargo:1.98.0",
+]
 
 [build.payload]
 default = "remaining"

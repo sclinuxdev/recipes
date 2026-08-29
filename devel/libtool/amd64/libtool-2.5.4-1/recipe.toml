@@ -1,0 +1,26 @@
+schema_version = 1
+
+[package]
+name = "libtool"
+version = "2.5.4"
+release = 1
+epoch = 0
+description = "GNU generic shared library support"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "m4"]
+provides = ["libtool"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/libtool/libtool-2.5.4.tar.xz"
+sha256 = "f81f5860666b0bc7d84baddefa60d1cb9fa6fceb2398cc3baca6afaa60266675"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.payload]
+default = "remaining"

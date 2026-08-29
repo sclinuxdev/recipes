@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "libedit"
+version = "20240808.3.1"
+release = 1
+epoch = 0
+description = "BSD editline command-line editing library"
+license = "BSD-3-Clause"
+channel = "system"
+arch = "amd64"
+slot = "0"
+
+dependencies = ["virtual/libc", "ncurses-libs"]
+provides = ["libedit", "libedit-libs", "so:libedit.so.0"]
+
+[[sources]]
+url = "https://thrysoee.dk/editline/libedit-20240808-3.1.tar.gz"
+sha256 = "5f0573349d77c4a48967191cdd6634dd7aa5f6398c6a57fe037cc02696d6099f"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static --enable-widec"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "libedit-dev"
+description = "editline development headers and linker metadata"
+license = "BSD-3-Clause"
+dependencies = ["libedit >= 20240808.3.1-1", "ncurses-dev"]
+provides = ["libedit-dev"]
+
+[subpackages.payload]
+files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

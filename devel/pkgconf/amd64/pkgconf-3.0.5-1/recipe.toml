@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "pkgconf"
+version = "3.0.5"
+release = 1
+epoch = 0
+description = "Package compiler and linker metadata tool"
+license = "ISC"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["pkgconf", "pkg-config"]
+
+[[sources]]
+url = "https://distfiles.ariadne.space/pkgconf/pkgconf-3.0.5.tar.xz"
+sha256 = "3acd3a8a3cce65a8d620321855d92fb602e026cbe8e13ee36bdec58483b59ace"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static --with-system-includedir=/usr/include --with-system-libdir=/usr/lib"
+
+[build.payload]
+default = "remaining"

@@ -3,24 +3,24 @@ name = "kernel"
 description = "Declarative Linux kernel build, module installation, and external-module headers class"
 
 implicit_build_dependencies = [
-    "bc",
-    "binutils",
-    "cpio",
-    "gettext",
-    "libelf-dev",
-    "libgcc",
-    "make",
-    "openssl",
-    "openssl-dev",
-    "pahole",
-    "perl",
-    "python",
-    "tar",
-    "xxhash",
-    "xz",
-    "zlib-dev",
-    "zstd",
-    "zstd-dev",
+    "system/bc",
+    "system/binutils",
+    "system/cpio",
+    "system/gettext",
+    "system/libelf-dev",
+    "gcc16/gcc-libs:16",
+    "system/make",
+    "system/openssl",
+    "system/openssl-dev",
+    "system/pahole",
+    "system/perl",
+    "python3.14/python:3.14",
+    "system/tar",
+    "system/xxhash",
+    "system/xz",
+    "system/zlib-dev",
+    "system/zstd",
+    "system/zstd-dev",
     "virtual/libc-dev",
 ]
 allowed_compilers = ["clang", "gcc"]
@@ -67,9 +67,14 @@ done < "${SRC_DIR}/.distfiles/manifest"
 
 src_prepare = """
 export KBUILD_BUILD_TIMESTAMP="@$SOURCE_DATE_EPOCH"
+llvm_arg=""
+if [ "${CC_FAMILY}" = "clang" ]; then
+    llvm_arg=LLVM=1
+fi
 make_kernel() {
     make -C "${SRC_DIR}" ARCH="${args.kernel_arch}" \
         ${args.make_args} \
+        $llvm_arg \
         CC="$CC" HOSTCC="$CC" HOSTCXX="$CXX" LD="$LD" RUSTC="$RUSTC" \
         "$@"
 }
@@ -110,6 +115,7 @@ src_compile = """
 make_kernel -j "${JOBS}" all
 if [ -x "${SRC_DIR}/scripts/config" ] && [ "$("${SRC_DIR}/scripts/config" -s CONFIG_BPF_SYSCALL)" = y ]; then
     make -C "${SRC_DIR}/tools/bpf/bpftool" ARCH="${args.kernel_arch}" \
+        $llvm_arg \
         CC="$CC" HOSTCC="$CC" HOSTCXX="$CXX" LD="$LD" RUSTC="$RUSTC" \
         vmlinux.h feature-clang-bpf-co-re=1
 fi

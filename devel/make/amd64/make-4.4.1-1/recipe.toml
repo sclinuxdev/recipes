@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "make"
+version = "4.4.1"
+release = 1
+epoch = 0
+description = "GNU build automation tool"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["make"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz"
+sha256 = "dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

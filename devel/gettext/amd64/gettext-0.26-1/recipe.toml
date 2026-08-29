@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "gettext"
+version = "0.26"
+release = 1
+epoch = 0
+description = "GNU internationalization utilities"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "libunistring"]
+provides = ["gettext"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/gettext/gettext-0.26.tar.xz"
+sha256 = "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static --disable-java --disable-native-java --disable-csharp --disable-libasprintf --disable-openmp"
+
+[build.payload]
+default = "remaining"

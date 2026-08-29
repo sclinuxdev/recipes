@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "python-installer"
+version = "1.0.1"
+release = 1
+epoch = 0
+description = "Low-level wheel installation library"
+license = "MIT"
+channel = "python3.14"
+arch = "any"
+
+dependencies = ["python:3.14 >= 3.14.7-1"]
+provides = ["python-installer"]
+
+[[sources]]
+kind = "file"
+url = "https://files.pythonhosted.org/packages/26/48/bedf3ba4163e7db392c9d4cbdfc8217423196c8fccbe5a404a0f094fde63/installer-1.0.1-py3-none-any.whl"
+sha256 = "011d045df8b954ced7dde3a7e42ae4418da40ecda7990f2d11d5ed7c146fd98b"
+destination = "installer.whl"
+
+[build]
+inherit = ["custom"]
+dependencies = ["python:3.14 >= 3.14.7-1"]
+
+[build.args]
+install_cmd = "out=\"${BUILD_DIR}/wheel\"; python3 -m zipfile -e \"${SRC_DIR}/installer.whl\" \"$out\"; install -dm755 \"${DESTDIR}/usr/lib/python3.14/site-packages\"; cp -a \"$out/installer\" \"${DESTDIR}/usr/lib/python3.14/site-packages/\"; cp -a \"$out\"/*.dist-info \"${DESTDIR}/usr/lib/python3.14/site-packages/\""
+
+[build.payload]
+default = "remaining"

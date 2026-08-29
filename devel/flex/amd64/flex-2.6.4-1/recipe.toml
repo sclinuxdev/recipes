@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "flex"
+version = "2.6.4"
+release = 1
+epoch = 0
+description = "Fast lexical analyzer generator"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc", "bison"]
+provides = ["flex", "lex"]
+
+[[sources]]
+url = "https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz"
+sha256 = "e87aae032bf07c26f85ac0ed3250998c37621d95f8bd748b31f15b33c45ee995"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

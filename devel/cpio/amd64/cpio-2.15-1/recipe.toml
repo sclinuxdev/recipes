@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "cpio"
+version = "2.15"
+release = 1
+epoch = 0
+description = "GNU copy-in and copy-out archive utility"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["cpio"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.gz"
+sha256 = "efa50ef983137eefc0a02fdb51509d624b5e3295c980aa127ceee4183455499e"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

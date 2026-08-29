@@ -1,0 +1,40 @@
+schema_version = 1
+
+[package]
+name = "mpdecimal"
+version = "4.0.1"
+release = 1
+epoch = 0
+description = "Correctly rounded arbitrary precision decimal arithmetic"
+license = "BSD-2-Clause"
+channel = "system"
+arch = "amd64"
+slot = "4"
+
+dependencies = ["virtual/libc"]
+provides = ["mpdecimal", "mpdecimal-libs", "so:libmpdec.so.4"]
+
+[[sources]]
+url = "https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz"
+sha256 = "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "mpdecimal-dev"
+description = "mpdecimal development headers and linker metadata"
+license = "BSD-2-Clause"
+dependencies = ["mpdecimal:4 >= 4.0.1-1"]
+provides = ["mpdecimal-dev"]
+
+[subpackages.payload]
+files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

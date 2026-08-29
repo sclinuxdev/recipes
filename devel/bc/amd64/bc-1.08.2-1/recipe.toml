@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "bc"
+version = "1.08.2"
+release = 1
+epoch = 0
+description = "Arbitrary precision calculator language"
+license = "GPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = ["virtual/libc"]
+provides = ["bc"]
+
+[[sources]]
+url = "https://ftp.gnu.org/gnu/bc/bc-1.08.2.tar.gz"
+sha256 = "ae470fec429775653e042015edc928d07c8c3b2fc59765172a330d3d87785f86"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["autotools"]
+
+[build.args]
+configure_args = "--disable-static"
+
+[build.payload]
+default = "remaining"

@@ -214,6 +214,12 @@ sets `CONFIG_RUST=y`, so its recipe declares `rustc`, `rust-src`, and
 `rust-bindgen` explicitly. The kernel build does not invoke Cargo; recipes should
 not add `cargo` unless their selected kernel configuration or an extra build step
 actually uses it.
+
+The CMake class accepts `args.source_dir` and `args.patch_root` for monorepos,
+and applies recipe-declared `.source-patches/*` in bytewise order. This keeps
+LLVM and its Clang/LLD/compiler-rt outputs in one build unit while retaining
+separate package payloads.
+
 ### 5.2 Node.js classes
 
 `npm` requires `npm ci`; `pnpm` requires a frozen lockfile. Both isolate their

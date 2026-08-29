@@ -1,0 +1,29 @@
+schema_version = 1
+
+[package]
+name = "meson"
+version = "1.12.0"
+release = 1
+epoch = 0
+description = "Python-based build system"
+license = "Apache-2.0"
+channel = "system"
+arch = "any"
+
+dependencies = ["python3.14/python:3.14"]
+provides = ["meson"]
+
+[[sources]]
+url = "https://github.com/mesonbuild/meson/releases/download/1.12.0/meson-1.12.0.tar.gz"
+sha256 = "88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = "install -Dm755 meson.py \"${DESTDIR}/usr/bin/meson\"; mkdir -p \"${DESTDIR}/usr/lib/meson\"; cp -a mesonbuild \"${DESTDIR}/usr/lib/meson/\""
+
+[build.payload]
+default = "remaining"
