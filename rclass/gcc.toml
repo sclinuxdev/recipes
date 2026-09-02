@@ -3,7 +3,7 @@ name = "gcc"
 description = "GNU Compiler Collection out-of-tree build class"
 
 implicit_build_dependencies = [
-    "system/binutils",
+    "system/binutils:2.47",
     "system/bison",
     "system/flex",
     "system/gawk",
@@ -21,8 +21,12 @@ allowed_linkers = ["lld", "mold", "ld"]
 [defaults]
 "args.configure_args" = ""
 "args.install_args" = ""
+"args.jobs" = "${JOBS}"
 "args.make_args" = ""
 "args.source_dir" = "."
+"args.bootstrap_cflags" = ""
+"args.target_cflags" = ""
+"args.target_cxxflags" = ""
 
 [phases]
 src_unpack = """
@@ -70,6 +74,17 @@ fi
 src_configure = """
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
+bootstrap_cflags="${args.bootstrap_cflags}"
+if [ -z "$bootstrap_cflags" ]; then
+    bootstrap_cflags="${CFLAGS} ${CPPFLAGS}"
+fi
+if ! CFLAGS_FOR_BUILD="$bootstrap_cflags" \
+CXXFLAGS_FOR_BUILD="$bootstrap_cflags" \
+CFLAGS="$bootstrap_cflags" \
+CXXFLAGS="$bootstrap_cflags" \
+CPP="$CC -E ${CPPFLAGS}" \
+CPP_FOR_BUILD="$CC -E ${CPPFLAGS}" \
+CPPFLAGS_FOR_BUILD="${CPPFLAGS}" \
 "${SRC_DIR}/${args.source_dir}/configure" \
     --prefix=/usr \
     --libdir=/usr/lib \
@@ -85,8 +100,50 @@ cd "${BUILD_DIR}"
     --with-system-zlib \
     --with-isl \
     --disable-werror \
-    ${args.configure_args}
+    ${args.configure_args}; then
+    grep -nE 'error:|fatal error:|No such file|fails sanity check' "${BUILD_DIR}/config.log" >&2 || true
+    cat "${BUILD_DIR}/config.log" >&2 || true
+    exit 1
+fi
 """
 
-src_compile = "make -C \"${BUILD_DIR}\" -j \"${JOBS}\" ${args.make_args}"
-src_install = "make -C \"${BUILD_DIR}\" DESTDIR=\"${DESTDIR}\" install ${args.install_args}"
+src_compile = """
+bootstrap_cflags="${args.bootstrap_cflags}"
+if [ -z "$bootstrap_cflags" ]; then
+    bootstrap_cflags="${CFLAGS} ${CPPFLAGS}"
+fi
+target_cflags="${args.target_cflags}"
+if [ -z "$target_cflags" ]; then
+    target_cflags="${CFLAGS} ${CPPFLAGS}"
+fi
+target_cxxflags="${args.target_cxxflags}"
+if [ -z "$target_cxxflags" ]; then
+    target_cxxflags="${CXXFLAGS} ${CPPFLAGS}"
+fi
+if ! make -C "${BUILD_DIR}" -j "${args.jobs}" ${args.make_args} \
+    CFLAGS="$bootstrap_cflags" \
+    CXXFLAGS="$bootstrap_cflags" \
+    CFLAGS_FOR_BUILD="$bootstrap_cflags" \
+    CXXFLAGS_FOR_BUILD="$bootstrap_cflags" \
+    CPPFLAGS_FOR_BUILD="${CPPFLAGS}" \
+    CPP_FOR_TARGET="${BUILD_DIR}/gcc/xgcc -B${BUILD_DIR}/gcc/ -E ${CPPFLAGS}" \
+    CPPFLAGS_FOR_TARGET="${CPPFLAGS}" \
+    CFLAGS_FOR_TARGET="$target_cflags" \
+    CXXFLAGS_FOR_TARGET="$target_cxxflags" \
+    LIBCFLAGS_FOR_TARGET="$target_cflags" \
+    LIBCXXFLAGS_FOR_TARGET="$target_cxxflags -fno-implicit-templates" \
+    >"${BUILD_DIR}/build.log" 2>&1; then
+    grep -nE 'error:|fatal error:|Killed|Error [0-9]+' "${BUILD_DIR}/build.log" >&2 || true
+    tail -n 200 "${BUILD_DIR}/build.log" >&2 || true
+    exit 1
+fi
+cat "${BUILD_DIR}/build.log"
+"""
+src_install = """
+make -C "${BUILD_DIR}" DESTDIR="${DESTDIR}" install ${args.install_args}
+# Release packages must not carry GCC's multi-hundred-megabyte debug sections.
+# Keep symbol tables needed by the driver and runtime linker while removing
+# debug-only data from executables, shared objects, and static archives.
+find "${DESTDIR}/usr/bin" "${DESTDIR}/usr/lib" "${DESTDIR}/usr/lib64" "${DESTDIR}/usr/libexec" \
+    -type f -exec strip --strip-debug {} + 2>/dev/null || true
+"""

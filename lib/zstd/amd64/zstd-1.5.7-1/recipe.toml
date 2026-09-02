@@ -22,10 +22,18 @@ url = "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.
 sha256 = "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3"
 
 [build]
-inherit = ["meson"]
+inherit = ["custom"]
+dependencies = [
+    "system/make",
+    "system/xz-dev",
+    "system/zlib-dev",
+]
 
 [build.args]
-meson_args = "-Dbin_programs=true -Dzlib=enabled -Dlzma=enabled -Dlz4=disabled"
+# Toolchain flags are inherited from the exported build environment. Passing
+# CFLAGS/LDFLAGS as command-line make variables would suppress zstd's
+# target-specific additions such as -fPIC and -shared for libzstd.so.
+install_cmd = 'cd "${SRC_DIR}"; make -j"${JOBS}" HAVE_ZLIB=1 HAVE_LZMA=1 lib-release zstd-release; make -j"${JOBS}" DESTDIR="${DESTDIR}" PREFIX=/usr LIBDIR=/usr/lib INCLUDEDIR=/usr/include HAVE_ZLIB=1 HAVE_LZMA=1 install'
 
 [build.payload]
 default = "remaining"

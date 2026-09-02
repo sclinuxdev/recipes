@@ -1,0 +1,63 @@
+schema_version = 1
+
+[package]
+name = "efivar"
+version = "39"
+release = 1
+epoch = 0
+description = "Tools and libraries for manipulating UEFI variables"
+license = "LGPL-2.1-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "efivar-libs >= 39-1",
+]
+
+provides = ["efivar"]
+
+[[sources]]
+url = "https://github.com/rhboot/efivar/archive/refs/tags/39.tar.gz"
+sha256 = "c9edd15f2eeeea63232f3e669a48e992c7be9aff57ee22672ac31f5eca1609a6"
+strip_components = 1
+destination = "."
+
+[build]
+inherit = ["custom"]
+dependencies = ["system/make", "system/pkgconf"]
+
+[build.args]
+install_cmd = "make -C \"${SRC_DIR}\" CC=\"${CC}\" CFLAGS=\"${CFLAGS}\" LDFLAGS=\"${LDFLAGS}\" PREFIX=/usr LIBDIR=/usr/lib ENABLE_DOCS=0 -j\"${JOBS}\"; make -C \"${SRC_DIR}\" CC=\"${CC}\" CFLAGS=\"${CFLAGS}\" LDFLAGS=\"${LDFLAGS}\" PREFIX=/usr LIBDIR=/usr/lib ENABLE_DOCS=0 DESTDIR=\"${DESTDIR}\" install"
+
+[build.payload]
+default = "remaining"
+
+[[subpackages]]
+name = "efivar-libs"
+description = "efivar runtime shared libraries"
+license = "LGPL-2.1-or-later"
+dependencies = ["virtual/libc"]
+provides = [
+    "efivar-libs",
+    "so:libefiboot.so.1",
+    "so:libefisec.so.1",
+    "so:libefivar.so.1",
+]
+
+[subpackages.payload]
+files = ["usr/lib/*.so.*"]
+
+[[subpackages]]
+name = "efivar-dev"
+description = "efivar headers, pkg-config files, and linker symlinks"
+license = "LGPL-2.1-or-later"
+dependencies = ["efivar-libs >= 39-1"]
+provides = ["efivar-dev"]
+
+[subpackages.payload]
+files = [
+    "usr/include/**",
+    "usr/lib/*.so",
+    "usr/lib/pkgconfig/**",
+]

@@ -20,10 +20,17 @@ strip_components = 1
 destination = "."
 
 [build]
-inherit = ["autotools"]
+inherit = ["custom"]
+dependencies = ["system/make"]
 
 [build.args]
-configure_args = "--disable-static --with-system-includedir=/usr/include --with-system-libdir=/usr/lib"
+install_cmd = """
+cd "${SRC_DIR}"
+./configure --prefix=/usr --disable-static --with-system-includedir=/usr/include --with-system-libdir=/usr/lib
+make -j"${JOBS}"
+make DESTDIR="${DESTDIR}" install
+ln -s pkgconf "${DESTDIR}/usr/bin/pkg-config"
+"""
 
 [build.payload]
 default = "remaining"

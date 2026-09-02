@@ -42,11 +42,11 @@ recipes/<category>/<pkgname>/<arch>/<pkgname>-<version>-<release>/
 
 ## 3. Versioning & Release Rules
 
-1. **`release` Starts at `1` and Increments Continuously**:
-   - When a new software `version` is packaged, its initial `release` **must start at `1`** (e.g., `zlib-1.3.1-1`).
-   - When updating or modifying an existing version's recipe (e.g., patching, dependency adjustments, build flag changes), the `release` number **must increment strictly monotonically and continuously without gaps** (`1` -> `2` -> `3` -> ...).
-   - **Never skip release numbers** (e.g., jumping directly from `1` to `3` is forbidden).
-   - **Continuous existence**: Historical releases must be preserved in accordance with repository maintenance policies to prevent broken upgrade paths.
+1. **Only the Latest Recipe Release Is Kept**:
+   - The repository contains exactly one recipe for each `package.name`, `package.version`, `package.arch`, and `package.slot` identity.
+   - The retained recipe and its directory **must always use `release = 1`** (for example, `zlib-1.3.1-1`).
+   - When a newer release is selected, replace the older recipe in place and normalize the retained release back to `1`; historical binary releases belong in the package channel/index, not in this recipe tree.
+   - A new upstream `package.version` also starts at `1`.
 2. **Directory & Metadata Strict Consistency**:
    - The directory name `<pkgname>-<version>-<release>` **must exactly match** the fields in `recipe.toml`:
      - `package.name` == `<pkgname>`

@@ -2,12 +2,17 @@ schema_version = 1
 name = "meson"
 description = "Meson and Ninja build class"
 
-implicit_build_dependencies = ["system/meson", "system/ninja", "system/pkgconf"]
+implicit_build_dependencies = [
+    "system/meson",
+    "system/ninja",
+    "system/pkgconf",
+]
 allowed_compilers = ["clang", "gcc"]
 allowed_linkers = ["lld", "mold", "ld"]
 
 [defaults]
 "args.meson_args" = ""
+"args.source_dir" = "."
 "args.test" = "0"
 "args.cross_arg" = ""
 
@@ -57,7 +62,7 @@ cpu = '${TARGET_ARCH}'
 endian = '${TARGET_ENDIAN}'
 EOF
 fi
-meson setup "${BUILD_DIR}" "${SRC_DIR}" --prefix=/usr --libdir=lib --buildtype=release ${args.cross_arg} ${args.meson_args}
+meson setup "${BUILD_DIR}" "${SRC_DIR}/${args.source_dir}" --prefix=/usr --libdir=lib --buildtype=release ${args.cross_arg} ${args.meson_args}
 """
 src_compile = "meson compile -C \"${BUILD_DIR}\" -j \"${JOBS}\""
 src_test = "if [ \"${args.test}\" = 1 ]; then meson test -C \"${BUILD_DIR}\" --no-rebuild; fi"

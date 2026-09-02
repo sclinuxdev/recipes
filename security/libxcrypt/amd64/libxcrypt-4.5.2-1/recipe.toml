@@ -28,7 +28,7 @@ sha256 = "71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
 inherit = ["autotools"]
 
 [build.args]
-configure_args = "--enable-hashes=strong,glibc --enable-obsolete-api=glibc --disable-static"
+configure_args = "--enable-hashes=strong,glibc --enable-obsolete-api=glibc --disable-static --disable-werror"
 
 [build.payload]
 default = "remaining"

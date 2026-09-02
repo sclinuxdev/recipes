@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sage Maintainers <maintainers@example.invalid>
+Date: Sat, 29 Aug 2026 00:00:00 +0000
+Subject: [PATCH] disable removed OpenSSL 4 legacy method constructors
+
+OpenSSL 4 no longer exports the version-specific SSL/TLS method
+constructors.  Python still declares and uses these deprecated compatibility
+entry points when the corresponding feature macros are not defined, which
+leaves _ssl with unresolved symbols at import time.  Keep the modern generic
+TLS method available and omit only the removed legacy constructors.
+---
+ Modules/_ssl.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/Modules/_ssl.c b/Modules/_ssl.c
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -136,6 +136,18 @@
+ #error Unsupported OpenSSL version
+ #endif
+ 
++/* OpenSSL 4 no longer exports version-specific method constructors. */
++#if OPENSSL_VERSION_NUMBER >= 0x40000000L
++#define OPENSSL_NO_SSL3
++#define OPENSSL_NO_SSL3_METHOD
++#define OPENSSL_NO_TLS1
++#define OPENSSL_NO_TLS1_METHOD
++#define OPENSSL_NO_TLS1_1
++#define OPENSSL_NO_TLS1_1_METHOD
++#define OPENSSL_NO_TLS1_2
++#define OPENSSL_NO_TLS1_2_METHOD
++#endif
++
+ /* OpenSSL API 1.1.0+ does not include version methods */
+ #ifndef OPENSSL_NO_SSL3_METHOD
+ extern const SSL_METHOD *SSLv3_method(void);
+--
+2.47.0

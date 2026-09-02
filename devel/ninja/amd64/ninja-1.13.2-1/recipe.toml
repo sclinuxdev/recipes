@@ -21,10 +21,9 @@ destination = "."
 
 [build]
 inherit = ["custom"]
-dependencies = ["python3.14/python:3.14"]
 
 [build.args]
-install_cmd = "python3 configure.py --bootstrap; install -Dm755 ninja \"${DESTDIR}/usr/bin/ninja\""
+install_cmd = "cd \"${SRC_DIR}\"; python3 configure.py --bootstrap; install -Dm755 ninja \"${DESTDIR}/usr/bin/ninja\""
 
 [build.payload]
 default = "remaining"

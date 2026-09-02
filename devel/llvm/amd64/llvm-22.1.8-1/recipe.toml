@@ -15,8 +15,8 @@ dependencies = [
     "llvm-libs:22.1.8 >= 22.1.8-1",
     "system/curl-libs",
     "system/glibc",
-    "gcc16/gcc-libs:16",
-    "gcc16/libstdc++:16",
+    "system/gcc-libs",
+    "system/libstdc++",
     "system/perl",
 ]
 
@@ -75,7 +75,7 @@ description = "LLVM compiler runtime libraries"
 license = "Apache-2.0 WITH LLVM-exception"
 dependencies = [
     "system/glibc",
-    "gcc16/gcc-libs:16",
+    "system/gcc-libs",
 ]
 provides = ["compiler-rt"]
 
@@ -90,8 +90,8 @@ dependencies = [
     "system/glibc",
     "system/libedit",
     "system/libffi",
-    "gcc16/gcc-libs:16",
-    "gcc16/libstdc++:16",
+    "system/gcc-libs",
+    "system/libstdc++",
     "system/libxml2-libs",
     "system/zlib-libs",
     "system/zstd-libs",
@@ -106,6 +106,11 @@ files = [
     "usr/lib/LLVMgold.so",
     "usr/lib/bfd-plugins/LLVMgold.so",
 ]
+excludes = [
+    "usr/lib/libLLVM.so",
+    "usr/lib/libLTO.so",
+    "usr/lib/libRemarks.so",
+]
 
 [[subpackages]]
 name = "clang"
@@ -113,7 +118,7 @@ description = "C language family frontend for LLVM"
 license = "Apache-2.0 WITH LLVM-exception"
 dependencies = [
     "compiler-rt:22.1.8 >= 22.1.8-1",
-    "gcc16/gcc-libs:16",
+    "system/gcc-libs",
     "system/libxml2-libs",
     "llvm-libs:22.1.8 >= 22.1.8-1",
 ]
@@ -167,4 +172,7 @@ files = [
     "usr/lib/libLLVM*.a",
     "usr/lib/libLTO*.a",
     "usr/lib/libRemarks*.a",
+    "usr/lib/libLLVM.so",
+    "usr/lib/libLTO.so",
+    "usr/lib/libRemarks.so",
 ]

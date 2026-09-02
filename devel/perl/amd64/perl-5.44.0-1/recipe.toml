@@ -10,7 +10,10 @@ license = "Artistic-1.0-Perl OR GPL-1.0-or-later"
 channel = "system"
 arch = "amd64"
 
-dependencies = ["virtual/libc", "libxcrypt-libs"]
+dependencies = [
+    "virtual/libc",
+    "libxcrypt-libs >= 4.5.2-1",
+]
 provides = ["perl"]
 
 [[sources]]
@@ -21,9 +24,27 @@ destination = "."
 
 [build]
 inherit = ["custom"]
+dependencies = [
+    "system/libxcrypt-dev",
+    "system/make",
+]
 
 [build.args]
-install_cmd = "./Configure -des -Dprefix=/usr -Dvendorprefix=/usr -Dman1dir=/usr/share/man/man1 -Dman3dir=/usr/share/man/man3 -Duseshrplib; make -j\"${JOBS}\"; make DESTDIR=\"${DESTDIR}\" install"
+install_cmd = """
+set -e
+cd "${SRC_DIR}"
+./Configure -des \
+    -Dprefix=/usr \
+    -Dvendorprefix=/usr \
+    -Dman1dir=/usr/share/man/man1 \
+    -Dman3dir=/usr/share/man/man3 \
+    -Duserelocatableinc \
+    -Doptimize="${CFLAGS}" \
+    -Dldflags="${LDFLAGS}" \
+    -Dlddlflags="-shared ${LDFLAGS}"
+make -j"${JOBS}"
+make DESTDIR="${DESTDIR}" install
+"""
 
 [build.payload]
 default = "remaining"

@@ -23,6 +23,7 @@ sha256 = "3029540d8f2ec75bee5cbdb7c2a0daa60bffa1d105c82ecb99b53432f6351afc"
 
 [build]
 inherit = ["custom"]
+dependencies = ["system/make"]
 
 [build.args]
 install_cmd = """

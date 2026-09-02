@@ -22,6 +22,7 @@ destination = "."
 
 [build]
 inherit = ["autotools"]
+dependencies = ["zlib-dev"]
 
 [build.args]
 configure_args = "--disable-multilib --enable-plugins --enable-lto --with-system-zlib --disable-werror"

@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 channel = "system"
 arch = "amd64"
 
-dependencies = ["virtual/libc", "ncurses-libs"]
+dependencies = ["virtual/libc", "ncurses-libs", "system/perl"]
 provides = ["texinfo"]
 
 [[sources]]
@@ -21,6 +21,7 @@ destination = "."
 
 [build]
 inherit = ["autotools"]
+dependencies = ["ncurses-dev", "system/perl"]
 
 [build.args]
 configure_args = "--disable-static"

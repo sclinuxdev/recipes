@@ -1,0 +1,42 @@
+From 6e4dfe7b4f5c8f6a8e1d2c3b4a59687766554433 Mon Sep 17 00:00:00 2001
+From: Sage Maintainers <maintainers@sage.invalid>
+Date: Sun, 30 Aug 2026 00:00:00 +0000
+Subject: [PATCH] Fix const casts in yescrypt paths
+
+GCC diagnoses the conversion performed by strchr as a discarded qualifier
+under the package's -Werror policy. The yescrypt buffer is writable scratch
+space and is subsequently rewritten by encode64, so pass it to strchr with
+its writable character type.
+---
+ lib/crypt-gost-yescrypt.c | 2 +-
+ lib/crypt-sm3-yescrypt.c  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/crypt-gost-yescrypt.c b/lib/crypt-gost-yescrypt.c
+index 1111111..2222222 100644
+--- a/lib/crypt-gost-yescrypt.c
++++ b/lib/crypt-gost-yescrypt.c
+@@ -131,7 +131,7 @@ _crypt_crypt_gost_yescrypt_rn (const char *phrase, size_t phr_size,
+   intbuf->outbuf[1] = 'g';
+ 
+   /* extract yescrypt output from "$y$param$salt$output" */
+-  char *hptr = strchr ((const char *) intbuf->retval + 3, '$');
++  char *hptr = strchr ((char *) intbuf->retval + 3, '$');
+   if (!hptr)
+     {
+       errno = EINVAL;
+diff --git a/lib/crypt-sm3-yescrypt.c b/lib/crypt-sm3-yescrypt.c
+index 3333333..4444444 100644
+--- a/lib/crypt-sm3-yescrypt.c
++++ b/lib/crypt-sm3-yescrypt.c
+@@ -136,7 +136,7 @@ _crypt_crypt_sm3_yescrypt_rn (const char *phrase, size_t phr_size,
+   intbuf->outbuf[3] = '3';
+ 
+   /* extract yescrypt output from "$y$param$salt$output" */
+-  char *hptr = strchr ((const char *) intbuf->retval + 3, '$');
++  char *hptr = strchr ((char *) intbuf->retval + 3, '$');
+   if (!hptr)
+     {
+       errno = EINVAL;
+--
+2.47.0

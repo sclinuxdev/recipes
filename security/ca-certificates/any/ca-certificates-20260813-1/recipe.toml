@@ -1,0 +1,30 @@
+schema_version = 1
+
+[package]
+name = "ca-certificates"
+version = "20260813"
+release = 1
+epoch = 0
+description = "Common CA certificate bundle extracted from Mozilla NSS"
+license = "MPL-2.0"
+channel = "system"
+arch = "any"
+
+dependencies = []
+
+provides = ["ca-certificates"]
+
+[[sources]]
+kind = "file"
+url = "https://curl.se/ca/cacert-2026-08-13.pem"
+sha256 = "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9"
+destination = "ca-certificates.pem"
+
+[build]
+inherit = ["custom"]
+
+[build.args]
+install_cmd = "install -Dm644 \"${SRC_DIR}/ca-certificates.pem\" \"${DESTDIR}/etc/ssl/certs/ca-certificates.crt\"; install -Dm644 \"${SRC_DIR}/ca-certificates.pem\" \"${DESTDIR}/etc/ca-certificates/extracted/tls-ca-bundle.pem\"; install -Dm644 \"${SRC_DIR}/ca-certificates.pem\" \"${DESTDIR}/usr/share/ca-certificates/mozilla/cacert.pem\"; ln -s certs/ca-certificates.crt \"${DESTDIR}/etc/ssl/cert.pem\""
+
+[build.payload]
+default = "remaining"

@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [build.args]
-install_cmd = "./bootstrap --prefix=/usr --parallel=\"${JOBS}\" -- -DCMAKE_BUILD_TYPE=Release; make -j\"${JOBS}\"; make DESTDIR=\"${DESTDIR}\" install"
+install_cmd = 'cd "${SRC_DIR}"; ./bootstrap --prefix=/usr --parallel="${JOBS}" -- -DCMAKE_BUILD_TYPE=Release; make -j"${JOBS}"; make DESTDIR="${DESTDIR}" install'
 
 [build.payload]
 default = "remaining"

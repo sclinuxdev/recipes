@@ -11,8 +11,8 @@ channel = "system"
 arch = "amd64"
 slot = "1.26"
 
-dependencies = ["virtual/libc"]
-provides = ["gdbm", "gdbm-libs", "so:libgdbm.so.6"]
+dependencies = ["virtual/libc", "gdbm-libs:0 >= 1.26-1"]
+provides = ["gdbm"]
 
 [[sources]]
 url = "https://ftp.gnu.org/gnu/gdbm/gdbm-1.26.tar.gz"
@@ -24,17 +24,28 @@ destination = "."
 inherit = ["autotools"]
 
 [build.args]
-configure_args = "--disable-static"
+configure_args = "--disable-static --enable-libgdbm-compat"
 
 [build.payload]
 default = "remaining"
 
 [[subpackages]]
+name = "gdbm-libs"
+slot = "0"
+description = "GNU database manager runtime shared libraries"
+license = "GPL-3.0-or-later"
+dependencies = ["virtual/libc"]
+provides = ["gdbm-libs", "so:libgdbm.so.6"]
+
+[subpackages.payload]
+files = ["usr/lib/*.so.*"]
+
+[[subpackages]]
 name = "gdbm-dev"
 description = "GNU database manager development headers and linker metadata"
 license = "GPL-3.0-or-later"
-dependencies = ["gdbm:1.26 >= 1.26-1"]
+dependencies = ["gdbm-libs:0 >= 1.26-1"]
 provides = ["gdbm-dev"]
 
 [subpackages.payload]
-files = ["usr/include/**", "usr/lib/*.so", "usr/lib/pkgconfig/**"]
+files = ["usr/include/**", "usr/lib/*.la", "usr/lib/*.so", "usr/lib/pkgconfig/**"]

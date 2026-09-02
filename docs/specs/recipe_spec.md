@@ -209,7 +209,29 @@ private_library_dirs = ["lib", "lib64"]
 The builder rejects absolute paths and parent traversal. It passes only computed
 `$ORIGIN`-relative paths to the globally configured `patchelf` executable.
 
-### 3.5 Out-of-tree kernel modules
+### 3.5 Per-recipe compiler and linker overrides
+
+The system build profile is the default for every recipe. A recipe may opt into
+one of the validated compiler families for a toolchain boundary:
+
+```toml
+[build]
+compiler = "gcc" # or "clang"
+linker = "mold"  # or "ld" for a documented compatibility exception
+cflags = "-march=x86-64-v3 -O2 -pipe"
+cxxflags = "-march=x86-64-v3 -O2 -pipe"
+ldflags = "-Wl,--as-needed"
+```
+
+These fields change only the sandbox tool wrappers for that recipe. They do
+not change the global profile or silently fall back to host tools. The optional
+`cflags`, `cxxflags`, `cppflags`, `ldflags`, and `rustflags` fields replace the
+corresponding profile values for that recipe and are recorded in build-tool
+attestation. A GCC self-hosting recipe must also pass its complete stage and
+target flags through its rclass arguments so nested compiler builds use the
+same policy.
+
+### 3.6 Out-of-tree kernel modules
 
 Prebuilt Kmod packages use the target kernel version as their package Slot. The
 declarative `kmod` rclass builds against that kernel's read-only headers and asks
@@ -250,7 +272,7 @@ Compiler and interpreter packages use versioned channels. For example,
 the host or to an unversioned compiler name. Short channel aliases are resolved
 inside the repository root by Sage.
 
-### 3.6 Declarative installation lifecycle
+### 3.7 Declarative installation lifecycle
 
 Source-free data and policy packages use `[install]` entries instead of a
 `custom` build class. All paths are relative to DESTDIR, duplicate or escaping
@@ -290,7 +312,7 @@ Executable lifecycle hooks such as `preinst`, `postinst`, `prerm`, and `postrm`
 are rejected. Transactions never treat package metadata as executable content and
 never open standard input for configuration prompts.
 
-### 3.7 Features and build-only dependencies
+### 3.8 Features and build-only dependencies
 
 Features are deterministic recipe transformations selected with
 `sage build --feature <name>`. Defaults are enabled unless

@@ -21,7 +21,7 @@ schema_version = 1
 name = "cmake"
 description = "CMake and Ninja build class"
 
-implicit_build_dependencies = ["cmake", "ninja"]
+implicit_build_dependencies = ["gcc16/gcc:16", "system/cmake", "system/ninja"]
 allowed_compilers = ["clang", "gcc"]
 allowed_linkers = ["lld", "mold", "ld"]
 
@@ -237,3 +237,7 @@ recipe arguments. Artifact globs must resolve to exactly one file.
 Ecosystem dependency access follows the global sandbox rule: builds have no
 network unless the recipe explicitly sets `allow_network = true`. Vendored or
 pre-populated inputs therefore remain the reproducible default.
+
+Cargo recipes must use a committed `Cargo.lock`. If registry or Git inputs are
+not vendored, the recipe must explicitly set `allow_network = true`; Cargo's
+locked mode still verifies registry checksums and exact Git revisions.

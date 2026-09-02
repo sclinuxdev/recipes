@@ -69,9 +69,9 @@ description = "Headers and build scripts for external modules for Linux-Zen"
 license = "GPL-2.0-only"
 dependencies = [
     "virtual/libc-dev",
-    "binutils",
+    "system/binutils:2.47",
     "libelf-libs",
-    "gcc16/gcc-libs:16",
+    "system/gcc-libs",
     "openssl-libs",
     "pahole",
     "xxhash",

@@ -23,7 +23,7 @@ destination = "."
 inherit = ["custom"]
 
 [build.args]
-install_cmd = "install -Dm755 meson.py \"${DESTDIR}/usr/bin/meson\"; mkdir -p \"${DESTDIR}/usr/lib/meson\"; cp -a mesonbuild \"${DESTDIR}/usr/lib/meson/\""
+install_cmd = 'cd "${SRC_DIR}"; install -Dm755 meson.py "${DESTDIR}/usr/bin/meson"; mkdir -p "${DESTDIR}/usr/lib/meson"; cp -a mesonbuild "${DESTDIR}/usr/lib/meson/"'
 
 [build.payload]
 default = "remaining"

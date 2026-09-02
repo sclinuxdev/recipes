@@ -20,13 +20,14 @@ dependencies = [
 
 provides = ["sage", "virtual/package-manager"]
 
-[source]
+[[sources]]
 kind = "git"
 url = "https://github.com/sclinuxdev/sage.git"
 commit = "f33c6c06abb99fa36ed2164885d7025e5c1901bd"
 
 [build]
 inherit = ["cargo"]
+allow_network = true
 dependencies = [
     "rust1.98/rust-bin:1.98.0",
     "rust1.98/cargo:1.98.0",

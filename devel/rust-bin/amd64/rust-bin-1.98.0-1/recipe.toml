@@ -14,8 +14,8 @@ slot = "1.98.0"
 dependencies = [
     "virtual/libc",
     "system/curl",
-    "gcc16/gcc-libs:16",
-    "gcc16/libstdc++:16",
+    "system/gcc-libs",
+    "system/libstdc++",
     "system/openssl-libs",
 ]
 

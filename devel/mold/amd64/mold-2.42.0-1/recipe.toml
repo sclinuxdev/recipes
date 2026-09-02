@@ -1,0 +1,39 @@
+schema_version = 1
+
+[package]
+name = "mold"
+version = "2.42.0"
+release = 1
+epoch = 0
+description = "Modern high-performance ELF linker"
+license = "MIT OR AGPL-3.0-or-later"
+channel = "system"
+arch = "amd64"
+
+dependencies = [
+    "virtual/libc",
+    "system/zlib-libs",
+    "system/zstd-libs",
+]
+
+provides = ["mold", "virtual/ld"]
+
+[[sources]]
+url = "https://github.com/rui314/mold/archive/refs/tags/v2.42.0.tar.gz"
+sha256 = "6c0f3308c5b3159a369202d970922ad819bab1bfcb5a3b3c06a723d19f65373e"
+strip_components = 1
+destination = "mold-2.42.0"
+
+[build]
+inherit = ["cmake"]
+dependencies = [
+    "system/zlib-dev",
+    "system/zstd-dev",
+]
+
+[build.args]
+source_dir = "mold-2.42.0"
+cmake_args = "-DMOLD_USE_MIMALLOC=OFF -DMOLD_USE_MOLD=OFF"
+
+[build.payload]
+default = "remaining"

@@ -22,6 +22,7 @@ destination = "."
 
 [build]
 inherit = ["custom"]
+dependencies = ["system/make"]
 
 [build.args]
 install_cmd = "make -C \"${SRC_DIR}\" -j \"${JOBS}\" PREFIX=/usr BUILD_SHARED=1; make -C \"${SRC_DIR}\" DESTDIR=\"${DESTDIR}\" PREFIX=/usr BUILD_SHARED=1 install"

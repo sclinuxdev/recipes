@@ -14,7 +14,7 @@ dependencies = [
     "virtual/libc",
     "mpfr-libs >= 4.2.2-1",
     "gmp >= 6.3.0-1",
-    "readline-libs >= 8.3-1",
+    "readline >= 8.3-1",
 ]
 
 provides = ["gawk", "virtual/awk", "awk"]

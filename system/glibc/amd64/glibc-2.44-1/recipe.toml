@@ -10,11 +10,7 @@ license = "LGPL-2.1-or-later AND GPL-2.0-or-later"
 channel = "system"
 arch = "amd64"
 
-dependencies = [
-    "linux-api-headers >= 7.1.11-1",
-    "iana-etc >= 20260811-1",
-    "tzdata >= 2026c-1",
-]
+dependencies = []
 
 provides = [
     "virtual/libc",
@@ -33,6 +29,17 @@ sha256 = "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667"
 
 [build]
 inherit = ["autotools"]
+dependencies = [
+    "gcc16/gcc:16",
+    "system/linux-api-headers >= 7.1.11-1",
+]
+# glibc is a GCC-only compiler boundary; use the system GNU linker as well.
+# The global default remains clang + mold for other packages.
+compiler = "gcc"
+linker = "ld"
+cflags = "-march=x86-64-v3 -O2 -pipe"
+cxxflags = "-march=x86-64-v3 -O2 -pipe"
+ldflags = "-Wl,--as-needed"
 
 [build.args]
 configure_args = "--enable-kernel=5.4 --enable-stack-protector=strong --enable-bind-now --disable-werror"
@@ -56,7 +63,11 @@ files = [
     "usr/lib/*.o",
     "usr/lib/*.a",
     "usr/lib/*.so",
+    "usr/lib64/*.o",
+    "usr/lib64/*.a",
+    "usr/lib64/*.so",
     "usr/lib/pkgconfig/**",
+    "usr/lib64/pkgconfig/**",
 ]
 
 [[subpackages]]

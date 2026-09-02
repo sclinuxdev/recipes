@@ -25,7 +25,7 @@ sha256 = "ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283"
 inherit = ["autotools"]
 
 [build.args]
-configure_args = "--enable-fsect-man5 --disable-static --disable-bzlib --disable-xzlib --disable-zlib"
+configure_args = "--enable-fsect-man5 --disable-static --disable-bzlib --disable-xzlib --disable-zlib --disable-libseccomp --disable-landlock"
 
 [build.payload]
 default = "remaining"

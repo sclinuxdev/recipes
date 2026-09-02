@@ -24,9 +24,10 @@ sha256 = "57b3cf4f77555992881e5ba2a09a63b05aa2c56342a60ed4305b5f45938390b5"
 
 [build]
 inherit = ["autotools"]
+dependencies = ["system/ncurses-dev"]
 
 [build.args]
-configure_args = "--disable-servers --disable-rsh --disable-rlogin --disable-rcp --disable-rexec --disable-nls"
+configure_args = "--disable-servers --disable-rsh --disable-rlogin --disable-rcp --disable-rexec --disable-nls --with-ncurses-include-dir=/usr/include"
 
 [build.payload]
 default = "remaining"

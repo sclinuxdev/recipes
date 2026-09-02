@@ -11,7 +11,10 @@ channel = "system"
 arch = "amd64"
 slot = "2.15"
 
-dependencies = ["zlib-libs"]
+dependencies = [
+    "libxml2-libs:2.15 >= 2.15.3-1",
+    "zlib-libs",
+]
 provides = ["libxml2"]
 
 [[sources]]
@@ -38,7 +41,7 @@ dependencies = ["zlib-libs"]
 provides = ["libxml2-libs", "so:libxml2.so.16"]
 
 [subpackages.payload]
-files = ["usr/lib/libxml2.so*"]
+files = ["usr/lib/libxml2.so.*"]
 
 [[subpackages]]
 name = "libxml2-dev"

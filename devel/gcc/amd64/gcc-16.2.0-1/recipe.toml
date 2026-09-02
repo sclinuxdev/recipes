@@ -12,9 +12,10 @@ arch = "amd64"
 slot = "16"
 
 dependencies = [
-    "gcc-libs:16 >= 16.2.0-1",
-    "libstdc++:16 >= 16.2.0-1",
-    "system/binutils",
+    "system/gcc-libs >= 16.2.0-1",
+    "system/libstdc++ >= 16.2.0-1",
+    "system/binutils:2.47",
+    "gcc16/gcc-dev:16 >= 16.2.0-1",
 ]
 
 provides = [
@@ -33,11 +34,29 @@ destination = "gcc-16.2.0"
 
 [build]
 inherit = ["gcc"]
+dependencies = ["gcc16/gcc:16"]
+compiler = "gcc"
+linker = "ld"
+cflags = "-march=x86-64-v3 -O2 -pipe"
+cxxflags = "-march=x86-64-v3 -O2 -pipe"
+cppflags = "-isystem /toolchain/usr/include"
+ldflags = "-Wl,--as-needed"
 private_library_dirs = ["lib"]
 
 [build.args]
 source_dir = "gcc-16.2.0"
-configure_args = "--with-arch=x86-64 --with-tune=generic"
+# GCC 16.2.0's in-tree stage3 bootstrap ICEs in the generated x86 matcher on
+# this seed toolchain.  The Sage bootstrap plan already provides the explicit
+# external seed boundary; disable only GCC's nested bootstrap so this package
+# can be produced deterministically from that seed.  The requested compiler,
+# linker, and target optimization profile remain in force.
+configure_args = "--with-arch=x86-64-v3 --with-tune=generic --with-build-config=no --disable-bootstrap --with-gmp=/toolchain/usr --with-mpfr=/toolchain/usr --with-mpc=/toolchain/usr --with-isl=/toolchain/usr"
+bootstrap_cflags = "-march=x86-64-v3 -O2 -pipe -fno-tree-dce -isystem /toolchain/usr/include"
+target_cflags = "-march=x86-64-v3 -O2 -pipe -isystem /toolchain/usr/include"
+target_cxxflags = "-march=x86-64-v3 -O2 -pipe -isystem /toolchain/usr/include"
+# Avoid an accidental host-Perl dependency while building the compiler.  The
+# self-hosted toolchain can rebuild documentation after the Perl stage.
+make_args = 'BOOT_CFLAGS="-march=x86-64-v3 -O2 -pipe -fno-tree-dce" STAGE1_CFLAGS="-march=x86-64-v3 -O2 -pipe -fno-tree-dce" STAGE1_CXXFLAGS="-march=x86-64-v3 -O2 -pipe -fno-tree-dce" LDFLAGS="-Wl,--as-needed" BOOT_LDFLAGS="-Wl,--as-needed" LDFLAGS_FOR_TARGET="-Wl,--as-needed" MAKEINFO=true'
 
 [build.payload]
 default = "remaining"
@@ -46,6 +65,8 @@ default = "remaining"
 name = "gcc-libs"
 description = "GCC runtime libraries other than libstdc++"
 license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+channel = "system"
+slot = "0"
 dependencies = [
     "system/glibc",
     "system/zlib-libs",
@@ -58,30 +79,54 @@ provides = [
 
 [subpackages.payload]
 files = [
-    "usr/lib/libgcc_s.so*",
-    "usr/lib/libgomp.so*",
-    "usr/lib/libatomic.so*",
-    "usr/lib/libasan.so*",
-    "usr/lib/liblsan.so*",
-    "usr/lib/libtsan.so*",
-    "usr/lib/libubsan.so*",
-    "usr/lib/libquadmath.so*",
-    "usr/lib/gcc/**/libgcc*.so*",
-    "usr/lib/gcc/**/libgomp*.so*",
-    "usr/lib/gcc/**/libatomic*.so*",
-    "usr/lib/gcc/**/libasan*.so*",
-    "usr/lib/gcc/**/liblsan*.so*",
-    "usr/lib/gcc/**/libtsan*.so*",
-    "usr/lib/gcc/**/libubsan*.so*",
-    "usr/lib/gcc/**/libquadmath*.so*",
+    "usr/lib/libgcc_s.so.*",
+    "usr/lib/libgomp.so.*",
+    "usr/lib/libatomic.so.*",
+    "usr/lib/libasan.so.*",
+    "usr/lib/liblsan.so.*",
+    "usr/lib/libtsan.so.*",
+    "usr/lib/libubsan.so.*",
+    "usr/lib/libquadmath.so.*",
+    "usr/lib/libhwasan.so.*",
+    "usr/lib/libitm.so.*",
+    "usr/lib/libssp.so.*",
+    "usr/lib64/libgcc_s.so.*",
+    "usr/lib64/libgomp.so.*",
+    "usr/lib64/libatomic.so.*",
+    "usr/lib64/libasan.so.*",
+    "usr/lib64/liblsan.so.*",
+    "usr/lib64/libtsan.so.*",
+    "usr/lib64/libubsan.so.*",
+    "usr/lib64/libquadmath.so.*",
+    "usr/lib64/libhwasan.so.*",
+    "usr/lib64/libitm.so.*",
+    "usr/lib64/libssp.so.*",
+    "usr/lib/gcc/**/libgcc*.so.*",
+    "usr/lib/gcc/**/libgomp*.so.*",
+    "usr/lib/gcc/**/libatomic*.so.*",
+    "usr/lib/gcc/**/libasan*.so.*",
+    "usr/lib/gcc/**/liblsan*.so.*",
+    "usr/lib/gcc/**/libtsan*.so.*",
+    "usr/lib/gcc/**/libubsan*.so.*",
+    "usr/lib/gcc/**/libquadmath*.so.*",
+    "usr/lib64/gcc/**/libgcc*.so.*",
+    "usr/lib64/gcc/**/libgomp*.so.*",
+    "usr/lib64/gcc/**/libatomic*.so.*",
+    "usr/lib64/gcc/**/libasan*.so.*",
+    "usr/lib64/gcc/**/liblsan*.so.*",
+    "usr/lib64/gcc/**/libtsan*.so.*",
+    "usr/lib64/gcc/**/libubsan*.so.*",
+    "usr/lib64/gcc/**/libquadmath*.so.*",
 ]
 
 [[subpackages]]
 name = "libstdc++"
 description = "GNU C++ runtime library"
 license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+channel = "system"
+slot = "0"
 dependencies = [
-    "gcc-libs:16 >= 16.2.0-1",
+    "system/gcc-libs >= 16.2.0-1",
     "system/glibc",
 ]
 provides = [
@@ -92,26 +137,46 @@ provides = [
 
 [subpackages.payload]
 files = [
-    "usr/lib/libstdc++.so*",
-    "usr/lib/gcc/**/libstdc++.so*",
+    "usr/lib/libstdc++.so.*",
+    "usr/lib64/libstdc++.so.*",
+    "usr/lib/gcc/**/libstdc++.so.*",
+    "usr/lib64/gcc/**/libstdc++.so.*",
 ]
 
 [[subpackages]]
 name = "gcc-dev"
 description = "GCC headers, plugins, static runtimes, and development metadata"
 license = "GPL-3.0-or-later WITH GCC-exception-3.1"
+channel = "gcc16"
+slot = "16"
 dependencies = [
-    "gcc-libs:16 >= 16.2.0-1",
-    "libstdc++:16 >= 16.2.0-1",
+    "system/gcc-libs >= 16.2.0-1",
+    "system/libstdc++ >= 16.2.0-1",
 ]
 provides = ["gcc-dev"]
 
 [subpackages.payload]
 files = [
+    "usr/include/**",
     "usr/lib/gcc/**/include/**",
     "usr/lib/gcc/**/include-fixed/**",
     "usr/lib/gcc/**/plugin/**",
     "usr/lib/gcc/**/*.a",
     "usr/lib/gcc/**/*.o",
-    "usr/lib/lib*.a",
+    "usr/lib/gcc/**/*.so",
+    "usr/lib64/gcc/**/include/**",
+    "usr/lib64/gcc/**/include-fixed/**",
+    "usr/lib64/gcc/**/plugin/**",
+    "usr/lib64/gcc/**/*.a",
+    "usr/lib64/gcc/**/*.o",
+    "usr/lib64/gcc/**/*.so",
+    "usr/lib/*.a",
+    "usr/lib/*.so",
+    "usr/lib64/*.a",
+    "usr/lib64/*.o",
+    "usr/lib64/*.so",
+    "usr/lib64/*.la",
+    "usr/lib64/*.spec",
+    "usr/lib64/*.modules.json",
+    "usr/lib64/*-gdb.py",
 ]

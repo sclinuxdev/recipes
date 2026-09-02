@@ -31,7 +31,13 @@ sha256 = "ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec"
 
 [build]
 inherit = ["meson"]
+compiler = "gcc"
+linker = "ld"
+cflags = "-march=x86-64-v3 -O2 -pipe"
+cxxflags = "-march=x86-64-v3 -O2 -pipe"
+ldflags = "-Wl,--as-needed"
 dependencies = [
+    "gcc16/gcc:16",
     "dbus-dev >= 1.16.2-1",
     "kmod-dev >= 34.2-1",
     "libcap-dev >= 2.78-1",
@@ -44,7 +50,6 @@ meson_args = "-Dmode=release -Dsplit-usr=false -Ddefault-hierarchy=unified -Dsys
 
 [build.payload]
 default = "remaining"
-excludes = ["usr/lib/systemd/system/*.service"]
 
 [[subpackages]]
 name = "systemd-libs"

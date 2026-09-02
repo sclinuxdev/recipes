@@ -19,9 +19,21 @@ provides = ["fakeroot"]
 [source]
 url = "https://deb.debian.org/debian/pool/main/f/fakeroot/fakeroot_2.1.4.orig.tar.xz"
 sha256 = "0822bd5a9f0cf19d2ba0546b88b0432d4d3d9917db62c57b74044ccadba06e49"
+strip_components = 1
+destination = "."
 
 [build]
-inherit = ["autotools"]
+inherit = ["custom"]
+dependencies = [
+    "system/autoconf",
+    "system/automake",
+    "system/libtool",
+    "system/make",
+    "system/pkgconf",
+]
+
+[build.args]
+install_cmd = 'cd "${SRC_DIR}"; ./bootstrap; ./configure --prefix=/usr; make -j"${JOBS}"; make DESTDIR="${DESTDIR}" install'
 
 [build.payload]
 default = "remaining"

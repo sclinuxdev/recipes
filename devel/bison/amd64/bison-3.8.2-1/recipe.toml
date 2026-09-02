@@ -21,9 +21,10 @@ destination = "."
 
 [build]
 inherit = ["autotools"]
+dependencies = ["system/m4"]
 
 [build.args]
-configure_args = "--disable-static"
+configure_args = "ac_cv_libtextstyle=no --disable-static --disable-nls --without-libtextstyle-prefix"
 
 [build.payload]
 default = "remaining"

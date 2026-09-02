@@ -22,6 +22,7 @@ destination = "."
 
 [build]
 inherit = ["autotools"]
+dependencies = ["system/gmp-dev"]
 
 [build.args]
 configure_args = "--disable-static"

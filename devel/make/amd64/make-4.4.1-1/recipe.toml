@@ -20,10 +20,16 @@ strip_components = 1
 destination = "."
 
 [build]
-inherit = ["autotools"]
+inherit = ["custom"]
 
 [build.args]
-configure_args = "--disable-static"
+install_cmd = """
+cd "${SRC_DIR}"
+./configure --prefix=/usr --disable-static
+./build.sh
+install -Dm755 make "${DESTDIR}/usr/bin/make"
+install -Dm644 doc/make.1 "${DESTDIR}/usr/share/man/man1/make.1"
+"""
 
 [build.payload]
 default = "remaining"

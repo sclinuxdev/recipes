@@ -38,7 +38,6 @@ destination = "."
 inherit = ["autotools"]
 private_library_dirs = ["lib"]
 dependencies = [
-    "gcc16/gcc:16",
     "system/bzip2-dev",
     "system/expat-dev",
     "system/gdbm-dev",
@@ -68,7 +67,7 @@ dependencies = [
 provides = ["python-libs", "so:libpython3.14.so.1.0"]
 
 [subpackages.payload]
-files = ["usr/lib/libpython3.14.so*"]
+files = ["usr/lib/libpython3.14.so.*"]
 
 [[subpackages]]
 name = "python-dev"

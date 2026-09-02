@@ -29,5 +29,11 @@ inherit = ["autotools"]
 [build.args]
 configure_args = "--enable-install-program=arch,hostname --enable-no-install-program=kill,uptime --with-openssl=yes --disable-nls"
 
+[features.force-unsafe-configure]
+default = true
+
+[features.force-unsafe-configure.env]
+FORCE_UNSAFE_CONFIGURE = "1"
+
 [build.payload]
 default = "remaining"

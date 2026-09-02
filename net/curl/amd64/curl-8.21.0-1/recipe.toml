@@ -22,10 +22,10 @@ url = "https://curl.se/download/curl-8.21.0.tar.xz"
 sha256 = "aa1b66a70eace83dc624508745646c08ae561de512ab403adffb93ac87fc72e6"
 
 [build]
-inherit = ["meson"]
+inherit = ["autotools"]
 
 [build.args]
-meson_args = "-Dssl=openssl -Dzlib=enabled -Dzstd=enabled -Dhttp2=disabled -Dldap=disabled -Dtelnet=disabled"
+configure_args = "--with-openssl --with-zlib --with-zstd --without-nghttp2 --disable-ldap --disable-telnet"
 
 [build.payload]
 default = "remaining"
@@ -72,11 +72,18 @@ default = true
 dependencies = ["openssl-libs >= 4.0.1-1"]
 build_dependencies = ["openssl-dev >= 4.0.1-1"]
 [features.ssl.args]
-meson_args = "-Dssl=openssl"
+configure_args = "--with-openssl"
 
 [features.zstd]
 default = true
 dependencies = ["zstd-libs >= 1.5.7-1"]
 build_dependencies = ["zstd-dev >= 1.5.7-1"]
 [features.zstd.args]
-meson_args = "-Dzstd=enabled"
+configure_args = "--with-zstd"
+
+[features.zlib]
+default = true
+dependencies = ["zlib-libs >= 1.3.2-1"]
+build_dependencies = ["zlib-dev >= 1.3.2-1"]
+[features.zlib.args]
+configure_args = "--with-zlib"

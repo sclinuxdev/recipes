@@ -1,0 +1,2429 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index bbf88b9b1da78cfa33613518b3e373f2d3484761..18d1a27eaf187001ca3bb45ffcdcfedcddce1eed 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1453,6 +1453,7 @@ dependencies = [
+  "toml",
+  "tracing",
+  "tracing-subscriber",
++ "walkdir",
+ ]
+ 
+ [[package]]
+@@ -1532,6 +1533,7 @@ dependencies = [
+  "tokio",
+  "toml",
+  "tracing",
++ "walkdir",
+  "zstd",
+ ]
+ 
+@@ -1583,6 +1585,7 @@ dependencies = [
+  "tempfile",
+  "tokio",
+  "toml",
++ "walkdir",
+  "zstd",
+ ]
+ 
+diff --git a/Cargo.toml b/Cargo.toml
+index 1d1ad0b86ba7995167ff5a49efaf97a59dca4f7a..bd6988c86f1684165511e256c0ff892b5c02e47c 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -51,7 +51,7 @@ ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+ sha2 = "0.10"
+ hex = "0.4"
+ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+-tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "fs", "io-util"] }
++tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "fs", "io-util", "time"] }
+ tempfile = "3.16"
+ glob = "0.3"
+ walkdir = "2.5"
+diff --git a/crates/sage-archive/src/lib.rs b/crates/sage-archive/src/lib.rs
+index d4d611731a72130daa711394a2efbb9746672294..7eb18139f471a3ecae4baa010607cf4d8df02756 100644
+--- a/crates/sage-archive/src/lib.rs
++++ b/crates/sage-archive/src/lib.rs
+@@ -3,6 +3,8 @@
+ use nix::errno::Errno;
+ use nix::fcntl::{open, openat, renameat, OFlag};
+ use nix::sys::stat::{fchmod, mkdirat, Mode};
++use nix::unistd::{linkat, LinkatFlags};
++use serde::Deserialize;
+ use sha2::{Digest, Sha256};
+ use std::collections::BTreeMap;
+ use std::fs::{self, File};
+@@ -57,6 +59,7 @@ pub struct PackageInspection {
+     pub manifest: PackageManifest,
+     pub files: Vec<FileRecord>,
+     pub optional: BTreeMap<String, Vec<u8>>,
++    pub legacy: bool,
+ }
+ 
+ /// Reads only the leading metadata section and stops at the first `data/` entry.
+@@ -81,12 +84,7 @@ pub fn inspect_package(path: impl AsRef<Path>) -> Result<PackageInspection, Arch
+     let manifest_bytes = metadata
+         .remove(".METADATA/manifest.toml")
+         .ok_or_else(|| ArchiveError::InvalidMetadata("missing manifest.toml".into()))?;
+-    let manifest: PackageManifest = toml::from_str(
+-        std::str::from_utf8(&manifest_bytes)
+-            .map_err(|_| ArchiveError::InvalidMetadata("manifest is not UTF-8".into()))?,
+-    )?;
+-    sage_core::validate_schema(manifest.schema_version)
+-        .map_err(|error| ArchiveError::InvalidMetadata(error.to_string()))?;
++    let (manifest, legacy) = parse_manifest(&manifest_bytes)?;
+     sage_core::validate_spdx_expression(&manifest.license)
+         .map_err(|error| ArchiveError::InvalidMetadata(error.to_string()))?;
+     let index = metadata
+@@ -97,9 +95,195 @@ pub fn inspect_package(path: impl AsRef<Path>) -> Result<PackageInspection, Arch
+         manifest,
+         files,
+         optional: metadata,
++        legacy,
+     })
+ }
+ 
++/// Reads current manifests and the schema-v1/v2 package records emitted by
++/// older Sage builders. Legacy records used TOML strings for `release` and
++/// called the amd64 architecture `x86_64`; normalizing them here lets a fresh
++/// Sage bootstrap consume an explicitly preserved seed pool without treating
++/// that pool as current installed state.
++fn parse_manifest(bytes: &[u8]) -> Result<(PackageManifest, bool), ArchiveError> {
++    let text = std::str::from_utf8(bytes)
++        .map_err(|_| ArchiveError::InvalidMetadata("manifest is not UTF-8".into()))?;
++    if let Ok(manifest) = toml::from_str::<PackageManifest>(text) {
++        sage_core::validate_schema(manifest.schema_version)
++            .map_err(|error| ArchiveError::InvalidMetadata(error.to_string()))?;
++        sage_core::validate_spdx_expression(&manifest.license)
++            .map_err(|error| ArchiveError::InvalidMetadata(error.to_string()))?;
++        return Ok((manifest, false));
++    }
++
++    // Sage 0.3 embedded a second, attestation-only package table in a
++    // triple-quoted field. Parse the first package record on its own so the
++    // old attestation cannot make the TOML document appear duplicated.
++    let legacy_text = text
++        .split_once("\nattestation_toml = \"\"\"")
++        .map_or(text, |(prefix, _)| prefix);
++    let legacy = match toml::from_str::<LegacyPackage>(legacy_text) {
++        Ok(package) => package,
++        Err(_) => {
++            let envelope = toml::from_str::<LegacyEnvelope>(legacy_text)
++                .map_err(|error| ArchiveError::InvalidMetadata(error.to_string()))?;
++            let mut package = envelope.package;
++            let mut dependencies = envelope.dependencies;
++            let mut provides = envelope.provides;
++            let mut conflicts = envelope.conflicts;
++            for producer in envelope.build_producers {
++                if dependencies.is_empty() {
++                    dependencies = producer.dependencies;
++                }
++                if provides.is_empty() {
++                    provides = producer.provides;
++                }
++                if conflicts.is_empty() {
++                    conflicts = producer.conflicts;
++                }
++            }
++            // Sage 0.3 stored the identity in `[package]` but emitted the
++            // dependency/provider arrays in the build-producer table. Merge
++            // those arrays so preserved seed packages remain usable.
++            if package.dependencies.is_empty() {
++                package.dependencies = dependencies;
++            }
++            if package.provides.is_empty() {
++                package.provides = provides;
++            }
++            if package.conflicts.is_empty() {
++                package.conflicts = conflicts;
++            }
++            package
++        }
++    };
++    let release = legacy
++        .release
++        .as_u32()
++        .ok_or_else(|| ArchiveError::InvalidMetadata("invalid package release".into()))?;
++    let dependencies = legacy
++        .dependencies
++        .into_iter()
++        .map(|value| {
++            value.parse().map_err(|error: sage_core::CoreError| {
++                ArchiveError::InvalidMetadata(error.to_string())
++            })
++        })
++        .collect::<Result<Vec<_>, _>>()?;
++    let license = if sage_core::validate_spdx_expression(&legacy.license).is_ok() {
++        legacy.license
++    } else {
++        // Sage 0.3 accepted SPDX-like project labels such as `bzip2-1.0.6`
++        // and `Public-domain`. Keep those archives usable as bootstrap input
++        // without allowing non-SPDX text into the current metadata model.
++        "LicenseRef-Sage-Legacy".into()
++    };
++    let channel = legacy.channel.clone();
++    let slot = legacy.slot.or_else(|| match channel.as_str() {
++        "toolchain/gcc:16" => Some("16".into()),
++        "toolchain/llvm:22" => Some("22.1.8".into()),
++        "runtime/python:3.14" => Some("3.14".into()),
++        _ => None,
++    });
++    let mut provides = legacy.provides;
++    // The preserved Sage 0.3 pool used `zlib` for the runtime package; the
++    // current recipe graph names the same ABI provider `zlib-libs`.
++    if legacy.name == "zlib" && !provides.iter().any(|value| value == "zlib-libs") {
++        provides.push("zlib-libs".into());
++    }
++    Ok((
++        PackageManifest {
++            schema_version: sage_core::SCHEMA_VERSION,
++            name: legacy.name,
++            slot: slot.unwrap_or_else(|| sage_core::DEFAULT_SLOT.into()),
++            version: legacy.version,
++            release,
++            epoch: legacy.epoch,
++            arch: if legacy.arch == "x86_64" {
++                "amd64".into()
++            } else {
++                legacy.arch
++            },
++            channel,
++            description: legacy.description,
++            license,
++            dependencies,
++            provides,
++            conflicts: legacy.conflicts,
++            features: legacy.features,
++            installed_size: legacy.installed_size,
++            build_time: legacy.build_time,
++            managed_build_tools: Vec::new(),
++        },
++        true,
++    ))
++}
++
++#[derive(Debug, Deserialize)]
++struct LegacyPackage {
++    name: String,
++    version: String,
++    release: LegacyNumber,
++    #[serde(default)]
++    epoch: u32,
++    #[serde(default)]
++    slot: Option<String>,
++    arch: String,
++    channel: String,
++    description: String,
++    license: String,
++    #[serde(default)]
++    dependencies: Vec<String>,
++    #[serde(default)]
++    provides: Vec<String>,
++    #[serde(default)]
++    conflicts: Vec<String>,
++    #[serde(default)]
++    features: Vec<String>,
++    #[serde(default)]
++    installed_size: u64,
++    #[serde(default)]
++    build_time: u64,
++}
++
++#[derive(Debug, Deserialize)]
++struct LegacyEnvelope {
++    package: LegacyPackage,
++    #[serde(default)]
++    dependencies: Vec<String>,
++    #[serde(default)]
++    provides: Vec<String>,
++    #[serde(default)]
++    conflicts: Vec<String>,
++    #[serde(default)]
++    build_producers: Vec<LegacyBuildProducer>,
++}
++
++#[derive(Debug, Deserialize, Default)]
++struct LegacyBuildProducer {
++    #[serde(default)]
++    dependencies: Vec<String>,
++    #[serde(default)]
++    provides: Vec<String>,
++    #[serde(default)]
++    conflicts: Vec<String>,
++}
++
++#[derive(Debug, Deserialize)]
++#[serde(untagged)]
++enum LegacyNumber {
++    Integer(u32),
++    String(String),
++}
++
++impl LegacyNumber {
++    fn as_u32(&self) -> Option<u32> {
++        match self {
++            Self::Integer(value) => Some(*value),
++            Self::String(value) => value.parse().ok(),
++        }
++    }
++}
++
+ /// Parses the compact TSV index while validating all paths and hashes.
+ pub fn parse_file_index(bytes: &[u8]) -> Result<Vec<FileRecord>, ArchiveError> {
+     let text = std::str::from_utf8(bytes)
+@@ -108,32 +292,116 @@ pub fn parse_file_index(bytes: &[u8]) -> Result<Vec<FileRecord>, ArchiveError> {
+         .filter(|line| !line.is_empty() && !line.starts_with('#'))
+         .map(|line| {
+             let mut fields = line.split('\t');
+-            let path = clean_archive_path(Path::new(fields.next().unwrap_or_default()))?;
+-            let mode = u32::from_str_radix(fields.next().unwrap_or_default(), 8)
+-                .map_err(|_| ArchiveError::InvalidMetadata(format!("invalid mode in '{line}'")))?;
+-            let size =
+-                fields.next().unwrap_or_default().parse().map_err(|_| {
++            let first = fields.next().unwrap_or_default();
++            let rest: Vec<_> = fields.collect();
++            if matches!(first, "dir" | "file" | "link" | "symlink" | "hardlink") && rest.len() != 3
++            {
++                parse_legacy_file_record(first, rest, line)
++            } else {
++                let mut fields = rest.into_iter();
++                let path = clean_archive_path(Path::new(first))?;
++                let mode =
++                    u32::from_str_radix(fields.next().unwrap_or_default(), 8).map_err(|_| {
++                        ArchiveError::InvalidMetadata(format!("invalid mode in '{line}'"))
++                    })?;
++                let size = fields.next().unwrap_or_default().parse().map_err(|_| {
+                     ArchiveError::InvalidMetadata(format!("invalid size in '{line}'"))
+                 })?;
+-            let sha256 = fields.next().unwrap_or_default();
+-            if fields.next().is_some()
+-                || sha256.len() != 64
+-                || !sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
+-            {
+-                return Err(ArchiveError::InvalidMetadata(format!(
+-                    "invalid SHA-256 in '{line}'"
+-                )));
++                let sha256 = fields.next().unwrap_or_default();
++                if fields.next().is_some()
++                    || sha256.len() != 64
++                    || !sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
++                {
++                    return Err(ArchiveError::InvalidMetadata(format!(
++                        "invalid SHA-256 in '{line}'"
++                    )));
++                }
++                Ok(Some(FileRecord {
++                    path,
++                    mode,
++                    size,
++                    sha256: sha256.to_ascii_lowercase(),
++                }))
+             }
+-            Ok(FileRecord {
+-                path,
+-                mode,
+-                size,
+-                sha256: sha256.to_ascii_lowercase(),
+-            })
+         })
++        .filter_map(|record| record.transpose())
+         .collect()
+ }
+ 
++/// Converts the Sage 0.3 `files.idx` row layout to the current file record.
++/// Directory rows are deliberately omitted because tar directory entries are
++/// created while extracting the indexed payload files.
++fn parse_legacy_file_record(
++    kind: &str,
++    fields: Vec<&str>,
++    line: &str,
++) -> Result<Option<FileRecord>, ArchiveError> {
++    if kind == "dir" {
++        return Ok(None);
++    }
++    let (mode, size, hash, path, target) = match fields.as_slice() {
++        // Sage 0.3 v1: mode, size, sha256, path, target
++        [mode, size, hash, path, target] => (*mode, *size, *hash, *path, *target),
++        // Sage 0.3 v2: mode, uid, gid, caps, size, sha256, path, target
++        [mode, _uid, _gid, _caps, size, hash, path, target] => {
++            (*mode, *size, *hash, *path, *target)
++        }
++        _ => {
++            return Err(ArchiveError::InvalidMetadata(format!(
++                "invalid legacy files.idx row '{line}'"
++            )))
++        }
++    };
++    let path = clean_archive_path(Path::new(path))?;
++    let mode = u32::from_str_radix(mode, 8)
++        .map_err(|_| ArchiveError::InvalidMetadata(format!("invalid mode in '{line}'")))?;
++    if kind == "file" {
++        let size = size
++            .parse()
++            .map_err(|_| ArchiveError::InvalidMetadata(format!("invalid size in '{line}'")))?;
++        let sha256 = if hash == "-" && size == 0 {
++            hex::encode(Sha256::digest([]))
++        } else if hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit()) {
++            hash.to_ascii_lowercase()
++        } else {
++            return Err(ArchiveError::InvalidMetadata(format!(
++                "invalid SHA-256 in '{line}'"
++            )));
++        };
++        return Ok(Some(FileRecord {
++            path,
++            mode,
++            size,
++            sha256,
++        }));
++    }
++    if kind == "hardlink" {
++        if target == "-" || target.is_empty() {
++            return Err(ArchiveError::InvalidMetadata(format!(
++                "unsupported legacy files.idx row '{line}'"
++            )));
++        }
++        return Ok(Some(FileRecord {
++            path,
++            mode,
++            size: 0,
++            sha256: String::new(),
++        }));
++    }
++    if !matches!(kind, "link" | "symlink") || target == "-" || target.is_empty() {
++        return Err(ArchiveError::InvalidMetadata(format!(
++            "unsupported legacy files.idx row '{line}'"
++        )));
++    }
++    let target_bytes = target.as_bytes();
++    Ok(Some(FileRecord {
++        path,
++        mode,
++        size: target_bytes.len() as u64,
++        sha256: hex::encode(Sha256::digest(target_bytes)),
++    }))
++}
++
+ /// Builds a sorted integrity index for a staged payload tree.
+ pub fn build_file_index(root: &Path) -> Result<Vec<FileRecord>, ArchiveError> {
+     fn visit(
+@@ -249,6 +517,9 @@ fn validate_metadata_path(path: &Path) -> Result<(), ArchiveError> {
+         ".METADATA/triggers.toml",
+         ".METADATA/alternatives.toml",
+         ".METADATA/sysusers.toml",
++        // Read-only provenance emitted by Sage 0.3 seed archives. It is not
++        // consumed as lifecycle metadata and is never executed.
++        ".METADATA/build-attestation.toml",
+     ];
+     if ALLOWED.iter().any(|allowed| path == Path::new(allowed)) {
+         Ok(())
+@@ -323,7 +594,18 @@ pub fn extract_package(
+     sysroot: impl AsRef<Path>,
+     index: &[FileRecord],
+ ) -> Result<Vec<PathBuf>, ArchiveError> {
+-    Ok(extract_package_with_config(package, sysroot, index, &BTreeMap::new())?.written)
++    Ok(extract_package_with_options(package, sysroot, index, &BTreeMap::new(), false)?.written)
++}
++
++/// Extracts a preserved Sage 0.3 archive. Those archives may contain an
++/// absolute symlink into a declared isolated toolchain prefix; current
++/// schema-v1 packages continue to reject absolute links.
++pub fn extract_legacy_package(
++    package: impl AsRef<Path>,
++    sysroot: impl AsRef<Path>,
++    index: &[FileRecord],
++) -> Result<Vec<PathBuf>, ArchiveError> {
++    Ok(extract_package_with_options(package, sysroot, index, &BTreeMap::new(), true)?.written)
+ }
+ 
+ /// Result of extraction including preserved and review-required configuration files.
+@@ -340,6 +622,16 @@ pub fn extract_package_with_config(
+     sysroot: impl AsRef<Path>,
+     index: &[FileRecord],
+     previous_hashes: &BTreeMap<String, String>,
++) -> Result<ExtractionReport, ArchiveError> {
++    extract_package_with_options(package, sysroot, index, previous_hashes, false)
++}
++
++fn extract_package_with_options(
++    package: impl AsRef<Path>,
++    sysroot: impl AsRef<Path>,
++    index: &[FileRecord],
++    previous_hashes: &BTreeMap<String, String>,
++    allow_legacy_absolute_links: bool,
+ ) -> Result<ExtractionReport, ArchiveError> {
+     let expected: BTreeMap<_, _> = index
+         .iter()
+@@ -355,6 +647,7 @@ pub fn extract_package_with_config(
+     let decoder = zstd::Decoder::new(File::open(package)?)?;
+     let mut archive = tar::Archive::new(decoder);
+     let mut report = ExtractionReport::default();
++    let mut pending_hardlinks = Vec::new();
+     let mut seen = 0;
+     for entry in archive.entries()? {
+         let mut entry = entry?;
+@@ -385,11 +678,37 @@ pub fn extract_package_with_config(
+             let target = entry
+                 .link_name()?
+                 .ok_or_else(|| ArchiveError::InvalidMetadata("symlink has no target".into()))?;
+-            write_verified_symlink(&root, relative, record, &target)?;
++            write_verified_symlink(
++                &root,
++                relative,
++                record,
++                &target,
++                allow_legacy_absolute_links,
++            )?;
+             report.written.push(relative.to_path_buf());
+             seen += 1;
+             continue;
+         }
++        if entry.header().entry_type().is_hard_link() {
++            let record = expected.get(relative).ok_or_else(|| {
++                ArchiveError::InvalidMetadata(format!("unindexed hard link {}", relative.display()))
++            })?;
++            let target = entry
++                .link_name()?
++                .ok_or_else(|| ArchiveError::InvalidMetadata("hard link has no target".into()))?;
++            let target = target
++                .strip_prefix("data")
++                .map_err(|_| ArchiveError::UnsafePath(target.display().to_string()))?;
++            // Some preserved Sage 0.3 archives emit hard-link entries before
++            // the regular entry they point at. Defer creation until all
++            // regular files have been verified and written.
++            pending_hardlinks.push((
++                relative.to_path_buf(),
++                (*record).clone(),
++                target.to_path_buf(),
++            ));
++            continue;
++        }
+         if !entry.header().entry_type().is_file() {
+             return Err(ArchiveError::UnsafePath(format!(
+                 "unsupported entry {}",
+@@ -418,6 +737,11 @@ pub fn extract_package_with_config(
+         }
+         seen += 1;
+     }
++    for (relative, record, target) in pending_hardlinks {
++        write_verified_hardlink(&root, &relative, &record, &target)?;
++        report.written.push(relative);
++        seen += 1;
++    }
+     if seen != expected.len() {
+         return Err(ArchiveError::InvalidMetadata(
+             "archive payload does not match files.idx".into(),
+@@ -431,8 +755,9 @@ fn write_verified_symlink(
+     path: &Path,
+     record: &FileRecord,
+     target: &Path,
++    allow_legacy_absolute_links: bool,
+ ) -> Result<(), ArchiveError> {
+-    validate_link_target(path, target)?;
++    validate_link_target(path, target, allow_legacy_absolute_links)?;
+     let bytes = target.as_os_str().as_encoded_bytes();
+     let actual = hex::encode(Sha256::digest(bytes));
+     if bytes.len() as u64 != record.size || actual != record.sha256 {
+@@ -467,10 +792,18 @@ fn write_verified_symlink(
+     Ok(())
+ }
+ 
+-fn validate_link_target(link: &Path, target: &Path) -> Result<(), ArchiveError> {
+-    if target.is_absolute() {
++fn validate_link_target(
++    link: &Path,
++    target: &Path,
++    allow_legacy_absolute_links: bool,
++) -> Result<(), ArchiveError> {
++    if target.is_absolute() && !(allow_legacy_absolute_links && target.starts_with("/opt/channels"))
++    {
+         return Err(ArchiveError::UnsafePath(target.display().to_string()));
+     }
++    if target.is_absolute() {
++        return Ok(());
++    }
+     let mut depth = link
+         .parent()
+         .map_or(0, |parent| parent.components().count());
+@@ -485,6 +818,37 @@ fn validate_link_target(link: &Path, target: &Path) -> Result<(), ArchiveError>
+     Ok(())
+ }
+ 
++fn write_verified_hardlink(
++    root: &OwnedFd,
++    path: &Path,
++    _record: &FileRecord,
++    target: &Path,
++) -> Result<(), ArchiveError> {
++    if target.as_os_str().is_empty()
++        || target
++            .components()
++            .any(|component| matches!(component, Component::ParentDir | Component::RootDir))
++    {
++        return Err(ArchiveError::UnsafePath(target.display().to_string()));
++    }
++    let source_dir = ensure_directory(root, target.parent().unwrap_or(Path::new("")))?;
++    let destination_dir = ensure_directory(root, path.parent().unwrap_or(Path::new("")))?;
++    let source_name = target
++        .file_name()
++        .ok_or_else(|| ArchiveError::UnsafePath(target.display().to_string()))?;
++    let destination_name = path
++        .file_name()
++        .ok_or_else(|| ArchiveError::UnsafePath(path.display().to_string()))?;
++    linkat(
++        Some(source_dir.as_raw_fd()),
++        source_name,
++        Some(destination_dir.as_raw_fd()),
++        destination_name,
++        LinkatFlags::NoSymlinkFollow,
++    )?;
++    Ok(())
++}
++
+ enum WriteOutcome {
+     Written,
+     Preserved,
+diff --git a/crates/sage-build/src/execution.rs b/crates/sage-build/src/execution.rs
+index 384e769a1e60da2e2ad6285c71a7a33af1e46597..74fa38711d30356dca04b9d354964292c4a5a584 100644
+--- a/crates/sage-build/src/execution.rs
++++ b/crates/sage-build/src/execution.rs
+@@ -12,6 +12,9 @@ pub struct BuildConfig {
+     pub cxx: String,
+     pub linker: String,
+     pub rustc: String,
++    /// Optional GCC installation used by Clang for crt/libgcc discovery.
++    #[serde(default)]
++    pub gcc_toolchain: Option<PathBuf>,
+     #[serde(default = "default_patchelf")]
+     pub patchelf: PathBuf,
+     #[serde(default)]
+@@ -39,6 +42,18 @@ pub struct BuildConfig {
+     /// into the ephemeral toolchain and never registered as host state.
+     #[serde(default)]
+     pub sandbox_dependencies: Vec<String>,
++    /// Host-provided build utilities exposed only under the private sandbox
++    /// build directory when the target sysroot does not provide them.
++    #[serde(default)]
++    pub sandbox_host_tools: Vec<PathBuf>,
++    /// Shared libraries needed by `sandbox_host_tools`, also exposed only
++    /// under the private sandbox build directory.
++    #[serde(default)]
++    pub sandbox_host_libraries: Vec<PathBuf>,
++    /// Host libraries that must be loaded before target libraries with the
++    /// same SONAME (for example, a host-only OpenSSL ABI used by rsync).
++    #[serde(default)]
++    pub sandbox_host_preload: Vec<PathBuf>,
+     /// Native machine triple used as the GNU build/host default.
+     #[serde(default)]
+     pub build: String,
+@@ -99,6 +114,19 @@ impl BuildConfig {
+                 validate_tool_name(tool)?;
+             }
+         }
++        for path in config
++            .sandbox_host_tools
++            .iter()
++            .chain(config.sandbox_host_libraries.iter())
++            .chain(config.sandbox_host_preload.iter())
++        {
++            if !path.is_absolute() || path.file_name().is_none() || !path.is_file() {
++                return Err(BuildError::InvalidSpec(format!(
++                    "sandbox host path must be an existing absolute file: {}",
++                    path.display()
++                )));
++            }
++        }
+         Ok(config)
+     }
+ 
+@@ -221,7 +249,7 @@ pub fn compose_runner(
+     }
+     expanded_variables.extend(variables.clone());
+     let mut script = String::from(
+-        "#!/usr/bin/bash\nset -euo pipefail\ntrap 'printf >&2 \"sage-build: line %s failed\\n\" \"$LINENO\"' ERR\n",
++        "#!/usr/bin/bash\nset -euo pipefail\nulimit -s unlimited 2>/dev/null || true\ntrap 'printf >&2 \"sage-build: line %s failed\\n\" \"$LINENO\"' ERR\n",
+     );
+     for (name, value) in env {
+         validate_shell_name(&name)?;
+@@ -377,10 +405,24 @@ impl<'a> SandboxRunner<'a> {
+         if allow_network {
+             command.arg("--share-net");
+         }
+-        command
+-            .args(["--ro-bind"])
+-            .arg(&self.config.sysroot)
+-            .arg("/");
++        // Start with a writable tmpfs root. Binding the complete host sysroot
++        // read-only first leaves no place for bwrap to create /source when the
++        // host root is itself read-only (common in containers). Only the
++        // system directories needed by ordinary programs are imported from the
++        // configured sysroot; build state remains confined to explicit binds.
++        command.args(["--tmpfs", "/"]);
++        for directory in ["bin", "etc", "lib", "lib64", "opt", "sbin", "sys", "usr", "var"] {
++            let source = self.config.sysroot.join(directory);
++            if source.exists() {
++                command
++                    .args(["--ro-bind"])
++                    .arg(source)
++                    .arg(format!("/{directory}"));
++            }
++        }
++        for mountpoint in ["source", "build", "dest", "run"] {
++            command.args(["--dir", &format!("/{mountpoint}")]);
++        }
+         command.args(["--bind"]).arg(&paths.source).arg("/source");
+         // Overlay immutable inputs after the writable source bind. An archive may
+         // populate the source tree, but it cannot replace later distfiles, the
+@@ -396,6 +438,40 @@ impl<'a> SandboxRunner<'a> {
+                 .arg("/source/.patches");
+         }
+         command.args(["--bind"]).arg(&paths.build).arg("/build");
++        let host_tools: Vec<_> = self
++            .config
++            .sandbox_host_tools
++            .iter()
++            .filter(|tool| {
++                tool.is_file()
++                    && tool
++                        .file_name()
++                        .map(|name| !self.config.sysroot.join("usr/bin").join(name).exists())
++                        .unwrap_or(false)
++            })
++            .collect();
++        if !host_tools.is_empty() {
++            command.args(["--dir", "/build/.sage-host-tools"]);
++            for tool in host_tools {
++                let name = tool.file_name().expect("validated host tool filename");
++                command
++                    .args(["--ro-bind"])
++                    .arg(tool)
++                    .arg(PathBuf::from("/build/.sage-host-tools").join(name));
++            }
++        }
++        if !self.config.sandbox_host_libraries.is_empty() {
++            command.args(["--dir", "/build/.sage-host-libs"]);
++            for library in &self.config.sandbox_host_libraries {
++                let name = library
++                    .file_name()
++                    .expect("validated host library filename");
++                command
++                    .args(["--ro-bind"])
++                    .arg(library)
++                    .arg(PathBuf::from("/build/.sage-host-libs").join(name));
++            }
++        }
+         command.args(["--bind"]).arg(&paths.destdir).arg("/dest");
+         command
+             .args(["--ro-bind"])
+@@ -406,10 +482,6 @@ impl<'a> SandboxRunner<'a> {
+         ]);
+         if let Some(toolchain) = &paths.toolchain {
+             command.args(["--ro-bind"]).arg(toolchain).arg("/toolchain");
+-            command
+-                .args(["--ro-bind"])
+-                .arg(toolchain.join("usr"))
+-                .arg("/usr");
+         }
+         if let Some(target_sysroot) = &paths.target_sysroot {
+             command
+@@ -465,6 +537,13 @@ impl<'a> SandboxRunner<'a> {
+             false,
+             true,
+         )?;
++        for (name, role, tool) in [
++            ("gcc", "cc", &self.config.cc),
++            ("g++", "cxx", &self.config.cxx),
++            ("c++", "cxx", &self.config.cxx),
++        ] {
++            self.write_tool_wrapper(&directory.join(name), role, tool, true, false)?;
++        }
+         for (name, role, tool, driver, rustc) in [
+             (&self.config.cc, "cc", &self.config.cc, true, false),
+             (&self.config.cxx, "cxx", &self.config.cxx, true, false),
+@@ -485,17 +564,79 @@ impl<'a> SandboxRunner<'a> {
+         rustc: bool,
+     ) -> Result<(), BuildError> {
+         validate_tool_name(tool)?;
+-        let search_path = "/usr/bin";
++        let search_path = "/toolchain/usr/bin:/toolchain/opt/channels/gcc/16/bin:/usr/bin";
++        let gcc_toolchain = self
++            .config
++            .gcc_toolchain
++            .as_ref()
++            .filter(|_| compiler_driver && tool_family(tool) == "clang")
++            .map(|path| format!(" --gcc-toolchain={}", shell_quote(&path.to_string_lossy())))
++            .unwrap_or_default();
++        let gcc_prefix = if compiler_driver && tool_family(tool) == "gcc" {
++            " -B/build/.sage-tools"
++        } else {
++            ""
++        };
++        // Clang's GCC-toolchain discovery can suppress the normal host
++        // include search path.  Keep the target's libc headers visible even
++        // for nested configure/make sub-builds that overwrite CXXFLAGS.  The
++        // path must be appended after the C++ directories so include_next in
++        // libstdc++ headers can reach libc's headers.
++        let clang_system_include = if compiler_driver && tool_family(tool) == "clang" {
++            " -idirafter /toolchain/usr/include -idirafter /toolchain/opt/channels/gcc/16/include -idirafter /usr/include"
++        } else {
++            ""
++        };
++        let driver_linker = if compiler_driver
++            && matches!(tool_family(tool).as_str(), "clang" | "gcc")
++            // GCC rejects `-fuse-ld=ld`; its default driver linker is GNU ld.
++            // Keeping the argument absent here still selects GNU ld while
++            // allowing explicit mold/lld selections to be enforced.
++            && !(tool_family(tool) == "gcc" && self.config.linker == "ld")
++        {
++            shell_quote(&format!("-fuse-ld={}", self.config.linker))
++        } else {
++            String::new()
++        };
+         let mut script = format!(
+-            "#!/usr/bin/bash\nset -euo pipefail\nresolved=$(PATH={} command -v -- {})\nprintf '%s\\t%s\\n' {} \"$resolved\" >> /build/.sage-tool-usage\n",
++            "#!/usr/bin/bash\nset -euo pipefail\nresolved=$(PATH={} command -v -- {})\nversion=$(\"$resolved\" --version 2>/dev/null | sed -n '1p')\n[ -n \"$version\" ] || {{ echo \"sage-build: failed to read $resolved version\" >&2; exit 1; }}\nprintf '%s\\t%s\\t%s\\n' {} \"$resolved\" \"$version\" >> /build/.sage-tool-usage\n",
+             shell_quote(search_path),
+             shell_quote(tool),
+             shell_quote(role),
+         );
+         if compiler_driver {
+-            script.push_str("exec \"$resolved\" -B/build/.sage-tools \"$@\"\n");
++            script.push_str("args=(\"$@\")\n");
++            if tool_family(tool) == "clang" {
++                // CPATH-family variables are searched before Clang's normal
++                // system directories.  That breaks libstdc++'s include_next
++                // when a nested build supplies its own -I directory.
++                script.push_str("unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH\n");
++                // Nested build systems sometimes inject their own linker
++                // choice.  The Sage build configuration is authoritative.
++                script.push_str(
++                    "args=()\nfor arg in \"$@\"; do\n    case \"$arg\" in\n        -fuse-ld=*) ;;\n        *) args+=(\"$arg\") ;;\n    esac\ndone\n",
++                );
++                // These options are wrapper policy rather than package
++                // source flags.  Do not let -Werror turn a compile-only
++                // probe into a false failure because a linker/toolchain
++                // option is not consumed by that invocation.
++                script.push_str("args+=(\"-Wno-unused-command-line-argument\")\n");
++                script.push_str(&format!(
++                    "compile_only=0\nfor arg in \"${{args[@]}}\"; do\n    case \"$arg\" in\n        -c|-S|-E|-fsyntax-only) compile_only=1 ;;\n    esac\ndone\nif [ \"$compile_only\" -eq 0 ]; then args+=({driver_linker}); fi\n",
++                ));
++            } else if tool_family(tool) == "gcc" {
++                script.push_str(&format!(
++                    "compile_only=0\nfor arg in \"${{args[@]}}\"; do\n    case \"$arg\" in\n        -c|-S|-E|-fsyntax-only) compile_only=1 ;;\n    esac\ndone\nif [ \"$compile_only\" -eq 0 ]; then args+=({driver_linker}); fi\n",
++                ));
++            }
++            script.push_str(&format!(
++                "exec \"$resolved\"{}{}{} \"${{args[@]}}\"\n",
++                gcc_toolchain, gcc_prefix, clang_system_include
++            ));
+         } else if rustc {
+-            script.push_str("exec \"$resolved\" -C linker=/build/.sage-tools/ld \"$@\"\n");
++            // Let Rust link through the configured Clang driver so its final
++            // links use the same mold policy as C/C++ packages.
++            script.push_str("exec \"$resolved\" -C linker=/build/.sage-tools/cc \"$@\"\n");
+         } else {
+             script.push_str("exec \"$resolved\" \"$@\"\n");
+         }
+@@ -508,43 +649,53 @@ impl<'a> SandboxRunner<'a> {
+         &self,
+         paths: &SandboxPaths,
+     ) -> Result<Vec<sage_archive::ManagedBuildTool>, BuildError> {
+-        let log = fs::read_to_string(paths.build.join(".sage-tool-usage"))?;
++        let usage_path = paths.build.join(".sage-tool-usage");
++        let log = fs::read_to_string(&usage_path).map_err(|error| {
++            BuildError::InvalidSpec(format!(
++                "failed to read managed build-tool usage {}: {error}",
++                usage_path.display()
++            ))
++        })?;
+         let mut observed = BTreeMap::new();
+         for line in log.lines() {
+-            let Some((role, executable)) = line.split_once('\t') else {
++            let mut fields = line.splitn(3, '\t');
++            let Some(role) = fields.next() else {
+                 return Err(BuildError::InvalidSpec(
+                     "malformed managed build-tool observation".into(),
+                 ));
+             };
++            let Some(executable) = fields.next() else {
++                return Err(BuildError::InvalidSpec(
++                    "malformed managed build-tool observation".into(),
++                ));
++            };
++            let Some(version) = fields.next() else {
++                return Err(BuildError::InvalidSpec(
++                    "managed build-tool observation has no version".into(),
++                ));
++            };
+             if !matches!(role, "cc" | "cxx" | "linker" | "rustc") || executable.is_empty() {
+                 return Err(BuildError::InvalidSpec(
+                     "unknown managed build-tool observation".into(),
+                 ));
+             }
++            if version.is_empty() {
++                return Err(BuildError::InvalidSpec(
++                    "managed build-tool observation has an empty version".into(),
++                ));
++            }
+             observed
+                 .entry(role.to_string())
+-                .or_insert_with(|| executable.to_string());
++                .or_insert_with(|| (executable.to_string(), version.to_string()));
+         }
+         observed
+             .into_iter()
+-            .map(|(role, executable)| {
++            .map(|(role, (executable, version))| {
+                 let host_path = self.host_tool_path(paths, &executable)?;
+-                let output = Command::new(&host_path).arg("--version").output()?;
+-                if !output.status.success() {
+-                    return Err(BuildError::InvalidSpec(format!(
+-                        "failed to probe observed build tool {executable}"
+-                    )));
+-                }
+-                let version_output = String::from_utf8_lossy(&output.stdout);
+-                let version = version_output
+-                    .lines()
+-                    .next()
+-                    .unwrap_or_default()
+-                    .trim()
+-                    .to_string();
+-                if version.is_empty() {
++                if !host_path.exists() {
+                     return Err(BuildError::InvalidSpec(format!(
+-                        "observed build tool {executable} returned no version"
++                        "observed build tool {executable} is missing at {}",
++                        host_path.display()
+                     )));
+                 }
+                 let parameters = match role.as_str() {
+@@ -600,7 +751,14 @@ impl<'a> SandboxRunner<'a> {
+         if let (Some(toolchain), Ok(relative)) =
+             (&paths.toolchain, sandbox_path.strip_prefix("/usr"))
+         {
+-            return Ok(toolchain.join("usr").join(relative));
++            let toolchain_path = toolchain.join("usr").join(relative);
++            if toolchain_path.exists() {
++                return Ok(toolchain_path);
++            }
++            return Ok(self
++                .config
++                .sysroot
++                .join(sandbox_path.strip_prefix("/").unwrap()));
+         }
+         if sandbox_path.is_absolute() {
+             return Ok(self
+@@ -613,7 +771,11 @@ impl<'a> SandboxRunner<'a> {
+ 
+     fn environment(&self, paths: &SandboxPaths) -> BTreeMap<String, String> {
+         let toolchain = paths.toolchain.is_some();
+-        let path = "/build/.sage-tools:/usr/bin";
++        let path = if self.config.sandbox_host_tools.is_empty() {
++            "/build/.sage-tools:/toolchain/usr/bin:/usr/bin"
++        } else {
++            "/build/.sage-tools:/build/.sage-host-tools:/toolchain/usr/bin:/usr/bin"
++        };
+         let mut environment = BTreeMap::from([
+             ("LC_ALL".into(), "C".into()),
+             ("TZ".into(), "UTC".into()),
+@@ -623,13 +785,19 @@ impl<'a> SandboxRunner<'a> {
+             ("BUILD_DIR".into(), "/build".into()),
+             ("DESTDIR".into(), "/dest".into()),
+             ("JOBS".into(), self.config.jobs.to_string()),
++            ("TAR_OPTIONS".into(), "--no-same-owner".into()),
+             (
+                 "SOURCE_DATE_EPOCH".into(),
+                 self.config.source_date_epoch.to_string(),
+             ),
+             ("CC".into(), "/build/.sage-tools/cc".into()),
+             ("CXX".into(), "/build/.sage-tools/cxx".into()),
+-            ("LD".into(), "/build/.sage-tools/ld".into()),
++            ("HOSTCC".into(), "/build/.sage-tools/cc".into()),
++            ("HOSTCXX".into(), "/build/.sage-tools/cxx".into()),
++            // Autoconf projects use LD for GNU ld feature/version probes.
++            // Clang and Rust links use their driver wrappers below, which
++            // enforce the configured mold linker independently.
++            ("LD".into(), "/usr/bin/ld".into()),
+             ("RUSTC".into(), "/build/.sage-tools/rustc".into()),
+             ("CFLAGS".into(), self.config.cflags.clone()),
+             ("CXXFLAGS".into(), self.config.cxxflags.clone()),
+@@ -641,14 +809,60 @@ impl<'a> SandboxRunner<'a> {
+             environment.extend([
+                 (
+                     "PKG_CONFIG_PATH".into(),
+-                    "/usr/lib/pkgconfig:/usr/share/pkgconfig".into(),
++                    "/toolchain/usr/lib/pkgconfig:/toolchain/usr/share/pkgconfig:/toolchain/opt/channels/gcc/16/lib/pkgconfig:/toolchain/opt/channels/gcc/16/share/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig".into(),
++                ),
++                (
++                    "CMAKE_PREFIX_PATH".into(),
++                    "/toolchain/usr:/toolchain/opt/channels/gcc/16:/usr".into(),
++                ),
++                (
++                    "ACLOCAL_PATH".into(),
++                    "/toolchain/usr/share/aclocal:/toolchain/opt/channels/gcc/16/share/aclocal:/usr/share/aclocal".into(),
++                ),
++                (
++                    "PYTHONPATH".into(),
++                    "/toolchain/usr/lib/python/site-packages:/toolchain/opt/channels/gcc/16/lib/python/site-packages:/usr/lib/python/site-packages".into(),
++                ),
++                (
++                    "LD_LIBRARY_PATH".into(),
++                    "/toolchain/usr/lib:/toolchain/usr/lib64:/toolchain/opt/channels/gcc/16/lib:/toolchain/opt/channels/gcc/16/lib64:/usr/lib:/usr/lib64".into(),
++                ),
++                (
++                    "LIBRARY_PATH".into(),
++                    "/toolchain/usr/lib:/toolchain/usr/lib64:/toolchain/opt/channels/gcc/16/lib:/toolchain/opt/channels/gcc/16/lib64:/toolchain/opt/channels/gcc/16/lib/gcc/x86_64-pc-linux-gnu/16.2.0:/usr/lib:/usr/lib64".into(),
+                 ),
+-                ("CMAKE_PREFIX_PATH".into(), "/usr".into()),
+-                ("ACLOCAL_PATH".into(), "/usr/share/aclocal".into()),
+-                ("PYTHONPATH".into(), "/usr/lib/python/site-packages".into()),
+-                ("LD_LIBRARY_PATH".into(), "/usr/lib:/usr/lib64".into()),
+             ]);
+         }
++        if !self.config.sandbox_host_libraries.is_empty() {
++            let current = environment
++                .get("LD_LIBRARY_PATH")
++                .cloned()
++                .unwrap_or_default();
++            environment.insert(
++                "LD_LIBRARY_PATH".into(),
++                if current.is_empty() {
++                    "/build/.sage-host-libs".into()
++                } else {
++                    format!("/build/.sage-host-libs:{current}")
++                },
++            );
++        }
++        if !self.config.sandbox_host_preload.is_empty() {
++            let preload = self
++                .config
++                .sandbox_host_preload
++                .iter()
++                .map(|library| {
++                    let name = library
++                        .file_name()
++                        .expect("validated host preload filename");
++                    PathBuf::from("/build/.sage-host-libs").join(name)
++                })
++                .map(|path| path.to_string_lossy().into_owned())
++                .collect::<Vec<_>>()
++                .join(":");
++            environment.insert("LD_PRELOAD".into(), preload);
++        }
+         if paths.target_sysroot.is_some() {
+             environment.extend([
+                 ("PKG_CONFIG_SYSROOT_DIR".into(), "/sysroot".into()),
+diff --git a/crates/sage-build/src/payload.rs b/crates/sage-build/src/payload.rs
+index 60741b9b79673ddf873a707ab810d057e13c06b7..10b52cc73f299903a00b6ae763db9c231bbecf71 100644
+--- a/crates/sage-build/src/payload.rs
++++ b/crates/sage-build/src/payload.rs
+@@ -166,7 +166,13 @@ impl ElfScanner {
+             if !bytes.starts_with(b"\x7fELF") {
+                 continue;
+             }
+-            let goblin::Object::Elf(elf) = goblin::Object::parse(&bytes)? else {
++            let object = goblin::Object::parse(&bytes).map_err(|error| {
++                BuildError::InvalidSpec(format!(
++                    "ELF parse failed for {}: {error}",
++                    entry.path().display()
++                ))
++            })?;
++            let goblin::Object::Elf(elf) = object else {
+                 continue;
+             };
+             if let Some(soname) = elf.soname {
+@@ -206,7 +212,13 @@ impl ElfScanner {
+             if !bytes.starts_with(b"\x7fELF") {
+                 continue;
+             }
+-            let goblin::Object::Elf(elf) = goblin::Object::parse(&bytes)? else {
++            let object = goblin::Object::parse(&bytes).map_err(|error| {
++                BuildError::InvalidSpec(format!(
++                    "ELF parse failed for {}: {error}",
++                    entry.path().display()
++                ))
++            })?;
++            let goblin::Object::Elf(elf) = object else {
+                 continue;
+             };
+             let relative = entry
+diff --git a/crates/sage-build/src/recipe.rs b/crates/sage-build/src/recipe.rs
+index f060cd58640b644a5754a5b3c236665086bba0fb..4d05c2cb54221d0003a4dc83dde414a7f278062e 100644
+--- a/crates/sage-build/src/recipe.rs
++++ b/crates/sage-build/src/recipe.rs
+@@ -70,6 +70,27 @@ pub struct RecipeBuild {
+     /// Extra private-library directories, relative to the installed channel root.
+     #[serde(default)]
+     pub private_library_dirs: Vec<PathBuf>,
++    /// Optional linker override for recipes with toolchain-specific link constraints.
++    #[serde(default)]
++    pub linker: Option<String>,
++    /// Optional compiler family override for recipes that must self-host with GCC.
++    #[serde(default)]
++    pub compiler: Option<String>,
++    /// Optional C compiler flags for recipes with a documented optimization policy.
++    #[serde(default)]
++    pub cflags: Option<String>,
++    /// Optional C++ compiler flags for recipes with a documented optimization policy.
++    #[serde(default)]
++    pub cxxflags: Option<String>,
++    /// Optional preprocessor flags for a recipe-specific toolchain boundary.
++    #[serde(default)]
++    pub cppflags: Option<String>,
++    /// Optional linker flags for a recipe-specific toolchain boundary.
++    #[serde(default)]
++    pub ldflags: Option<String>,
++    /// Optional Rust flags for a recipe-specific toolchain boundary.
++    #[serde(default)]
++    pub rustflags: Option<String>,
+     /// Optional target triple. An empty value means a native build.
+     #[serde(default)]
+     pub target: String,
+@@ -111,6 +132,12 @@ pub struct SubpackageSpec {
+     pub name: String,
+     pub description: Option<String>,
+     pub license: Option<String>,
++    /// Optional channel override for this output package.
++    #[serde(default)]
++    pub channel: Option<String>,
++    /// Optional ABI slot override for this output package.
++    #[serde(default)]
++    pub slot: Option<String>,
+     #[serde(default)]
+     pub dependencies: Vec<String>,
+     #[serde(default)]
+@@ -272,9 +299,12 @@ impl BuildUnit {
+                 .iter()
+                 .map(|package| {
+                     sage_core::PackageKey::new(
+-                        &recipe.package.channel,
++                        package
++                            .channel
++                            .as_deref()
++                            .unwrap_or(&recipe.package.channel),
+                         &package.name,
+-                        &recipe.package.slot,
++                        package.slot.as_deref().unwrap_or(&recipe.package.slot),
+                     )
+                 }),
+         );
+@@ -335,6 +365,26 @@ impl BuildUnit {
+         }
+         Ok(())
+     }
++
++    /// Returns stable identifiers for symbols this unit consumes.  The
++    /// scheduler uses these identifiers to block only dependents of a failed
++    /// build while allowing unrelated units in later layers to proceed.
++    pub fn consumed_symbol_ids(&self) -> BTreeSet<String> {
++        self.consumes.iter().map(symbol_id).collect()
++    }
++
++    /// Returns stable identifiers for every package/provide symbol emitted by
++    /// this unit.  A blocked unit propagates the block to its own dependents.
++    pub fn produced_symbol_ids(&self) -> BTreeSet<String> {
++        self.produces.iter().map(symbol_id).collect()
++    }
++}
++
++fn symbol_id(symbol: &BuildSymbol) -> String {
++    match symbol {
++        BuildSymbol::Package(key) => format!("package:{key}"),
++        BuildSymbol::Provided(name) => format!("provided:{name}"),
++    }
+ }
+ 
+ fn dependency_symbol(channel: &str, dependency: sage_core::Dependency) -> BuildSymbol {
+@@ -394,7 +444,7 @@ impl BuildGraph {
+     }
+ 
+     /// Applies Kahn's algorithm and returns maximal deterministic parallel layers.
+-    pub fn layers(units: Vec<BuildUnit>) -> Result<Vec<Vec<BuildUnit>>, BuildError> {
++    pub fn layers(mut units: Vec<BuildUnit>) -> Result<Vec<Vec<BuildUnit>>, BuildError> {
+         let mut package_owners = BTreeMap::new();
+         for unit in &units {
+             for package in &unit.packages {
+@@ -412,6 +462,27 @@ impl BuildGraph {
+                 producers.entry(symbol.clone()).or_default().push(index);
+             }
+         }
++        // A dependency may name a compatibility alias rather than a
++        // concrete output package (for example `zlib-libs` is provided by
++        // the zlib recipe).  Resolve that fallback before constructing the
++        // graph so layer ordering and failure propagation match the package
++        // solver's package-or-provides semantics.
++        for unit in &mut units {
++            let mut resolved = BTreeSet::new();
++            for symbol in &unit.consumes {
++                if let BuildSymbol::Package(key) = symbol {
++                    if !producers.contains_key(symbol) {
++                        let provider = BuildSymbol::Provided(key.name.clone());
++                        if producers.contains_key(&provider) {
++                            resolved.insert(provider);
++                            continue;
++                        }
++                    }
++                }
++                resolved.insert(symbol.clone());
++            }
++            unit.consumes = resolved;
++        }
+         let mut outgoing = vec![BTreeSet::new(); units.len()];
+         let mut indegree = vec![0usize; units.len()];
+         for (consumer, unit) in units.iter().enumerate() {
+@@ -559,6 +630,17 @@ impl RecipeSpec {
+             }
+         }
+         recipe.install.validate()?;
++        if let Some(linker) = &recipe.build.linker {
++            validate_tool_name(linker)?;
++        }
++        if let Some(compiler) = &recipe.build.compiler {
++            validate_tool_name(compiler)?;
++            if !matches!(tool_family(compiler).as_str(), "clang" | "gcc") {
++                return Err(BuildError::InvalidSpec(
++                    "recipe compiler must be clang or gcc".into(),
++                ));
++            }
++        }
+         if recipe.features.keys().any(|name| !valid_feature_name(name)) {
+             return Err(BuildError::InvalidSpec(
+                 "feature names must use lowercase ASCII letters, digits, '_' or '-'".into(),
+@@ -590,6 +672,23 @@ impl RecipeSpec {
+             ));
+         }
+         for subpackage in &recipe.subpackages {
++            if subpackage.channel.as_deref().is_some_and(str::is_empty) {
++                return Err(BuildError::InvalidSpec(
++                    "subpackage channel must not be empty".into(),
++                ));
++            }
++            if subpackage.slot.as_deref().is_some_and(|slot| {
++                slot.is_empty()
++                    || !slot.bytes().all(|byte| {
++                        byte.is_ascii_alphanumeric()
++                            || matches!(byte, b'.' | b'_' | b'+' | b'-')
++                    })
++            }) {
++                return Err(BuildError::InvalidSpec(
++                    "subpackage slot must contain only ASCII letters, digits, '.', '_', '+', or '-'"
++                        .into(),
++                ));
++            }
+             if let Some(license) = &subpackage.license {
+                 sage_core::validate_spdx_expression(license)
+                     .map_err(|error| BuildError::InvalidSpec(error.to_string()))?;
+diff --git a/crates/sage-repo/Cargo.toml b/crates/sage-repo/Cargo.toml
+index bb38cbad763fd7c07c643a0a0e76b8772b3c5e72..c2353f47c8d8ae837a8bb675a0fc4c1c59470736 100644
+--- a/crates/sage-repo/Cargo.toml
++++ b/crates/sage-repo/Cargo.toml
+@@ -24,3 +24,4 @@ sha2 = { workspace = true }
+ hex = { workspace = true }
+ thiserror = { workspace = true }
+ tracing = { workspace = true }
++walkdir = { workspace = true }
+diff --git a/crates/sage-repo/src/lib.rs b/crates/sage-repo/src/lib.rs
+index a88d334a171c3bbe89cfc3d550e444348f202d51..48373e354c21746c7ad274d8f91d0d3d9fe29014 100644
+--- a/crates/sage-repo/src/lib.rs
++++ b/crates/sage-repo/src/lib.rs
+@@ -4,7 +4,7 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+ use heed::types::{Bytes, Str};
+ use heed::{Env, EnvFlags, EnvOpenOptions};
+ use reqwest::header::{ACCEPT_RANGES, CONTENT_LENGTH, ETAG, IF_NONE_MATCH, RANGE};
+-use reqwest::{Client, StatusCode};
++use reqwest::{Client, Method, StatusCode};
+ use serde::Deserialize;
+ use serde::Serialize;
+ use sha2::{Digest, Sha256};
+@@ -12,10 +12,13 @@ use std::fs::File;
+ use std::io::{Read, Write};
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicU64, Ordering};
++use std::time::Duration;
+ use thiserror::Error;
+ use tokio::io::AsyncWriteExt;
+ 
+ const CHUNKS: u64 = 4;
++const MAX_REQUEST_ATTEMPTS: usize = 4;
++const RETRY_BACKOFF_MS: u64 = 250;
+ static TEMP_ID: AtomicU64 = AtomicU64::new(0);
+ 
+ /// Repository transfer, verification, and index failures.
+@@ -149,10 +152,11 @@ pub fn build_index(
+     signing_key: &Path,
+ ) -> Result<IndexArtifacts, RepoError> {
+     std::fs::create_dir_all(output_dir)?;
+-    let mut package_files: Vec<_> = std::fs::read_dir(pool)?
+-        .collect::<Result<Vec<_>, _>>()?
++    let mut package_files: Vec<_> = walkdir::WalkDir::new(pool)
++        .follow_links(false)
+         .into_iter()
+-        .map(|entry| entry.path())
++        .filter_map(|entry| entry.ok())
++        .map(|entry| entry.into_path())
+         .filter(|path| {
+             path.file_name()
+                 .and_then(|name| name.to_str())
+@@ -176,7 +180,11 @@ pub fn build_index(
+         }
+         releases.entry(key).or_default().push(IndexedRelease {
+             package: inspection.manifest,
+-            archive: path.file_name().unwrap().to_string_lossy().into_owned(),
++            archive: path
++                .strip_prefix(pool)
++                .unwrap_or(&path)
++                .to_string_lossy()
++                .into_owned(),
+             sha256: hash_file(path)?,
+         });
+     }
+@@ -278,6 +286,9 @@ impl DownloadEngine {
+     pub fn new(cache_dir: impl Into<PathBuf>) -> Result<Self, RepoError> {
+         let client = Client::builder()
+             .user_agent(concat!("sage/", env!("CARGO_PKG_VERSION")))
++            .http1_only()
++            .connect_timeout(Duration::from_secs(15))
++            .timeout(Duration::from_secs(300))
+             .build()?;
+         Ok(Self {
+             client,
+@@ -335,10 +346,7 @@ impl DownloadEngine {
+             tokio::fs::create_dir_all(parent).await?;
+         }
+         // HEAD is an optimization only; mirrors that reject it still work through GET.
+-        let head = self
+-            .client
+-            .head(url)
+-            .send()
++        let head = send_with_retries(&self.client, Method::HEAD, url, None)
+             .await
+             .ok()
+             .filter(|response| response.status().is_success());
+@@ -358,11 +366,7 @@ impl DownloadEngine {
+             self.download_ranges(url, &temporary, length.unwrap())
+                 .await?;
+         } else {
+-            stream_response(
+-                self.client.get(url).send().await?.error_for_status()?,
+-                &temporary,
+-            )
+-            .await?;
++            download_response_with_retries(&self.client, url, None, &temporary, None).await?;
+         }
+         verify_hash(&temporary, sha256).await?;
+         tokio::fs::rename(&temporary, destination).await?;
+@@ -390,18 +394,15 @@ impl DownloadEngine {
+             let client = self.client.clone();
+             let url = url.to_owned();
+             tasks.spawn(async move {
+-                let response = client
+-                    .get(url)
+-                    .header(RANGE, format!("bytes={start}-{end}"))
+-                    .send()
+-                    .await?;
+-                if response.status() != StatusCode::PARTIAL_CONTENT {
+-                    return Err(RepoError::InvalidConfig(
+-                        "server ignored a range request".into(),
+-                    ));
+-                }
+-                stream_response(response, &part).await?;
+-                Ok::<_, RepoError>(())
++                let range = format!("bytes={start}-{end}");
++                download_response_with_retries(
++                    &client,
++                    &url,
++                    Some(&range),
++                    &part,
++                    Some(StatusCode::PARTIAL_CONTENT),
++                )
++                .await
+             });
+         }
+         let _cleanup = TempFiles::new(parts.clone());
+@@ -475,6 +476,45 @@ impl DownloadEngine {
+     }
+ }
+ 
++fn retryable_status(status: StatusCode) -> bool {
++    status == StatusCode::REQUEST_TIMEOUT
++        || status == StatusCode::TOO_MANY_REQUESTS
++        || status.is_server_error()
++}
++
++async fn send_with_retries(
++    client: &Client,
++    method: Method,
++    url: &str,
++    range: Option<&str>,
++) -> Result<reqwest::Response, reqwest::Error> {
++    for attempt in 0..MAX_REQUEST_ATTEMPTS {
++        let mut request = client.request(method.clone(), url);
++        if let Some(range) = range {
++            request = request.header(RANGE, range);
++        }
++        match request.send().await {
++            Ok(response)
++                if retryable_status(response.status()) && attempt + 1 < MAX_REQUEST_ATTEMPTS =>
++            {
++                tokio::time::sleep(Duration::from_millis(
++                    RETRY_BACKOFF_MS * 2u64.pow(attempt as u32),
++                ))
++                .await;
++            }
++            Ok(response) => return Ok(response),
++            Err(_error) if attempt + 1 < MAX_REQUEST_ATTEMPTS => {
++                tokio::time::sleep(Duration::from_millis(
++                    RETRY_BACKOFF_MS * 2u64.pow(attempt as u32),
++                ))
++                .await;
++            }
++            Err(error) => return Err(error),
++        }
++    }
++    unreachable!("request retry loop must return on its final attempt")
++}
++
+ async fn stream_response(mut response: reqwest::Response, path: &Path) -> Result<(), RepoError> {
+     let mut output = tokio::fs::File::create(path).await?;
+     while let Some(chunk) = response.chunk().await? {
+@@ -484,6 +524,54 @@ async fn stream_response(mut response: reqwest::Response, path: &Path) -> Result
+     Ok(())
+ }
+ 
++/// Downloads a response body with retries that cover both response setup and
++/// streaming. A successful HTTP response can still fail while reading its
++/// body, especially through slow mirrors or proxy connections, so retrying
++/// only `send()` is insufficient. Each attempt writes to the same temporary
++/// path and removes a partial body before the next attempt.
++async fn download_response_with_retries(
++    client: &Client,
++    url: &str,
++    range: Option<&str>,
++    path: &Path,
++    expected_status: Option<StatusCode>,
++) -> Result<(), RepoError> {
++    for attempt in 0..MAX_REQUEST_ATTEMPTS {
++        let response = match send_with_retries(client, Method::GET, url, range).await {
++            Ok(response) => response,
++            Err(_error) if attempt + 1 < MAX_REQUEST_ATTEMPTS => {
++                tokio::time::sleep(Duration::from_millis(
++                    RETRY_BACKOFF_MS * 2u64.pow(attempt as u32),
++                ))
++                .await;
++                continue;
++            }
++            Err(error) => return Err(error.into()),
++        };
++        if let Some(expected_status) = expected_status {
++            if response.status() != expected_status {
++                return Err(RepoError::InvalidConfig(
++                    "server ignored a range request".into(),
++                ));
++            }
++        } else if !response.status().is_success() {
++            return Err(response.error_for_status().unwrap_err().into());
++        }
++        match stream_response(response, path).await {
++            Ok(()) => return Ok(()),
++            Err(_error) if attempt + 1 < MAX_REQUEST_ATTEMPTS => {
++                let _ = tokio::fs::remove_file(path).await;
++                tokio::time::sleep(Duration::from_millis(
++                    RETRY_BACKOFF_MS * 2u64.pow(attempt as u32),
++                ))
++                .await;
++            }
++            Err(error) => return Err(error),
++        }
++    }
++    unreachable!("response retry loop must return on its final attempt")
++}
++
+ async fn verify_hash(path: &Path, expected: &str) -> Result<(), RepoError> {
+     let path = path.to_path_buf();
+     let actual = tokio::task::spawn_blocking(move || hash_file(&path)).await??;
+diff --git a/crates/sage-solver/src/lib.rs b/crates/sage-solver/src/lib.rs
+index e9efcc3c65a28724a39a7104d04f8acffc465bb9..541ef25b55953dce09ed7f5916822f32868377d8 100644
+--- a/crates/sage-solver/src/lib.rs
++++ b/crates/sage-solver/src/lib.rs
+@@ -403,19 +403,22 @@ fn dependency_key(
+ ///
+ /// Recipe metadata intentionally uses short channel names such as `system` or
+ /// `gcc16`. Once a repository index is loaded, those names become
+-/// `main/system` and `main/gcc16`. Keeping this conversion at the solver seam
+-/// lets recipe graphs stay readable while preserving exact cross-root channel
+-/// references when a dependency already contains `/`.
++/// `main/system` and `main/gcc16`. The dependency parser passes the channel
++/// portion of `gcc16/gcc` as `gcc16`, so both short and `subchannel/name`
++/// declarations must inherit the repository root from the parent package.
+ fn dependency_channel(parent: &PackageKey, requested: Option<&str>) -> String {
+     let Some(requested) = requested else {
+         return parent.channel.clone();
+     };
+-    if requested.contains('/') {
+-        return requested.into();
+-    }
+     parent.channel.rsplit_once('/').map_or_else(
+         || requested.into(),
+-        |(root, _)| format!("{root}/{requested}"),
++        |(root, _)| {
++            if requested == root || requested.starts_with(&format!("{root}/")) {
++                requested.into()
++            } else {
++                format!("{root}/{requested}")
++            }
++        },
+     )
+ }
+ fn is_virtual(dependency: &Dependency) -> bool {
+diff --git a/crates/sage-tests/Cargo.toml b/crates/sage-tests/Cargo.toml
+index 449e61e4ab487ed8c19566b1a6be705a3edac2c8..2323f4ca89d21b4ed28866486a75b33014dd157f 100644
+--- a/crates/sage-tests/Cargo.toml
++++ b/crates/sage-tests/Cargo.toml
+@@ -25,3 +25,4 @@ tempfile = { workspace = true }
+ tokio = { workspace = true }
+ toml = { workspace = true }
+ zstd = { workspace = true }
++walkdir = { workspace = true }
+diff --git a/crates/sage-tests/tests/cases/build.rs b/crates/sage-tests/tests/cases/build.rs
+index 23d61994eef573cd598155ec00f37a69278e1712..c02c4fdb2ccf73124d0f7c4e9143008a07c9d26b 100644
+--- a/crates/sage-tests/tests/cases/build.rs
++++ b/crates/sage-tests/tests/cases/build.rs
+@@ -21,7 +21,7 @@ mod build_tests {
+         fs::create_dir(&build).unwrap();
+         fs::write(
+             build.join(".sage-tool-usage"),
+-            "cc\t/usr/bin/gcc\ncc\t/usr/bin/gcc\nlinker\t/usr/bin/ld.lld\n",
++            "cc\t/usr/bin/gcc\tgcc (Sage test) 1.0\ncc\t/usr/bin/gcc\tgcc (Sage test) 1.0\nlinker\t/usr/bin/ld.lld\tLLD 18.1\n",
+         )
+         .unwrap();
+         let config = BuildConfig {
+@@ -34,6 +34,7 @@ mod build_tests {
+             cxx: "g++".into(),
+             linker: "ld.lld".into(),
+             rustc: "rustc".into(),
++            gcc_toolchain: None,
+             patchelf: "patchelf".into(),
+             cflags: "-O2".into(),
+             cxxflags: "-O3".into(),
+@@ -47,6 +48,9 @@ mod build_tests {
+             compiler_cache: String::new(),
+             ccache_dir: PathBuf::new(),
+             sandbox_dependencies: vec![],
++            sandbox_host_tools: vec![],
++            sandbox_host_libraries: vec![],
++            sandbox_host_preload: vec![],
+             build: String::new(),
+             targets: BTreeMap::new(),
+         };
+@@ -636,7 +640,14 @@ shell="/usr/bin/nologin"
+         let root = directory.path().join("dest");
+         fs::create_dir(&root).unwrap();
+         fs::create_dir_all(root.join(".METADATA")).unwrap();
+-        sage::stage_sysusers(&recipe, &root.join(".METADATA"), "daemon").unwrap();
++        sage::stage_sysusers(
++            &recipe,
++            &root.join(".METADATA"),
++            "daemon",
++            "system",
++            "0",
++        )
++        .unwrap();
+         assert_eq!(
+             sage_sys::SysusersDocument::parse(
+                 &fs::read(root.join(".METADATA/sysusers.toml")).unwrap(),
+@@ -710,6 +721,8 @@ shell="/usr/bin/nologin"
+                     name: "x-libs".into(),
+                     description: None,
+                     license: None,
++                    channel: None,
++                    slot: None,
+                     dependencies: vec![],
+                     provides: vec![],
+                     payload: PayloadSpec {
+@@ -721,6 +734,8 @@ shell="/usr/bin/nologin"
+                     name: "x-dev".into(),
+                     description: None,
+                     license: None,
++                    channel: None,
++                    slot: None,
+                     dependencies: vec![],
+                     provides: vec![],
+                     payload: PayloadSpec {
+diff --git a/crates/sage-tests/tests/cases/sage.rs b/crates/sage-tests/tests/cases/sage.rs
+index 4acd5afa994a08f31d58c90558d591643ac1080a..269d218972ca1554212186c09770c4f2a86528d4 100644
+--- a/crates/sage-tests/tests/cases/sage.rs
++++ b/crates/sage-tests/tests/cases/sage.rs
+@@ -260,7 +260,11 @@ target_root="/"
+             .map(|entry| entry.path())
+             .find(|path| path.to_string_lossy().ends_with(".pkg.tar.zst"))
+             .unwrap();
+-        let destination = pool.join(archive.file_name().unwrap());
++        let destination = pool
++            .join(".slots")
++            .join(slot)
++            .join(archive.file_name().unwrap());
++        std::fs::create_dir_all(destination.parent().unwrap()).unwrap();
+         std::fs::copy(archive, &destination).unwrap();
+         destination
+     }
+@@ -282,8 +286,13 @@ target_root="/"
+         std::fs::copy(pool.join("index.mdb"), index).unwrap();
+         let cache = root.join("var/cache/sage/packages");
+         std::fs::create_dir_all(&cache).unwrap();
+-        for entry in std::fs::read_dir(pool).unwrap().map(Result::unwrap) {
+-            let path = entry.path();
++        for entry in walkdir::WalkDir::new(pool)
++            .follow_links(false)
++            .into_iter()
++            .filter_map(Result::ok)
++            .filter(|entry| entry.file_type().is_file())
++        {
++            let path = entry.into_path();
+             if path.to_string_lossy().ends_with(".pkg.tar.zst") {
+                 let digest = hex::encode(Sha256::digest(std::fs::read(&path).unwrap()));
+                 std::fs::copy(path, cache.join(digest)).unwrap();
+@@ -367,7 +376,17 @@ target_root="/"
+             },
+         )
+         .await;
+-        assert_ne!(app1.file_name(), app2_slot.file_name());
++        assert_eq!(app1.file_name(), app2_slot.file_name());
++        assert_ne!(
++            sage_archive::inspect_package(&app1)
++                .unwrap()
++                .manifest
++                .slot,
++            sage_archive::inspect_package(&app2_slot)
++                .unwrap()
++                .manifest
++                .slot
++        );
+         assert_eq!(
+             sage_archive::inspect_package(&app2_slot)
+                 .unwrap()
+diff --git a/crates/sage-tests/tests/cases/solver.rs b/crates/sage-tests/tests/cases/solver.rs
+index 17523f43e74366cb44e840dcc05dbda01a24c433..adcf16ea99464bd2d25d9c7dbbc4c24756351799 100644
+--- a/crates/sage-tests/tests/cases/solver.rs
++++ b/crates/sage-tests/tests/cases/solver.rs
+@@ -116,6 +116,33 @@ mod solver_tests {
+         );
+     }
+ 
++    #[test]
++    fn short_subchannel_dependencies_inherit_repository_root() {
++        let mut universe = PackageUniverse::default();
++        universe.insert(sage_core::Package::from_release(
++            PackageKey::new("main/gcc16", "gcc", "16"),
++            "16.2.0-1".parse().unwrap(),
++            vec![],
++            vec![],
++        ));
++        let dependency = "gcc16/gcc:16".parse().unwrap();
++        let solution = SageSolver::new(&universe)
++            .resolve_dependencies("main/system", &[dependency])
++            .unwrap();
++        assert!(solution.contains_key(&PackageKey::new("main/gcc16", "gcc", "16")));
++    }
++
++    #[test]
++    fn canonical_cross_channel_dependencies_are_not_double_prefixed() {
++        let mut universe = PackageUniverse::default();
++        universe.insert(release("main/system", "gmp", "6.3.0-1", &[]));
++        let dependency = "main/system/gmp".parse().unwrap();
++        let solution = SageSolver::new(&universe)
++            .resolve_dependencies("main/gcc16", &[dependency])
++            .unwrap();
++        assert!(solution.contains_key(&PackageKey::new("main/system", "gmp", "0")));
++    }
++
+     #[test]
+     fn configured_virtual_provider_is_preferred_but_can_backtrack() {
+         let mut universe = PackageUniverse::default();
+diff --git a/crates/sage/Cargo.toml b/crates/sage/Cargo.toml
+index 5b9606dad9d5401a94e0d063ed4b80a39c44b624..85e563240bd0364e1f07fb3b854527fef717676f 100644
+--- a/crates/sage/Cargo.toml
++++ b/crates/sage/Cargo.toml
+@@ -32,3 +32,4 @@ toml = { workspace = true }
+ tempfile = { workspace = true }
+ sha2 = { workspace = true }
+ hex = { workspace = true }
++walkdir = { workspace = true }
+diff --git a/crates/sage/src/build_ops.rs b/crates/sage/src/build_ops.rs
+index cf1aaf5bdbb0d98aa3e6b82ad8594ee67b9e33ee..3b1b7e40bbf40133fc6dfec9836420bdbb465736 100644
+--- a/crates/sage/src/build_ops.rs
++++ b/crates/sage/src/build_ops.rs
+@@ -11,7 +11,9 @@ pub async fn mass_rebuild(
+         .map(Path::to_path_buf)
+         .unwrap_or_else(|| recipe_root.join(".sage-packages"));
+     prepare_source_pool(&pool, dry_run)?;
+-    execute_source_layers(root, &layers, &pool, jobs, dry_run).await
++    reset_failure_report(&pool, dry_run)?;
++    let mut blocked_symbols = std::collections::BTreeSet::new();
++    execute_source_layers(root, &layers, &pool, jobs, dry_run, &mut blocked_symbols).await
+ }
+ pub async fn bootstrap_sources(
+     root: &Path,
+@@ -26,6 +28,8 @@ pub async fn bootstrap_sources(
+         .map(Path::to_path_buf)
+         .unwrap_or_else(|| base.join(".sage-bootstrap"));
+     prepare_source_pool(&pool, dry_run)?;
++    reset_failure_report(&pool, dry_run)?;
++    let mut blocked_symbols = std::collections::BTreeSet::new();
+     for stage in plan.stages {
+         println!("Bootstrap stage {}", stage.name);
+         let mut units = Vec::new();
+@@ -41,7 +45,7 @@ pub async fn bootstrap_sources(
+         }
+         let units = source_build_units(root, units)?;
+         let layers = sage_build::BuildGraph::layers(units)?;
+-        execute_source_layers(root, &layers, &pool, jobs, dry_run).await?;
++        execute_source_layers(root, &layers, &pool, jobs, dry_run, &mut blocked_symbols).await?;
+     }
+     Ok(())
+ }
+@@ -67,33 +71,41 @@ fn source_build_units(
+ }
+ 
+ fn prepare_source_pool(pool: &Path, dry_run: bool) -> Result<()> {
+-    if pool.exists()
+-        && std::fs::read_dir(pool)?.any(|entry| {
+-            entry.ok().is_some_and(|entry| {
+-                entry
+-                    .file_name()
+-                    .to_str()
+-                    .is_some_and(|name| name.ends_with(".pkg.tar.zst"))
+-            })
+-        })
+-    {
+-        bail!(
+-            "source build output must not contain existing packages: {}",
+-            pool.display()
+-        );
+-    }
++    // A bootstrap output pool may contain explicitly preserved seed archives.
++    // New artifacts are published atomically by the layer executor and replace
++    // the matching seed filename when a package is rebuilt.
+     if !dry_run {
+         std::fs::create_dir_all(pool)?;
+     }
+     Ok(())
+ }
+ 
++fn reset_failure_report(pool: &Path, dry_run: bool) -> Result<()> {
++    if !dry_run {
++        let report = pool.join("build-failures.log");
++        if report.exists() {
++            std::fs::remove_file(report)?;
++        }
++    }
++    Ok(())
++}
++
++fn record_failure(report: &Path, message: &str) -> Result<()> {
++    let mut file = std::fs::OpenOptions::new()
++        .create(true)
++        .append(true)
++        .open(report)?;
++    std::io::Write::write_all(&mut file, format!("{message}\n").as_bytes())?;
++    Ok(())
++}
++
+ async fn execute_source_layers(
+     root: &Path,
+     layers: &[Vec<sage_build::BuildUnit>],
+     pool: &Path,
+     requested_jobs: usize,
+     dry_run: bool,
++    blocked_symbols: &mut std::collections::BTreeSet<String>,
+ ) -> Result<()> {
+     if dry_run {
+         for (index, layer) in layers.iter().enumerate() {
+@@ -111,6 +123,7 @@ async fn execute_source_layers(
+     }
+     let config =
+         sage_build::BuildConfig::load(under_root(root, Path::new("/etc/sage/build.toml")))?;
++    let failure_report = pool.join("build-failures.log");
+     for (layer_index, layer) in layers.iter().enumerate() {
+         let concurrency = if requested_jobs == 0 {
+             config.jobs.min(layer.len()).max(1)
+@@ -125,13 +138,29 @@ async fn execute_source_layers(
+                 .tempdir_in(pool)?;
+             let mut tasks = tokio::task::JoinSet::new();
+             for (index, unit) in chunk.iter().enumerate() {
++                if unit
++                    .consumed_symbol_ids()
++                    .iter()
++                    .any(|symbol| blocked_symbols.contains(symbol))
++                {
++                    let message = format!(
++                        "{}: blocked by a failed dependency; not scheduled",
++                        unit.name
++                    );
++                    println!("Skip {message}");
++                    record_failure(&failure_report, &message)?;
++                    blocked_symbols.extend(unit.produced_symbol_ids());
++                    continue;
++                }
+                 let root = root.to_path_buf();
+                 let recipe = unit.recipe.clone();
++                let unit_name = unit.name.clone();
++                let produced_symbols = unit.produced_symbol_ids();
+                 let output = outputs.path().join(format!("{index:04}"));
+                 let pool = pool.to_path_buf();
+                 std::fs::create_dir(&output)?;
+                 tasks.spawn(async move {
+-                    build_recipe(
++                    let result = build_recipe(
+                         &root,
+                         &recipe,
+                         &[],
+@@ -144,34 +173,124 @@ async fn execute_source_layers(
+                         },
+                     )
+                     .await
+-                    .map(|_| output)
++                    .map(|_| output);
++                    (unit_name, produced_symbols, result)
+                 });
+             }
+             let mut completed = Vec::new();
+             while let Some(result) = tasks.join_next().await {
+-                completed.push(result??);
++                match result {
++                    Ok((unit_name, produced_symbols, Ok(output))) => {
++                        completed.push((unit_name, produced_symbols, output));
++                    }
++                    Ok((unit_name, produced_symbols, Err(error))) => {
++                        let message = format!("{unit_name}: {error:#}");
++                        eprintln!("Build failed: {message}");
++                        record_failure(&failure_report, &message)?;
++                        blocked_symbols.extend(produced_symbols);
++                    }
++                    Err(error) => {
++                        let message = format!("build task panicked or was cancelled: {error}");
++                        eprintln!("Build failed: {message}");
++                        record_failure(&failure_report, &message)?;
++                    }
++                }
+             }
+-            completed.sort();
+-            for directory in completed {
+-                let mut artifacts: Vec<_> = std::fs::read_dir(directory)?
+-                    .collect::<Result<Vec<_>, _>>()?
+-                    .into_iter()
+-                    .map(|entry| entry.path())
+-                    .filter(|path| {
+-                        path.file_name()
+-                            .and_then(|name| name.to_str())
+-                            .is_some_and(|name| name.ends_with(".pkg.tar.zst"))
+-                    })
+-                    .collect();
+-                artifacts.sort();
++            completed.sort_by(|left, right| left.2.cmp(&right.2));
++            for (unit_name, produced_symbols, directory) in completed {
++                let artifacts = match std::fs::read_dir(&directory) {
++                    Ok(entries) => {
++                        let mut artifacts: Vec<_> = entries
++                            .collect::<Result<Vec<_>, _>>()?
++                            .into_iter()
++                            .map(|entry| entry.path())
++                            .filter(|path| {
++                                path.file_name()
++                                    .and_then(|name| name.to_str())
++                                    .is_some_and(|name| name.ends_with(".pkg.tar.zst"))
++                            })
++                            .collect();
++                        artifacts.sort();
++                        artifacts
++                    }
++                    Err(error) => {
++                        let message = format!(
++                            "{unit_name}: failed to read build output {}: {error}",
++                            directory.display()
++                        );
++                        eprintln!("Build failed: {message}");
++                        record_failure(&failure_report, &message)?;
++                        blocked_symbols.extend(produced_symbols);
++                        continue;
++                    }
++                };
++                let mut publish_failed = false;
+                 for artifact in artifacts {
+-                    let target = pool.join(artifact.file_name().unwrap());
+-                    std::fs::rename(&artifact, &target)?;
++                    let inspection = match sage_archive::inspect_package(&artifact) {
++                        Ok(inspection) => inspection,
++                        Err(error) => {
++                            let message = format!(
++                                "{unit_name}: failed to inspect {}: {error}",
++                                artifact.display()
++                            );
++                            eprintln!("Build failed: {message}");
++                            record_failure(&failure_report, &message)?;
++                            publish_failed = true;
++                            continue;
++                        }
++                    };
++                    let Some(file_name) = artifact.file_name() else {
++                        let message = format!(
++                            "{unit_name}: build output has no filename: {}",
++                            artifact.display()
++                        );
++                        eprintln!("Build failed: {message}");
++                        record_failure(&failure_report, &message)?;
++                        publish_failed = true;
++                        continue;
++                    };
++                    let target = pool
++                        .join(".slots")
++                        .join(&inspection.manifest.channel)
++                        .join(&inspection.manifest.name)
++                        .join(&inspection.manifest.slot)
++                        .join(file_name);
++                    if let Some(parent) = target.parent() {
++                        if let Err(error) = std::fs::create_dir_all(parent) {
++                            let message = format!(
++                                "{unit_name}: failed to create package destination {}: {error}",
++                                parent.display()
++                            );
++                            eprintln!("Build failed: {message}");
++                            record_failure(&failure_report, &message)?;
++                            publish_failed = true;
++                            continue;
++                        }
++                    }
++                    if let Err(error) = std::fs::rename(&artifact, &target) {
++                        let message = format!(
++                            "{unit_name}: failed to publish {}: {error}",
++                            artifact.display()
++                        );
++                        eprintln!("Build failed: {message}");
++                        record_failure(&failure_report, &message)?;
++                        publish_failed = true;
++                        continue;
++                    }
+                     println!("Published {}", target.display());
+                 }
++                if publish_failed {
++                    blocked_symbols.extend(produced_symbols);
++                }
+             }
+         }
+     }
++    if failure_report.exists() {
++        eprintln!(
++            "Build completed with failures; review {}",
++            failure_report.display()
++        );
++    }
+     Ok(())
+ }
+ 
+@@ -228,6 +347,37 @@ async fn build_recipe(
+     if let Some(jobs) = invocation.jobs_override {
+         config.jobs = jobs.max(1);
+     }
++    if let Some(linker) = &recipe.build.linker {
++        config.linker.clone_from(linker);
++    }
++    if let Some(compiler) = &recipe.build.compiler {
++        match sage_build::tool_family(compiler).as_str() {
++            "clang" => {
++                config.cc = "clang".into();
++                config.cxx = "clang++".into();
++            }
++            "gcc" => {
++                config.cc = "gcc".into();
++                config.cxx = "g++".into();
++            }
++            _ => unreachable!("recipe compiler was validated during load"),
++        }
++    }
++    if let Some(flags) = &recipe.build.cflags {
++        config.cflags.clone_from(flags);
++    }
++    if let Some(flags) = &recipe.build.cxxflags {
++        config.cxxflags.clone_from(flags);
++    }
++    if let Some(flags) = &recipe.build.cppflags {
++        config.cppflags.clone_from(flags);
++    }
++    if let Some(flags) = &recipe.build.ldflags {
++        config.ldflags.clone_from(flags);
++    }
++    if let Some(flags) = &recipe.build.rustflags {
++        config.rustflags.clone_from(flags);
++    }
+     let cross = config.cross_target(&recipe.build.target)?.cloned();
+     if let Some(target) = &cross {
+         recipe.build.args.extend([
+@@ -515,7 +665,10 @@ async fn prepare_package_tree(
+     std::fs::create_dir(&tree)?;
+     let package_cache = under_root(root, Path::new("/var/cache/sage/packages"));
+     let engine = sage_repo::DownloadEngine::new(&package_cache)?;
+-    let mut owned = std::collections::BTreeSet::new();
++    let mut owned: std::collections::BTreeMap<
++        PathBuf,
++        (sage_core::PackageKey, sage_core::Version),
++    > = std::collections::BTreeMap::new();
+     for (key, version) in solution {
+         let source = available
+             .releases
+@@ -523,20 +676,44 @@ async fn prepare_package_tree(
+             .with_context(|| format!("index record disappeared for build dependency {key}"))?;
+         let archive = obtain_release_archive(&engine, &package_cache, source).await?;
+         let inspection = sage_archive::inspect_package(&archive)?;
+-        if let Some(path) = inspection
++        if let Some((path, owner)) = inspection
+             .files
+             .iter()
+-            .map(|record| &record.path)
+-            .find(|path| !owned.insert((*path).clone()))
++            .map(|record| record.path.clone())
++            .filter(|path| !is_shared_build_metadata(path))
++            .find_map(|path| {
++                if let Some(owner) = owned.get(&path) {
++                    Some((path, owner.clone()))
++                } else {
++                    owned.insert(path, (key.clone(), version.clone()));
++                    None
++                }
++            })
+         {
+-            bail!("build dependency file conflict at {}", path.display());
++            bail!(
++                "build dependency file conflict at {} between {} and {}",
++                path.display(),
++                key,
++                owner.0
++            );
++        }
++        if inspection.legacy {
++            sage_archive::extract_legacy_package(&archive, &tree, &inspection.files)?;
++        } else {
++            sage_archive::extract_package(&archive, &tree, &inspection.files)?;
+         }
+-        sage_archive::extract_package(&archive, &tree, &inspection.files)?;
+         println!("{} dependency {} {}", tree_name, key, version);
+     }
+     Ok(Some(tree))
+ }
+ 
++/// Info directory indexes are intentionally shared and regenerated by the
++/// GNU documentation tools. They must not make otherwise independent build
++/// dependency packages look like a payload collision.
++fn is_shared_build_metadata(path: &Path) -> bool {
++    path == Path::new("usr/share/info/dir")
++}
++
+ async fn obtain_release_archive(
+     engine: &sage_repo::DownloadEngine,
+     cache: &Path,
+@@ -667,16 +844,34 @@ fn package_staging(
+     let metadata = area.path().join(".METADATA");
+     std::fs::create_dir(&metadata)?;
+     stage_declarative_metadata(recipe_dir, &metadata, &area.name, &recipe.package.name)?;
+-    stage_alternatives(recipe, &metadata, &area.name)?;
+-    stage_sysusers(recipe, &metadata, &area.name)?;
+-    std::fs::write(
+-        metadata.join("files.idx"),
+-        sage_archive::format_file_index(&records),
+-    )?;
+     let subpackage = recipe
+         .subpackages
+         .iter()
+         .find(|subpackage| subpackage.name == area.name);
++    let package_channel = subpackage
++        .and_then(|package| package.channel.as_deref())
++        .unwrap_or(&recipe.package.channel);
++    let package_slot = subpackage
++        .and_then(|package| package.slot.as_deref())
++        .unwrap_or(&recipe.package.slot);
++    stage_alternatives(
++        recipe,
++        &metadata,
++        &area.name,
++        package_channel,
++        package_slot,
++    )?;
++    stage_sysusers(
++        recipe,
++        &metadata,
++        &area.name,
++        package_channel,
++        package_slot,
++    )?;
++    std::fs::write(
++        metadata.join("files.idx"),
++        sage_archive::format_file_index(&records),
++    )?;
+     let mut dependency_strings = area.dependencies.clone();
+     dependency_strings.extend(elf.dependencies);
+     dependency_strings.sort();
+@@ -692,12 +887,12 @@ fn package_staging(
+     let manifest = sage_archive::PackageManifest {
+         schema_version: sage_core::SCHEMA_VERSION,
+         name: area.name.clone(),
+-        slot: recipe.package.slot.clone(),
++        slot: package_slot.into(),
+         version: recipe.package.version.clone(),
+         release: recipe.package.release,
+         epoch: recipe.package.epoch,
+         arch: recipe.package.arch.clone(),
+-        channel: recipe.package.channel.clone(),
++        channel: package_channel.into(),
+         description: subpackage
+             .and_then(|package| package.description.clone())
+             .unwrap_or_else(|| recipe.package.description.clone()),
+@@ -721,13 +916,18 @@ fn package_staging(
+         toml::to_string_pretty(&manifest)?,
+     )?;
+     let output = output_dir.join(format!(
+-        "{}-{}-{}-{}-{}.pkg.tar.zst",
++        "{}-{}-{}-{}.pkg.tar.zst",
+         area.name,
+-        recipe.package.slot,
+         recipe.package.version,
+         recipe.package.release,
+         recipe.package.arch
+     ));
++    if output.exists() {
++        bail!(
++            "package archive filename collision at {}; slot is metadata, so outputs with identical name/version/release/arch must use separate directories",
++            output.display()
++        );
++    }
+     sage_archive::create_package(area.path(), &output, 15)?;
+     println!("Created {}", output.display());
+     Ok(())
+@@ -737,6 +937,8 @@ fn stage_alternatives(
+     recipe: &sage_build::RecipeSpec,
+     metadata: &Path,
+     output_package: &str,
++    package_channel: &str,
++    package_slot: &str,
+ ) -> Result<()> {
+     let alternatives: Vec<_> = recipe
+         .alternatives
+@@ -757,9 +959,9 @@ fn stage_alternatives(
+     let document = sage_sys::AlternativesDocument {
+         schema_version: sage_core::SCHEMA_VERSION,
+         package: sage_core::PackageKey::new(
+-            &recipe.package.channel,
++            package_channel,
+             output_package,
+-            &recipe.package.slot,
++            package_slot,
+         ),
+         alternatives,
+     };
+@@ -774,6 +976,8 @@ pub fn stage_sysusers(
+     recipe: &sage_build::RecipeSpec,
+     metadata: &Path,
+     output_package: &str,
++    package_channel: &str,
++    package_slot: &str,
+ ) -> Result<()> {
+     let accounts: Vec<_> = recipe
+         .sysusers
+@@ -797,9 +1001,9 @@ pub fn stage_sysusers(
+     let document = sage_sys::SysusersDocument {
+         schema_version: sage_core::SCHEMA_VERSION,
+         package: sage_core::PackageKey::new(
+-            &recipe.package.channel,
++            package_channel,
+             output_package,
+-            &recipe.package.slot,
++            package_slot,
+         ),
+         accounts,
+     };
+diff --git a/crates/sage/src/package_ops.rs b/crates/sage/src/package_ops.rs
+index 528a6cac5c891db0b8794895ef7fd99e42941b6d..4d124c78b6e9a094c92755135a06c8250ef59a54 100644
+--- a/crates/sage/src/package_ops.rs
++++ b/crates/sage/src/package_ops.rs
+@@ -141,13 +141,17 @@ pub fn load_available_with_pool(
+             }
+             let alias = subchannel.alias.as_deref().unwrap_or(sub_name);
+             let canonical = format!("{channel_name}/{alias}");
++            // Register configured names even before their remote index has
++            // been synchronized. This is required during a staged bootstrap,
++            // where the local output pool is the authoritative source and
++            // intentionally starts without an LMDB index.
++            aliases.insert(alias.into(), canonical.clone());
++            aliases.insert(canonical.clone(), canonical.clone());
++            target_roots.insert(canonical.clone(), subchannel.target_root.clone());
+             let index_path = cache.join(&channel_name).join(alias).join("index.mdb");
+             if !index_path.exists() {
+                 continue;
+             }
+-            aliases.insert(alias.into(), canonical.clone());
+-            aliases.insert(canonical.clone(), canonical.clone());
+-            target_roots.insert(canonical.clone(), subchannel.target_root.clone());
+             let url = sage_repo::subchannel_url(&channel, sub_name, subchannel);
+             for release in sage_repo::RepositoryIndex::open(&index_path)?.all_releases()? {
+                 if architecture.is_some_and(|wanted| {
+@@ -171,10 +175,11 @@ pub fn load_available_with_pool(
+         }
+     }
+     if let Some(pool) = local_pool.filter(|pool| pool.exists()) {
+-        let mut packages: Vec<_> = std::fs::read_dir(pool)?
+-            .collect::<Result<Vec<_>, _>>()?
++        let mut packages: Vec<_> = walkdir::WalkDir::new(pool)
++            .follow_links(false)
+             .into_iter()
+-            .map(|entry| entry.path())
++            .filter_map(|entry| entry.ok())
++            .map(|entry| entry.into_path())
+             .filter(|path| {
+                 path.file_name()
+                     .and_then(|name| name.to_str())
+@@ -182,32 +187,167 @@ pub fn load_available_with_pool(
+             })
+             .collect();
+         packages.sort();
++        let mut inspected = Vec::new();
+         for path in packages {
+             let inspection = sage_archive::inspect_package(&path)?;
+             if architecture.is_some_and(|wanted| {
+-                inspection.manifest.arch != wanted
+-                    && inspection.manifest.arch != "any"
+-                    && inspection.manifest.arch != "noarch"
++                !compatible_architecture(&inspection.manifest.arch, wanted)
+             }) {
+                 continue;
+             }
+-            let canonical = aliases
+-                .get(&inspection.manifest.channel)
+-                .cloned()
+-                .unwrap_or_else(|| {
+-                    if inspection.manifest.channel.contains('/') {
+-                        inspection.manifest.channel.clone()
+-                    } else {
+-                        format!("main/{}", inspection.manifest.channel)
+-                    }
+-                });
++            inspected.push((path, inspection));
++        }
++        let current_identities: BTreeSet<_> = inspected
++            .iter()
++            .filter(|(_, inspection)| !inspection.legacy)
++            .map(|(_, inspection)| {
++                (
++                    inspection.manifest.name.clone(),
++                    inspection.manifest.slot.clone(),
++                    inspection.manifest.epoch,
++                    inspection.manifest.version.clone(),
++                )
++            })
++            .collect();
++        for (path, inspection) in inspected {
++            let mut canonical = if inspection.legacy {
++                // Do not let an earlier legacy package (notably binutils)
++                // overwrite the configured alias for the whole old channel.
++                // Every package from toolchain/gcc:16 must first resolve to
++                // the gcc16 subchannel; binutils is remapped below as the
++                // sole intentional exception.
++                legacy_channel_alias(&inspection.manifest.channel, &aliases)
++                    .or_else(|| aliases.get(&inspection.manifest.channel).cloned())
++            } else {
++                aliases.get(&inspection.manifest.channel).cloned()
++            }
++            .unwrap_or_else(|| {
++                if inspection.manifest.channel.contains('/') {
++                    inspection.manifest.channel.clone()
++                } else {
++                    format!("main/{}", inspection.manifest.channel)
++                }
++            });
++            if inspection.legacy
++                && matches!(
++                    inspection.manifest.name.as_str(),
++                    "python" | "python-libs" | "python-dev" | "python-tests"
++                )
++            {
++                canonical = aliases
++                    .get("python3.14")
++                    .cloned()
++                    .unwrap_or_else(|| "main/python3.14".into());
++            }
++            // The preserved GCC seed carried binutils in the old versioned
++            // toolchain channel, while the current topology owns binutils in
++            // system.  Keep its /opt/channels payload, but expose its package
++            // identity where the current GCC seed dependency expects it.
++            if inspection.legacy
++                && inspection.manifest.name == "binutils"
++                && canonical == "main/gcc16"
++            {
++                canonical = aliases
++                    .get("system")
++                    .cloned()
++                    .unwrap_or_else(|| "main/system".into());
++            }
++            if inspection.legacy
++                && current_identities.contains(&(
++                    inspection.manifest.name.clone(),
++                    inspection.manifest.slot.clone(),
++                    inspection.manifest.epoch,
++                    inspection.manifest.version.clone(),
++                ))
++            {
++                continue;
++            }
+             aliases
+                 .entry(inspection.manifest.channel.clone())
+                 .or_insert_with(|| canonical.clone());
+             aliases
+                 .entry(canonical.clone())
+                 .or_insert_with(|| canonical.clone());
+-            let package = inspection.manifest.for_channel(&canonical);
++            let mut package = inspection.manifest.for_channel(&canonical);
++            if inspection.legacy && package.arch == "x86_64" {
++                package.arch = "amd64".into();
++            }
++            if inspection.legacy
++                && canonical == "main/python3.14"
++                && matches!(
++                    inspection.manifest.name.as_str(),
++                    "python" | "python-libs" | "python-dev" | "python-tests"
++                )
++            {
++                package.slot = "3.14".into();
++            }
++            if inspection.legacy
++                && inspection.manifest.name == "binutils"
++                && canonical == "main/system"
++            {
++                // The legacy channel encoded the GCC toolchain slot in the
++                // channel name.  The current repository owns binutils in the
++                // system channel and keys it by its ABI/version slot instead.
++                package.slot = "2.47".into();
++            }
++            // Sage 0.3 placed the compiler's runtime prerequisites in the
++            // same versioned toolchain channel and used short dependency
++            // names.  The current topology keeps those libraries in the
++            // system channel, so normalize preserved GCC seed metadata at
++            // the repository boundary while retaining the gcc16 package
++            // identity itself.
++            if inspection.legacy && canonical == "main/gcc16" {
++                // The preserved GCC package redundantly listed both concrete
++                // runtime packages and their SONAMEs.  The current solver
++                // treats SONAMEs as independent provider choices, which can
++                // select a second slot for (for example) isl even though the
++                // concrete dependency is already present.  The direct
++                // package dependencies are sufficient for this seed.
++                package
++                    .dependencies
++                    .retain(|dependency| !dependency.name.starts_with("so:"));
++                for dependency in &mut package.dependencies {
++                    if dependency.channel.is_none()
++                        && !dependency.name.starts_with("so:")
++                        && !dependency.name.starts_with("virtual/")
++                    {
++                        if dependency.name == "binutils" {
++                            dependency.channel = Some("main/system".into());
++                            dependency.slot = Some("2.47".into());
++                        } else {
++                            dependency.channel = Some("main/system".into());
++                        }
++                    }
++                }
++            }
++            if inspection.legacy && canonical == "main/python3.14" {
++                // The legacy Python runtime already names python-libs
++                // directly.  Its duplicated libpython SONAME is resolved in
++                // the system channel by the old solver semantics, although
++                // the concrete library belongs to python3.14; omit the
++                // redundant SONAME edge at the seed boundary.
++                if inspection.manifest.name == "python" {
++                    package
++                        .dependencies
++                        .retain(|dependency| !dependency.name.starts_with("so:"));
++                }
++                for dependency in &mut package.dependencies {
++                    if dependency.channel.is_none()
++                        && !dependency.name.starts_with("so:")
++                        && !dependency.name.starts_with("virtual/")
++                    {
++                        if matches!(
++                            dependency.name.as_str(),
++                            "python" | "python-libs" | "python-dev" | "python-tests"
++                        ) {
++                            dependency.channel = Some(canonical.clone());
++                            dependency.slot = Some("3.14".into());
++                        } else {
++                            dependency.channel = Some("main/system".into());
++                        }
++                    }
++                }
++            }
+             let coordinate = package.coordinate();
+             universe.insert(package);
+             releases.insert(
+@@ -215,7 +355,11 @@ pub fn load_available_with_pool(
+                 ReleaseSource {
+                     release: sage_repo::IndexedRelease {
+                         package: inspection.manifest,
+-                        archive: path.file_name().unwrap().to_string_lossy().into_owned(),
++                        archive: path
++                            .strip_prefix(pool)
++                            .unwrap_or(&path)
++                            .to_string_lossy()
++                            .into_owned(),
+                         sha256: String::new(),
+                     },
+                     location: ReleaseLocation::Local(path),
+@@ -233,6 +377,28 @@ pub fn load_available_with_pool(
+         aliases,
+     })
+ }
++
++fn compatible_architecture(actual: &str, wanted: &str) -> bool {
++    actual == wanted
++        || matches!(actual, "any" | "noarch")
++        || (wanted == "amd64" && actual == "x86_64")
++        || (wanted == "aarch64" && actual == "arm64")
++}
++
++/// Maps channel names used by the preserved Sage 0.3 seed pool to the
++/// versioned aliases in the current channel topology. The mapping is scoped
++/// to known legacy names; arbitrary channel strings are never rewritten.
++fn legacy_channel_alias(channel: &str, aliases: &BTreeMap<String, String>) -> Option<String> {
++    let alias = match channel {
++        "toolchain/gcc:16" => "gcc16",
++        "toolchain/llvm:22" => "llvm22",
++        "runtime/python:3.14" => "python3.14",
++        "toolchain/perl:5.44" => "system",
++        _ => return None,
++    };
++    aliases.get(alias).cloned()
++}
++
+ fn canonical_channel(available: &AvailablePackages, selected: Option<&str>) -> Result<String> {
+     let selected = selected.unwrap_or("system");
+     available
+diff --git a/docs/specs/recipe_spec.md b/docs/specs/recipe_spec.md
+index db0a698a9e9c06ca026a476b6d4783fa6540ee9c..b56c5a56ec3f18d4eef4a2f2a7855b13a8569ffb 100644
+--- a/docs/specs/recipe_spec.md
++++ b/docs/specs/recipe_spec.md
+@@ -33,6 +33,11 @@
+ 2. **零文件冲突与无交叉污染**: 被子包认领的文件自动从主包文件池中剔除，确保生成的多个 `*.pkg.tar.zst` 之间**文件集合严格互斥**。
+ 3. **独立 ELF 符号扫描**: 每个子包独立运行 `ElfScanner`，例如主包工具自动生成对 `libs` 子包导出的 `so:libfoo.so` 的依赖。
+ 
++归档文件名使用稳定的包坐标，不包含 ABI slot：
++`<name>-<version>-<release>-<arch>.pkg.tar.zst`。slot 只保存在
++`.METADATA/manifest.toml` 和仓库索引中，因此不同 slot 的同名产物必须输出到
++不同目录，避免文件名碰撞。
++
+ ---
+ 
+ ## 2. 完整实战配方示例 (`libarchive` 多包拆分)
+@@ -126,6 +131,9 @@ files = [
+ ### 3.2 `[[subpackages]]` (独立拆分子包)
+ - `name`: 子包名称（如 `foo-libs`, `foo-dev`, `foo-doc`）。
+ - `description`: 子包专属描述（可选，默认继承主包）。
++- `channel`: 子包通道覆盖（可选，默认继承主包）。运行时库可因此落在
++  `system` 通道，而编译器本体保留在版本化 slot 中。
++- `slot`: 子包 ABI slot 覆盖（可选，默认继承主包）。
+ - `dependencies`: 子包专属依赖（如 `foo-dev` 依赖 `foo-libs`）。
+ - `provides`: 子包显式提供的额外虚拟符号。
+ - `[subpackages.payload]`:

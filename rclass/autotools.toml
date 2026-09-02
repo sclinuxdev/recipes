@@ -1,11 +1,8 @@
 schema_version = 1
 name = "autotools"
-description = "GNU Autoconf, Automake, Libtool and Make build class"
+description = "Autoconf-compatible Make build class"
 
 implicit_build_dependencies = [
-    "system/autoconf",
-    "system/automake",
-    "system/libtool",
     "system/make",
     "system/pkgconf",
 ]
@@ -19,6 +16,7 @@ allowed_linkers = ["lld", "mold", "ld"]
 "args.test" = "0"
 "args.configure_triples" = ""
 "args.source_patch_strip" = "1"
+"args.autoreconf" = "0"
 
 [phases]
 src_unpack = """
@@ -48,20 +46,32 @@ done < "${SRC_DIR}/.distfiles/manifest"
 """
 src_prepare = """
 if [ -d "${SRC_DIR}/.patches" ]; then
-    for patch_file in "${SRC_DIR}"/.patches/*; do patch -d "${SRC_DIR}" -p1 < "$patch_file"; done
+    for patch_file in "${SRC_DIR}"/.patches/*; do
+        [ -f "$patch_file" ] || continue
+        patch -d "${SRC_DIR}" -p1 < "$patch_file"
+    done
 fi
 if [ -d "${SRC_DIR}/.source-patches" ]; then
     for patch_file in "${SRC_DIR}"/.source-patches/*; do
+        [ -f "$patch_file" ] || continue
         patch -d "${SRC_DIR}" -p "${args.source_patch_strip}" < "$patch_file"
     done
 fi
-if [ ! -x "${SRC_DIR}/configure" ]; then autoreconf -fi "${SRC_DIR}"; fi
+if [ "${args.autoreconf}" = 1 ]; then autoreconf -fi "${SRC_DIR}"; fi
 """
 src_configure = """
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
-"${SRC_DIR}/configure" --prefix=/usr ${args.configure_triples} ${args.configure_args}
+if ! "${SRC_DIR}/configure" --prefix=/usr ${args.configure_triples} ${args.configure_args}; then
+    if [ -f config.log ]; then
+        cat config.log >&2
+    fi
+    exit 1
+fi
 """
 src_compile = "make -C \"${BUILD_DIR}\" -j \"${JOBS}\" ${args.make_args}"
 src_test = "if [ \"${args.test}\" = 1 ]; then make -C \"${BUILD_DIR}\" check; fi"
-src_install = "make -C \"${BUILD_DIR}\" DESTDIR=\"${DESTDIR}\" install ${args.install_args}"
+src_install = """
+make -C "${BUILD_DIR}" DESTDIR="${DESTDIR}" install ${args.install_args}
+find "${DESTDIR}" -type f -name '*.la' -delete
+"""

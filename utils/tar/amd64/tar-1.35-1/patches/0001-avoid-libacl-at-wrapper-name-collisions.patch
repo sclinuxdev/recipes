@@ -1,0 +1,36 @@
+diff --git a/src/xattrs.c b/src/xattrs.c
+--- a/src/xattrs.c
++++ b/src/xattrs.c
+@@ -142,4 +142,4 @@
+-static acl_t acl_get_file_at (int, const char *, acl_type_t);
+-static int acl_set_file_at (int, const char *, acl_type_t, acl_t);
+-static int file_has_acl_at (int, char const *, struct stat const *);
+-static int acl_delete_def_file_at (int, char const *);
++static acl_t tar_acl_get_file_at (int, const char *, acl_type_t);
++static int tar_acl_set_file_at (int, const char *, acl_type_t, acl_t);
++static int tar_file_has_acl_at (int, char const *, struct stat const *);
++static int tar_acl_delete_def_file_at (int, char const *);
+@@ -148,1 +148,1 @@
+-#define AT_FUNC_NAME acl_get_file_at
++#define AT_FUNC_NAME tar_acl_get_file_at
+@@ -163,1 +163,1 @@
+-#define AT_FUNC_NAME acl_set_file_at
++#define AT_FUNC_NAME tar_acl_set_file_at
+@@ -174,1 +174,1 @@
+-#define AT_FUNC_NAME acl_delete_def_file_at
++#define AT_FUNC_NAME tar_acl_delete_def_file_at
+@@ -185,1 +185,1 @@
+-#define AT_FUNC_NAME file_has_acl_at
++#define AT_FUNC_NAME tar_file_has_acl_at
+@@ -302,1 +302,1 @@
+-      if (acl_delete_def_file_at (chdir_fd, file_name))
++      if (tar_acl_delete_def_file_at (chdir_fd, file_name))
+@@ -319,1 +319,1 @@
+-  if (acl_set_file_at (chdir_fd, file_name, type, acl) == -1)
++  if (tar_acl_set_file_at (chdir_fd, file_name, type, acl) == -1)
+@@ -360,1 +360,1 @@
+-  if (!(acl = acl_get_file_at (parentfd, file_name, type)))
++  if (!(acl = tar_acl_get_file_at (parentfd, file_name, type)))
+@@ -461,1 +461,1 @@
+-      int err = file_has_acl_at (parentfd, file_name, &st->stat);
++      int err = tar_file_has_acl_at (parentfd, file_name, &st->stat);

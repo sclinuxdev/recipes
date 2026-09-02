@@ -14,6 +14,9 @@ allowed_linkers = ["lld", "mold", "ld"]
 
 [env]
 CARGO_BUILD_JOBS = "${JOBS}"
+CARGO_HOME = "${BUILD_DIR}/cargo-home"
+CARGO_NET_GIT_FETCH_WITH_CLI = "false"
+RUST_MIN_STACK = "16777216"
 RUSTFLAGS = "${RUSTFLAGS}"
 
 [phases]

@@ -4,11 +4,11 @@ description = "Declarative Linux kernel build, module installation, and external
 
 implicit_build_dependencies = [
     "system/bc",
-    "system/binutils",
+    "system/binutils:2.47",
     "system/cpio",
     "system/gettext",
     "system/libelf-dev",
-    "gcc16/gcc-libs:16",
+    "system/gcc-libs",
     "system/make",
     "system/openssl",
     "system/openssl-dev",

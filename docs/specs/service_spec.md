@@ -22,21 +22,29 @@ group = "root"
 working_dir = "/"
 pid_file = "/run/sshd.pid"
 restart = "always"             # "always" | "on-failure" | "no"
-type = "simple"                # "simple" | "forking"
+type = "simple"                # "simple" | "forking" | "notify" | "oneshot"
 after = ["net", "syslog"]
 before = []
 runtime = ""                   # 绑定运行时，例如 "runtime/java:openjdk-21"
 ```
+
+一个文件可以使用单数 `[service]` 声明一个服务，也可以使用一个或多个
+`[[services]]` 声明来自同一构建配方的多个服务。每个服务可以通过 `package`
+字段归属到主包或某个子包；服务名称在同一个文件中必须唯一。两种声明形式
+最终会被 Sage 合并为同一个服务集合。
+
+`type` 支持 `simple`、`forking`、`notify` 和 `oneshot`。具体 init provider
+可以通过其 `supported_types` 声明可渲染的子集。
 
 ---
 
 ## 2. 声明式 Init 渲染工作流 (Zero Hardcoded Init in Engine)
 
 ```text
-/etc/sage/system.toml [providers.init = "openrc"]
+/etc/sage/system.toml [providers.init = "<provider>"]
                    │
                    ▼ (加载对应 rclass)
-         rclass/init-openrc.toml
+         rclass/init-<provider>.toml
                    │
                    ├─► 读取各个包的 .METADATA/service.toml
                    ├─► 展开 template 模板字符串

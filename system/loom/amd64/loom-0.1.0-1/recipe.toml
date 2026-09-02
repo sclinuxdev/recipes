@@ -13,13 +13,14 @@ arch = "amd64"
 dependencies = ["virtual/libc"]
 provides = ["loom", "init", "virtual/init"]
 
-[source]
+[[sources]]
 url = "https://github.com/antinomie1/loom.git"
 kind = "git"
 commit = "126b3bd80360dfaf5c4ff7757901d36a22659037"
 
 [build]
 inherit = ["cargo"]
+allow_network = true
 dependencies = [
     "rust1.98/rust-bin:1.98.0",
     "rust1.98/cargo:1.98.0",
